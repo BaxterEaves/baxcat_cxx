@@ -1,0 +1,89 @@
+#ifndef baxcat_cxx_synthetic_data_generator_guard
+#define baxcat_cxx_synthetic_data_generator_guard
+
+#include <vector>
+#include <memory>
+#include <string>
+#include <map>
+
+#include "prng.hpp"
+#include "distributions/gaussian.hpp"
+#include "distributions/multinomial.hpp"
+#include "helpers/constants.hpp"
+#include "helpers/state_helper.hpp"
+
+namespace baxcat{
+
+// SyntheticDataGenerator generates random crosscat data tables and distributions. It also scores
+// data under each column's mixture distribution.
+class SyntheticDataGenerator{
+public:
+	// Quick data
+	SyntheticDataGenerator(size_t num_rows, std::vector<std::string> datatypes, 
+		unsigned int rng_seed);
+
+	// TODO: implement
+	// Generate specific partition for benchmarking
+	// SyntheticDataGenerator(size_t num_rows, size_t num_cols, size_t num_views, 
+	// 	size_t num_clusters_per_view, unsigned int rng_seed);
+
+	// get something specific for inference testing
+	SyntheticDataGenerator(size_t num_rows, std::vector<double> view_weights, 
+		std::vector<std::vector<double>> category_weights, std::vector<double> category_separation,
+		std::vector<std::string> datatypes, unsigned int rng_seed);
+
+	void initialize();
+
+	std::vector<size_t> generateWeightedParition(std::vector<double> wights, size_t n);
+
+	// get the log likelihood of the data in x given the mixture distribution in column
+	std::vector<double> logLikelihood(std::vector<double> data, size_t column);
+
+	// returns the data as a vector of column vectors of doubles---the same format as state takes
+	std::vector<std::vector<double>> getData();
+
+	// TODO: implement
+	// get assignment of columns to views
+	// std::vector<size_t> getColumnAssignment();
+
+	// TODO: implement
+	// get assignment of rows to clusters in each view
+	// std::vector<std::vector<size_t>> getRowAssignment();
+
+private:
+	std::vector<std::map<std::string, double>> __generateSeparatedParameters(baxcat::datatype type,
+		size_t num_categories, double separation);
+
+	// generate separated clusters for each type
+	std::vector<std::map<std::string, double>> __generateContinuousParameters(
+		size_t num_categories, double separation);
+	// std::vector<std::map<std::string, double>> __generateCategoricalParameters(
+	// 	size_t num_categories,double separation);
+
+	// generate a datum from a set of parameters
+	double __generateContinuousDatum(std::map<std::string, double> params);
+	// double __generateCCategoricalDatum(std::map<std::string, double> params);
+
+	// get log lieklihood for the data in X
+	double __continuousLogp(double x, size_t column);
+	// std::vector<double> __categoricalLogp(std::vector<double> X, size_t column);
+
+	// MEMBERS
+	size_t _num_rows;
+	size_t _num_columns;
+	std::vector<size_t> _column_assignment;
+	std::vector<std::vector<size_t>> _row_assignments;
+	std::vector<std::vector<double>> _category_weights;
+	std::vector<std::vector<std::map<std::string, double>>> _params;
+	std::vector<double> _view_weights;
+	std::vector<double> _category_separation;
+	std::vector<baxcat::datatype> _datatypes;
+	std::vector<std::vector<double>> _data;
+
+	std::shared_ptr<baxcat::PRNG> _rng;
+	
+};
+
+} // end namespace
+
+#endif
