@@ -1,5 +1,5 @@
 # baxcat_cxx
-A fast, extensible implementation of cross-categorization
+An extensible implementation of cross-categorization
 
 ## Currently implemented data types
 
@@ -11,4 +11,4 @@ Uses Categorical likelihood with symmetric Dirichlet prior.
 
 ## License
 
-Licensed under the GNU General Public License, version 3. See LICENSE.txt for deatails.
+Licensed under the GNU General Public License, version 3. See `LICENSE.txt` for details.
