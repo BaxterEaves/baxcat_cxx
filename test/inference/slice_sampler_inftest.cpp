@@ -1,3 +1,20 @@
+
+// BaxCat: an extensible cross-catigorization engine.
+// Copyright (C) 2014 Baxter Eaves
+//
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU General Public License as published by the Free Software Foundation, version 3.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+// even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License (LICENSE.txt) along with this
+// program. If not, see <http://www.gnu.org/licenses/>.
+//
+// You may contact the mantainers of this software via github
+// <https://github.com/BaxterEaves/baxcat_cxx>.
+
 #define BOOST_TEST_DYN_LINK
 
 #include <boost/test/unit_test.hpp>
@@ -34,7 +51,7 @@ BOOST_AUTO_TEST_CASE(test_slice_sampler_standard_normal)
     ks_stat = baxcat::test_utils::testSliceSampler(x_0, log_norm_pdf, D, 1, norm_cdf, NUM_SAMPLES);
 
     bool norm_reject = baxcat::test_utils::ksTestRejectNull(ks_stat, NUM_SAMPLES, NUM_SAMPLES);
-    
+
     BOOST_CHECK(!norm_reject);
 }
 
@@ -45,11 +62,11 @@ BOOST_AUTO_TEST_CASE(test_slice_sampler_beta)
     double b = 1;
     double ks_stat;
 
-    auto log_beta_pdf = [a, b](double x){ 
+    auto log_beta_pdf = [a, b](double x){
         return baxcat::dist::beta::logPdf(x,a,b);
     };
-    auto beta_cdf = [a, b](double x){ 
-        return baxcat::dist::beta::cdf(x,a,b); 
+    auto beta_cdf = [a, b](double x){
+        return baxcat::dist::beta::cdf(x,a,b);
     };
     baxcat::Domain D(0, 1);
 
@@ -66,11 +83,11 @@ BOOST_AUTO_TEST_CASE(test_slice_sampler_gamma)
     double scale = 1;
     double ks_stat;
 
-    auto log_gam_pdf = [shape, scale](double x){ 
+    auto log_gam_pdf = [shape, scale](double x){
         return baxcat::dist::gamma::logPdf(x,shape,scale);
     };
-    auto gam_cdf = [shape, scale](double x){ 
-        return baxcat::dist::gamma::cdf(x,shape,scale); 
+    auto gam_cdf = [shape, scale](double x){
+        return baxcat::dist::gamma::cdf(x,shape,scale);
     };
     baxcat::Domain D(0, INF);
 
@@ -87,11 +104,11 @@ BOOST_AUTO_TEST_CASE(test_slice_sampler_inverse_gamma)
     double scale = 3;
     double ks_stat;
 
-    auto log_invgam_pdf = [shape, scale](double x){ 
+    auto log_invgam_pdf = [shape, scale](double x){
         return baxcat::dist::inverse_gamma::logPdf(x,shape,scale);
     };
-    auto invgam_cdf = [shape, scale](double x){ 
-        return baxcat::dist::inverse_gamma::cdf(x,shape,scale); 
+    auto invgam_cdf = [shape, scale](double x){
+        return baxcat::dist::inverse_gamma::cdf(x,shape,scale);
     };
     baxcat::Domain D(0, INF);
 
@@ -115,7 +132,7 @@ BOOST_AUTO_TEST_CASE(test_slice_sampler_normal_mixture)
         double log_pdf_val = baxcat::numerics::logsumexp({logp_1, logp_2});
         return log_pdf_val;
     };
-    auto norm_cdf = [mu_1, mu_2, rho](double x){ 
+    auto norm_cdf = [mu_1, mu_2, rho](double x){
         double cdf_1 = .5*baxcat::dist::gaussian::cdf(x,mu_1,rho);
         double cdf_2 = .5*baxcat::dist::gaussian::cdf(x,mu_2,rho);
         return cdf_1+cdf_2;
@@ -131,7 +148,7 @@ BOOST_AUTO_TEST_CASE(test_slice_sampler_normal_mixture)
 
 BOOST_AUTO_TEST_CASE(test_slice_sampler_crp)
 {
-    auto log_crp = [](double x){ 
+    auto log_crp = [](double x){
         double logp = baxcat::numerics::lcrpUNormPost(5, 100, x);
         return logp + baxcat::dist::inverse_gamma::logPdf(x,1,1);
     };

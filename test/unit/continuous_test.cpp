@@ -1,3 +1,20 @@
+
+// BaxCat: an extensible cross-catigorization engine.
+// Copyright (C) 2014 Baxter Eaves
+//
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU General Public License as published by the Free Software Foundation, version 3.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+// even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License (LICENSE.txt) along with this
+// program. If not, see <http://www.gnu.org/licenses/>.
+//
+// You may contact the mantainers of this software via github
+// <https://github.com/BaxterEaves/baxcat_cxx>.
+
 #define BOOST_TEST_DYN_LINK
 
 #include <boost/test/unit_test.hpp>
@@ -278,10 +295,12 @@ BOOST_AUTO_TEST_CASE(test_m_conditional_values_single)
 	auto hypers = model.getHypersMap();
 	auto suffstats = model.getSuffstatsMap();
 
+	double m_std = config[1];
+	double m_mean = config[0];
 	double f_m = 0;
-	f_m += baxcat::dist::gaussian::logPdf(x,config[0],config[1]);
+	f_m += baxcat::dist::gaussian::logPdf(x, m_mean, 1/(m_std*m_std));
 	f_m += nng.logMarginalLikelihood(suffstats["n"], suffstats["sum_x"], suffstats["sum_x_sq"], x,
-		hypers["r"], hypers["s"], hypers["nu"]);
+									 hypers["r"], hypers["s"], hypers["nu"]);
 
 	BOOST_CHECK_EQUAL(m_conditional(x), f_m);
 
@@ -305,7 +324,7 @@ BOOST_AUTO_TEST_CASE(test_r_conditional_values_single)
 	double f_r = 0;
 	f_r += baxcat::dist::gamma::logPdf(x, 1, config[2]);
 	f_r += nng.logMarginalLikelihood(suffstats["n"], suffstats["sum_x"], suffstats["sum_x_sq"],
-		hypers["m"], x, hypers["s"], hypers["nu"]);
+									 hypers["m"], x, hypers["s"], hypers["nu"]);
 
 	BOOST_CHECK_EQUAL(r_conditional(x), f_r);
 }
@@ -328,7 +347,7 @@ BOOST_AUTO_TEST_CASE(test_s_conditional_values_single)
 	double f_s = 0;
 	f_s += baxcat::dist::gamma::logPdf(x, 1, config[3]);
 	f_s += nng.logMarginalLikelihood(suffstats["n"], suffstats["sum_x"], suffstats["sum_x_sq"],
-		hypers["m"], hypers["r"], x, hypers["nu"]);
+									 hypers["m"], hypers["r"], x, hypers["nu"]);
 
 	BOOST_CHECK_EQUAL(s_conditional(x), f_s);
 }
@@ -377,12 +396,16 @@ BOOST_AUTO_TEST_CASE(test_m_conditional_values_multiple)
 	auto suffstats_0 = model_0.getSuffstatsMap();
 	auto suffstats_1 = model_1.getSuffstatsMap();
 
+	double m_std = config[1];
+
 	double f_m = 0;
-	f_m += baxcat::dist::gaussian::logPdf(x,config[0],config[1]);
+	f_m += baxcat::dist::gaussian::logPdf(x, config[0], 1/(m_std*m_std));
 	f_m += nng.logMarginalLikelihood(suffstats_0["n"], suffstats_0["sum_x"],
-		suffstats_0["sum_x_sq"], x, hypers["r"], hypers["s"], hypers["nu"]);
+									 suffstats_0["sum_x_sq"], x, hypers["r"], hypers["s"],
+									 hypers["nu"]);
 	f_m += nng.logMarginalLikelihood(suffstats_1["n"], suffstats_1["sum_x"],
-		suffstats_1["sum_x_sq"], x, hypers["r"], hypers["s"], hypers["nu"]);
+									 suffstats_1["sum_x_sq"], x, hypers["r"], hypers["s"],
+									 hypers["nu"]);
 
 	BOOST_CHECK_EQUAL(m_conditional(x), f_m);
 }
@@ -405,7 +428,7 @@ BOOST_AUTO_TEST_CASE(test_r_conditional_values_multiple)
 	auto suffstats_1 = model_1.getSuffstatsMap();
 
 	double f_r = 0;
-	f_r += baxcat::dist::inverse_gamma::logPdf(x,1,config[2]);
+	f_r += baxcat::dist::gamma::logPdf(x,1,config[2]);
 	f_r += nng.logMarginalLikelihood(suffstats_0["n"], suffstats_0["sum_x"],
 		suffstats_0["sum_x_sq"], hypers["m"], x, hypers["s"], hypers["nu"]);
 	f_r += nng.logMarginalLikelihood(suffstats_1["n"], suffstats_1["sum_x"],

@@ -1,3 +1,20 @@
+
+// BaxCat: an extensible cross-catigorization engine.
+// Copyright (C) 2014 Baxter Eaves
+//
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU General Public License as published by the Free Software Foundation, version 3.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+// even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License (LICENSE.txt) along with this
+// program. If not, see <http://www.gnu.org/licenses/>.
+//
+// You may contact the mantainers of this software via github
+// <https://github.com/BaxterEaves/baxcat_cxx>.
+
 #define BOOST_TEST_DYN_LINK
 
 #include <boost/test/unit_test.hpp>
@@ -52,7 +69,7 @@ BOOST_AUTO_TEST_CASE(constructor_should_produce_valid_object){
    BOOST_CHECK_CLOSE_FRACTION( suffstats[0]["sum_x"], 15, EPSILON );
    BOOST_CHECK_CLOSE_FRACTION( suffstats[0]["sum_x_sq"], 55, EPSILON );
 
-    // check hypers  
+    // check hypers
    vector<map<string, double>> hypers = feature.getModelHypers();
    BOOST_REQUIRE( hypers.size() == 1);
    BOOST_REQUIRE( hypers[0].size() == 4 );
@@ -247,7 +264,7 @@ BOOST_AUTO_TEST_CASE(destroy_singleton_should_remove_cluster){
     // moves X[4] out of clusters[1] to clusters[0] and destroys clusters[1]
     feature.destroySingletonCluster(4, 1, 0);
 
-    suffstats = feature.getModelSuffstats();    
+    suffstats = feature.getModelSuffstats();
     BOOST_REQUIRE( suffstats.size() == 1 );
     BOOST_CHECK_CLOSE_FRACTION( suffstats[0]["sum_x"], 15, EPSILON );
     BOOST_CHECK_CLOSE_FRACTION( suffstats[0]["sum_x_sq"], 55, EPSILON );

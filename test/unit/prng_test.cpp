@@ -1,3 +1,20 @@
+
+// BaxCat: an extensible cross-catigorization engine.
+// Copyright (C) 2014 Baxter Eaves
+//
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU General Public License as published by the Free Software Foundation, version 3.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+// even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License (LICENSE.txt) along with this
+// program. If not, see <http://www.gnu.org/licenses/>.
+//
+// You may contact the mantainers of this software via github
+// <https://github.com/BaxterEaves/baxcat_cxx>.
+
 #define BOOST_TEST_DYN_LINK
 
 #include <boost/test/unit_test.hpp>
@@ -74,7 +91,7 @@ BOOST_AUTO_TEST_CASE(number_from_edge_thread_should_be_same_with_seed){
 // Test random element
 // ````````````````````````````````````````````````````````````````````````````````````````````````
 BOOST_AUTO_TEST_CASE(random_element_should_return_an_element){
-    static baxcat::PRNG rng(10); 
+    static baxcat::PRNG rng(10);
     std::vector<int> a = {1,2,3,4,5};
     auto element = rng.randomElement(a);
     BOOST_CHECK( baxcat::test_utils::hasElement(a, element) );
@@ -231,7 +248,7 @@ BOOST_AUTO_TEST_CASE(symmetric_dirichlet_random_vector_should_be_normalized){
     char K_2 = 4;
     double alpha_2 = 10;
     std::vector<double> p_2 = rng.dirrand(K_2, alpha_2);
-    BOOST_CHECK_CLOSE_FRACTION( baxcat::utils::sum(p_2), 1.0, TOL);    
+    BOOST_CHECK_CLOSE_FRACTION( baxcat::utils::sum(p_2), 1.0, TOL);
 }
 
 // Stress test

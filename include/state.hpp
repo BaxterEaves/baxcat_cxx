@@ -1,3 +1,20 @@
+
+// BaxCat: an extensible cross-catigorization engine.
+// Copyright (C) 2014 Baxter Eaves
+//
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU General Public License as published by the Free Software Foundation, version 3.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+// even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License (LICENSE.txt) along with this
+// program. If not, see <http://www.gnu.org/licenses/>.
+//
+// You may contact the mantainers of this software via github
+// <https://github.com/BaxterEaves/baxcat_cxx>.
+
 #ifndef baxcat_cxx_state_guard
 #define baxcat_cxx_state_guard
 
@@ -32,25 +49,25 @@ public:
     // datatypes[f] is the datatype for feature feature
     // n_grid is the number of bins for hyperparameters
     // rng_seed seeds the rng starting state
-    State( std::vector<std::vector<double>> X, 
+    State( std::vector<std::vector<double>> X,
         std::vector<std::string> datatypes,
-        std::vector<std::vector<double>> distargs, 
+        std::vector<std::vector<double>> distargs,
         unsigned int rng_seed);
 
-    // init with a set partition 
+    // init with a set partition
     // Zv[f] is the view to which feature f belongs
     // Zrcv[v][r] is the category to which row r of the features in view v are
     // assigned
-    State( std::vector<std::vector<double>> X, 
+    State( std::vector<std::vector<double>> X,
         std::vector<std::string> datatypes,
         std::vector<std::vector<double>> distargs,
-        unsigned int rng_seed, std::vector<size_t> Zv, 
+        unsigned int rng_seed, std::vector<size_t> Zv,
         std::vector<std::vector<size_t>> Zrcv,
         std::vector<std::map<std::string, double>> hyper_maps);
 
-    // do transitions. 
+    // do transitions.
     void transition( std::vector< std::string > which_transitions,
-        std::vector<size_t> which_rows, std::vector<size_t> which_cols, 
+        std::vector<size_t> which_rows, std::vector<size_t> which_cols,
         size_t which_kernel, int N);
 
     // getters
@@ -63,11 +80,11 @@ public:
 
     // setters
     void setHyperConfig(size_t column_index, std::vector<double> hyperprior_config);
-    
+
     // predictive_logp
-    // returns the logp of the values in query_values being in corresponding  indices in 
+    // returns the logp of the values in query_values being in corresponding  indices in
     // query_indices given that the values in constraint_values are in constraint_indices
-    std::vector<double> predictiveLogp( 
+    std::vector<double> predictiveLogp(
         std::vector<std::vector<size_t>> query_indices,
         std::vector<double> query_values,
         std::vector<std::vector<size_t>> constraint_indices,
@@ -75,8 +92,8 @@ public:
 
     // TODO: implement these features
     // void setColumnHypers(std::map<string, double> hypers, size_t which_col);
-    
-    // append data to last row. assign_to_p_max_row specifies whether the row is assigned to the 
+
+    // append data to last row. assign_to_p_max_row specifies whether the row is assigned to the
     // category with the max probability or is assigned probabilistically
     void appendRow(std::vector<double> data_row, bool assign_to_max_p_cluster);
     void popRow();
@@ -86,7 +103,7 @@ public:
     // predictive_draw
     // does N draws from query indice given constraint_values returns a N by query_indices.size()
     // vector of vectors
-    std::vector<std::vector<double>> predictiveDraw( 
+    std::vector<std::vector<double>> predictiveDraw(
         std::vector<std::vector<size_t>> query_indices,
         std::vector<std::vector<size_t>> constraint_indices,
         std::vector<double> constraint_values,
@@ -95,9 +112,9 @@ public:
 
     // for geweke
     // clear suffstats and data
-    void __geweke_clear();                   
+    void __geweke_clear();
     // resample one row
-    void __geweke_resampleRows();    
+    void __geweke_resampleRows();
     // resample all rows
     void __geweke_resampleRow(size_t which_row);
     std::vector<double> __geweke_pullDataColumn(size_t column_index) const;
@@ -115,7 +132,7 @@ private:
     // transition view alpha --- alpha over rows in views
     void __transitionViewCRPAlphas();
     // transition hyperparameters for columns in which_cols
-    // if which_cols is empty, all columns, in shuffled order are transistioned 
+    // if which_cols is empty, all columns, in shuffled order are transistioned
     void __transitionColumnHypers(std::vector<size_t> which_columns);
     // transition the assignment of columns to views
     // if which_cols is empty, all columns, in shuffled order are transistioned
@@ -132,7 +149,7 @@ private:
     // probability and sample helpers
     double __doPredictiveLogpObserved(size_t row, size_t column, double value);
     double __doPredictiveLogpUnobserved(size_t column, double value);
-    double __doPredictiveDrawObserved(size_t row, size_t col); 
+    double __doPredictiveDrawObserved(size_t row, size_t col);
     double __doPredictiveDrawUnobserved(size_t col); // FIXME: implement!
 
     // Cleanup methods
@@ -159,10 +176,10 @@ private:
     std::vector<size_t> _view_counts;
     // Zv[f] is the feature to which Feature f is assigned
     std::vector<size_t> _column_assignment;
-    
+
     // Parallel random number generator
     std::shared_ptr<baxcat::PRNG> _rng;
-    
+
     // holds the views
     std::vector<View> _views;
 
@@ -171,7 +188,7 @@ private:
     std::vector<std::shared_ptr<BaseFeature>> _features;
 
     std::vector<datatype> _feature_types;
-    
+
 };
 
 

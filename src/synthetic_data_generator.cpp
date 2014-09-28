@@ -1,4 +1,20 @@
 
+// BaxCat: an extensible cross-catigorization engine.
+// Copyright (C) 2014 Baxter Eaves
+//
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU General Public License as published by the Free Software Foundation, version 3.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+// even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License (LICENSE.txt) along with this
+// program. If not, see <http://www.gnu.org/licenses/>.
+//
+// You may contact the mantainers of this software via github
+// <https://github.com/BaxterEaves/baxcat_cxx>.
+
 #include "helpers/synthetic_data_generator.hpp"
 
 using std::vector;
@@ -186,6 +202,74 @@ double SyntheticDataGenerator::__continuousLogp(double x, size_t column)
 	for(size_t k = 0; k < num_clusters; ++k){
 		weights[k] = log(weights[k]) + dist::gaussian::logPdf(x, _params[column][k]["mu"],
 			_params[column][k]["rho"]);
+	}
+
+	return numerics::logsumexp(weights);
+}
+
+
+// categorical
+// ````````````````````````````````````````````````````````````````````````````````````````````````
+vector<map<string, double>> SyntheticDataGenerator::__generateCategoricalParameters(
+	size_t num_categories, double separation)
+{
+
+	if (separation > 0.95)
+        separation = 0.95;
+
+	// TODO: Non-arbitrary number of categories.
+	size_t K = 5;
+
+	// symmetric
+	vector<double> alpha_vec(K, 1.0-separation)
+
+	vector<map<string, double>> params;
+
+	for(size_t i = 0; i < num_categories; ++i){
+		// draw multinomial vector for dirichlet
+		vector<double> P = rng.get()->dirrand(alpha_vec);
+
+		map<string, double> param;
+		for(size_t k = 0; k < K; ++k){
+			std::ostringstream key;
+			key << i;
+			param[key.str()] = P[k];
+		}
+		params.push_back(param);
+	}
+	return params;
+}
+
+
+double SyntheticDataGenerator::__generateCategoricalDatum(map<string, double> param)
+{
+	size_t K = param.size();
+
+	vector<double> p(K);
+	for(size_t i = 0; i < K; ++i){
+		string key = std::to_string(i);
+		p[i] = param[key]
+	}
+	return static_cast<double>(_rng.get()->pflip(p));
+}
+
+
+double SyntheticDataGenerator::__categoricalLogp(double x, size_t column)
+{
+	size_t this_view = _column_assignment[column];
+	auto weights = _category_weights[this_view];
+	size_t num_clusters = weights.size();
+
+	size_t y = static_cast<size_t>(x+.5);
+
+	for(size_t i = 0; i < num_clusters; ++i){
+		auto K = _params[column][i].size();
+		vector<double> p(K);
+		for(size_t k = 0; k < K; ++k){
+			string key = std::to_string(k);
+			p[k] = param[key]
+		}
+		weights[i] = log(weights[i]) + dist::multinomial::logPdf(y, p);
 	}
 
 	return numerics::logsumexp(weights);

@@ -1,4 +1,20 @@
-// Feature class implementation
+
+// BaxCat: an extensible cross-catigorization engine.
+// Copyright (C) 2014 Baxter Eaves
+//
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU General Public License as published by the Free Software Foundation, version 3.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+// even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License (LICENSE.txt) along with this
+// program. If not, see <http://www.gnu.org/licenses/>.
+//
+// You may contact the mantainers of this software via github
+// <https://github.com/BaxterEaves/baxcat_cxx>.
+
 using std::vector;
 using std::string;
 using std::map;
@@ -6,7 +22,7 @@ using std::map;
 
 template<class DataType, typename T>
 baxcat::Feature<DataType, T>::Feature(unsigned int idx, baxcat::DataContainer<T> data,
-                                      vector<T> args, baxcat::PRNG *rng_ptr):
+                                      vector<double> args, baxcat::PRNG *rng_ptr):
                                       _index(idx), _data(data), _rng(rng_ptr), _N(data.size())
 {
     _distargs = args;
@@ -18,7 +34,7 @@ baxcat::Feature<DataType, T>::Feature(unsigned int idx, baxcat::DataContainer<T>
 // FIXME: figure out how to get delegated constructors to work here
 template<class DataType, typename T>
 baxcat::Feature<DataType, T>::Feature(unsigned int idx, baxcat::DataContainer<T> data,
-                                      vector<T> args, vector<size_t> Z, baxcat::PRNG *_rngptr):
+                                      vector<double> args, vector<size_t> Z, baxcat::PRNG *_rngptr):
                                       _index(idx), _data(data), _rng(_rngptr), _N(data.size())
 {
     _distargs = args;
@@ -32,7 +48,7 @@ baxcat::Feature<DataType, T>::Feature(unsigned int idx, baxcat::DataContainer<T>
         _clusters[k].setHypers(_hypers);
     }
 
-    ASSERT(std::cout, _clusters.size() == K);
+    ASSERT_EQUAL(std::cout, _clusters.size(), K);
 
     for( size_t i = 0; i < _N; i++)
         this->insertElement( i, Z[i] );
@@ -177,14 +193,23 @@ void baxcat::Feature<DataType, T>::createSingletonCluster(size_t row, size_t cur
 template<class DataType, typename T>
 void baxcat::Feature<DataType, T>::reassign(std::vector<size_t> assignment)
 {
-    size_t K = utils::vector_max(assignment) + 1;
-    _clusters.resize(K);
-    for(size_t k = 0; k < K; k++){
-        _clusters[k].clear(_distargs);
-        _clusters[k].setHypers(_hypers);
+    size_t K_old = _clusters.size();
+    size_t K_new = utils::vector_max(assignment) + 1;
+
+    if(K_new < K_old){
+        _clusters.resize(K_new, DataType(_distargs));
+        for(size_t k = 0; k < K_new; k++)
+            _clusters[k].setHypers(_hypers);
+    }else{
+        _clusters.resize(K_new, DataType(_distargs));
+        for(size_t k = 0; k < K_old; k++)
+            _clusters[k].clear(_distargs);
+
+        for(size_t k = K_old; k < K_new; k++)
+            _clusters[k].setHypers(_hypers);
     }
 
-    ASSERT(std::cout, _clusters.size() == K);
+    ASSERT_EQUAL(std::cout, _clusters.size(), K_new);
 
     for(size_t i = 0; i < _N; ++i)
         this->insertElement(i, assignment[i]);
@@ -247,8 +272,9 @@ vector<map<string, double>> baxcat::Feature<DataType, T>::getModelSuffstats() co
 }
 
 
+// TODO: implement so we can use variable return types
 template<class DataType, typename T>
-std::vector<T> baxcat::Feature<DataType, T>::getData() const
+std::vector<double> baxcat::Feature<DataType, T>::getData() const
 {
     return _data.getSetData();
 }

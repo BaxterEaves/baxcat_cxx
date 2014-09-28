@@ -1,3 +1,20 @@
+
+# BaxCat: an extensible cross-catigorization engine.
+# Copyright (C) 2014 Baxter Eaves
+#
+# This program is free software: you can redistribute it and/or modify it under the terms of the
+# GNU General Public License as published by the Free Software Foundation, version 3.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+# even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License (LICENSE.txt) along with this
+# program. If not, see <http://www.gnu.org/licenses/>.
+#
+# You may contact the mantainers of this software via github
+# <https://github.com/BaxterEaves/baxcat_cxx>.
+
 # TODO: Learn how to make better makefiles
 
 SRC = ../../src
@@ -19,7 +36,8 @@ DEBUG_HEADER = $(INCLUDE)/debug.hpp
 OBJECTS = categorical.o continuous.o state.o view.o feature_tree.o sdg.o
 TEST_FILES = utils_test.cpp test_utils_test.cpp numerics_test.cpp container_test.cpp prng_test.cpp \
 	distributions_test.cpp nng_test.cpp continuous_test.cpp feature_test.cpp feature_tree_test.cpp \
-	view_test.cpp state_test.cpp synthetic_data_generator_test.cpp msd_test.cpp categorical_test.cpp
+	view_test.cpp state_test.cpp synthetic_data_generator_test.cpp msd_test.cpp \
+	categorical_test.cpp feature_builder_test.cpp
 
 
 all : $(TEST_FILES) $(OBJECTS) test_main.cpp
@@ -51,7 +69,7 @@ sdg.o : $(HELPERS)/constants.hpp $(HELPERS)/state_helper.hpp $(DIST)/gaussian.hp
 	$(CXX) -c $(SRC)/synthetic_data_generator.cpp -o sdg.o $(OPTS)
 
 runtests:
-	./main.test  # --log_level=test_suite
+	./main.test  #--log_level=test_suite
 
 runjenkins:
 	./main.test --log_format=XML --log_sink=results.xml --log_level=all --report_level=no

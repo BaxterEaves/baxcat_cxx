@@ -1,3 +1,20 @@
+
+// BaxCat: an extensible cross-catigorization engine.
+// Copyright (C) 2014 Baxter Eaves
+//
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU General Public License as published by the Free Software Foundation, version 3.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+// even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License (LICENSE.txt) along with this
+// program. If not, see <http://www.gnu.org/licenses/>.
+//
+// You may contact the mantainers of this software via github
+// <https://github.com/BaxterEaves/baxcat_cxx>.
+
 #define BOOST_TEST_DYN_LINK
 
 #include <boost/test/unit_test.hpp>
@@ -44,7 +61,7 @@ struct Setup{
 BOOST_AUTO_TEST_CASE(verify_base_constructor){
     static baxcat::PRNG *rng = new baxcat::PRNG(10);
     Setup s(rng);
- 
+
     View view( s.features, rng);
 
     BOOST_CHECK_EQUAL( view.checkPartitions(), 1);
@@ -53,7 +70,7 @@ BOOST_AUTO_TEST_CASE(verify_base_constructor){
 BOOST_AUTO_TEST_CASE(verify_assignment_constructor){
     static baxcat::PRNG *rng = new baxcat::PRNG(10);
     Setup s(rng);
- 
+
     double alpha = 14;
     std::vector<size_t> assignment = {0, 0, 1, 1, 1};
 
@@ -183,7 +200,7 @@ BOOST_AUTO_TEST_CASE(pop_row_should_work_non_singleton_2){
 
 // does't SIGBART tests
 //`````````````````````````````````````````````````````````````````````````````
-// I'm not entirely sure how to unit test functions that depend on random 
+// I'm not entirely sure how to unit test functions that depend on random
 // numbers, so I'm just going to run all the functions and see if they SIGBART
 // or damage the partitions.
 BOOST_AUTO_TEST_CASE(transition_row_should_run){

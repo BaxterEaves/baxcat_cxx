@@ -1,3 +1,20 @@
+
+// BaxCat: an extensible cross-catigorization engine.
+// Copyright (C) 2014 Baxter Eaves
+//
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU General Public License as published by the Free Software Foundation, version 3.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+// even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License (LICENSE.txt) along with this
+// program. If not, see <http://www.gnu.org/licenses/>.
+//
+// You may contact the mantainers of this software via github
+// <https://github.com/BaxterEaves/baxcat_cxx>.
+
 #ifndef baxcat_cxx_geweke_tester_guard
 #define baxcat_cxx_geweke_tester_guard
 
@@ -16,7 +33,7 @@
 #include "helpers/synthetic_data_generator.hpp"
 #include "template_helpers.hpp"
 
-namespace baxcat{ 
+namespace baxcat{
 
 class GewekeTester
 {
@@ -44,7 +61,7 @@ public:
 
     static void __initStats( const baxcat::State &state, std::vector<double> &state_crp_alpha,
         std::vector<std::map<std::string, std::vector<double>>> &all_stats);
-    
+
 private:
     size_t _num_cols;
 
@@ -58,7 +75,7 @@ private:
     std::vector<double> _state_crp_alpha_posterior;
     std::vector<std::map<std::string, std::vector<double>>> _all_stats_forward;
     std::vector<std::map<std::string, std::vector<double>>> _all_stats_posterior;
-    
+
     std::mt19937 _seeder;
 };
 

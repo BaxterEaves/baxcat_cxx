@@ -1,3 +1,20 @@
+
+// BaxCat: an extensible cross-catigorization engine.
+// Copyright (C) 2014 Baxter Eaves
+//
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU General Public License as published by the Free Software Foundation, version 3.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+// even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License (LICENSE.txt) along with this
+// program. If not, see <http://www.gnu.org/licenses/>.
+//
+// You may contact the mantainers of this software via github
+// <https://github.com/BaxterEaves/baxcat_cxx>.
+
 #define BOOST_TEST_DYN_LINK
 
 #include <boost/test/unit_test.hpp>
@@ -16,7 +33,7 @@ BOOST_AUTO_TEST_SUITE (numerics_test)
 //`````````````````````````````````````````````````````````````````````````````````````````````````
 BOOST_AUTO_TEST_CASE(log_factorial_value_checks){
     // fringe case 0
-    double ans; 
+    double ans;
     ans = baxcat::numerics::lfactorial(0);
     BOOST_CHECK_CLOSE_FRACTION(ans,0,TOL);
 
@@ -32,7 +49,7 @@ BOOST_AUTO_TEST_CASE(log_factorial_value_checks){
 //`````````````````````````````````````````````````````````````````````````````````````````````````
 BOOST_AUTO_TEST_CASE(log_nchoosek_value_checks){
     // fringe case 0
-    double ans; 
+    double ans;
     // fringe case 0
     ans = baxcat::numerics::lnchoosek(10,0);
     BOOST_CHECK_CLOSE_FRACTION(ans,0,TOL);
@@ -53,7 +70,7 @@ BOOST_AUTO_TEST_CASE(log_nchoosek_value_checks){
 //`````````````````````````````````````````````````````````````````````````````````````````````````
 BOOST_AUTO_TEST_CASE(log_beta_value_checks){
     // fringe case 0
-    double ans; 
+    double ans;
     // fringe case a=b=0
     ans = baxcat::numerics::lbeta(1,1);
     BOOST_CHECK_CLOSE_FRACTION(ans,0,TOL);
@@ -74,7 +91,7 @@ BOOST_AUTO_TEST_CASE(quadrature_value_checks_against_beta_distribution){
     const double QUADTOL = 10E-5;
 
     double quad_epsilon = 10E-10;
-    
+
     auto betajeff = [](double x){
         boost::math::beta_distribution<double> beta(.5,.5);
         return pdf(beta,x);
@@ -91,7 +108,7 @@ BOOST_AUTO_TEST_CASE(quadrature_value_checks_against_beta_distribution){
         boost::math::normal_distribution<double> norm_1(-3,1);
         boost::math::normal_distribution<double> norm_2(3,1);
         return .5*pdf(norm_1,x) + .5*pdf(norm_2,x);
-    };    
+    };
 
     cdf = baxcat::numerics::quadrature(normix,-50,0, quad_epsilon);
     BOOST_CHECK_CLOSE_FRACTION(cdf,.5,QUADTOL);
@@ -166,4 +183,3 @@ BOOST_AUTO_TEST_CASE(logsumexp_value_checks){
 
 
 BOOST_AUTO_TEST_SUITE_END()
-

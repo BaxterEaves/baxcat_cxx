@@ -1,4 +1,20 @@
 
+// BaxCat: an extensible cross-catigorization engine.
+// Copyright (C) 2014 Baxter Eaves
+//
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU General Public License as published by the Free Software Foundation, version 3.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+// even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License (LICENSE.txt) along with this
+// program. If not, see <http://www.gnu.org/licenses/>.
+//
+// You may contact the mantainers of this software via github
+// <https://github.com/BaxterEaves/baxcat_cxx>.
+
 #ifndef baxcat_cxx_samplers_slice_guard
 #define baxcat_cxx_samplers_slice_guard
 
@@ -31,23 +47,23 @@ namespace samplers{
     void __stepout(double x_0, double y, double w, double m, lambda f, baxcat::Domain D,
         baxcat::PRNG *rng, double &L, double &R)
     {
-        
+
         double U = rng->rand();
         L = x_0 - w*U;
         L = (L < D.lower) ? D.lower : L;
         R = L + w;
-        
+
         double V = rng->rand();
         size_t J = floor(m*V);
         size_t K = (m-1)-J;
-        
+
         while (J > 0 and y < f(L)) {
             L -= w;
             --J;
             if (L < D.lower)
                 L = D.lower;
         }
-        
+
         while (K > 0 and y < f(R)) {
             R += w;
             --K;
@@ -58,18 +74,18 @@ namespace samplers{
 
     // slice sample the log function log_pdf with bounds defined in domain, D, and starting from
     // point x_0. w is the expected slice width and burn the the number of samples to ignore before
-    // the samples is collected. 
+    // the samples is collected.
     template <typename lambda>
     double sliceSample(double x_0, lambda &log_pdf, baxcat::Domain D, double w, size_t burn,
         baxcat::PRNG *rng)
     {
         const double m = 256;
-        
+
         // interval
         double L,R;
         double y;
         size_t MAX_LOOPS = 50;
-        
+
         bool reduce_width = false;
 
         reduce_width_and_try_again:
@@ -90,7 +106,7 @@ namespace samplers{
                     x_0 = x_1;
                     break;
                 }
-                
+
                 if (x_1 < x_0)
                     L = ( x_1 < D.lower) ? D.lower : x_1;
                 else

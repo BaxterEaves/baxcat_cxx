@@ -1,4 +1,20 @@
 
+// BaxCat: an extensible cross-catigorization engine.
+// Copyright (C) 2014 Baxter Eaves
+//
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU General Public License as published by the Free Software Foundation, version 3.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+// even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License (LICENSE.txt) along with this
+// program. If not, see <http://www.gnu.org/licenses/>.
+//
+// You may contact the mantainers of this software via github
+// <https://github.com/BaxterEaves/baxcat_cxx>.
+
 #include "datatypes/categorical.hpp"
 
 using std::map;
@@ -48,7 +64,7 @@ double Categorical::elementLogp(size_t x) const
 
 double Categorical::singletonLogp(size_t x) const
 {
-	return _msd.logSingletonProbability(x, _dirichlet_alpha, _log_Z0 );
+	return _msd.logSingletonProbability(x, _counts.size(), _dirichlet_alpha);
 }
 
 
@@ -90,12 +106,12 @@ vector<double> Categorical::initHypers(const vector<double> &hyperprior_config, 
 }
 
 
-vector<double> Categorical::constructHyperpriorConfig(const vector<size_t> &X)
+vector<double> Categorical::constructHyperpriorConfig(const vector<double> &X)
 {
-	auto K = baxcat::utils::vector_max(X);
-	double alpha_scale = 1./static_cast<double>(K);
+	auto K = baxcat::utils::vector_max(X)+1;
+	double alpha_scale = 1./K;
 
-	vector<double> config(1);
+	vector<double> config(1, 0);
 	config[DIRICHLET_ALPHA_SCALE] = alpha_scale;
 
 	return config;

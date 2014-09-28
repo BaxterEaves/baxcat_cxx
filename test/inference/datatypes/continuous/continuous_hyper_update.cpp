@@ -1,3 +1,20 @@
+
+// BaxCat: an extensible cross-catigorization engine.
+// Copyright (C) 2014 Baxter Eaves
+//
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU General Public License as published by the Free Software Foundation, version 3.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+// even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License (LICENSE.txt) along with this
+// program. If not, see <http://www.gnu.org/licenses/>.
+//
+// You may contact the mantainers of this software via github
+// <https://github.com/BaxterEaves/baxcat_cxx>.
+
 #define BOOST_TEST_DYN_LINK
 
 #include <boost/test/unit_test.hpp>
@@ -35,7 +52,7 @@ struct TestFeature_multiple{
     TestFeature_multiple(){
         X = {
             4.87585565178368796069, 6.48969760778546511659, 6.40903448980047940609,
-            6.41719241342961410624, -4.70612853290334154366, -5.78728280375863768370, 
+            6.41719241342961410624, -4.70612853290334154366, -5.78728280375863768370,
             -4.11160436824235819842, -6.14707010696915023829};
 
         models.emplace_back(4, 20.9748786135057, 119.246738310581, 0, 1.2, 3, 2);
@@ -75,7 +92,7 @@ BOOST_AUTO_TEST_CASE(test_r_posterior_update_single)
     double x_0 = 1/config[2];
     double ks_stat;
 
-    auto log_fr = Continuous::constructRConditional(feature.models, config);    
+    auto log_fr = Continuous::constructRConditional(feature.models, config);
 
     ks_stat = baxcat::test_utils::testHyperparameterSampler(log_fr, x_0, {ALMOST_ZERO,10},
         w, "results/continuous_r_hyper_single.png", "r hypers (s)");
@@ -96,7 +113,7 @@ BOOST_AUTO_TEST_CASE(test_s_posterior_update_single)
     double x_0 = config[3];
     double ks_stat;
 
-    ks_stat = baxcat::test_utils::testHyperparameterSampler(log_fs, x_0, {ALMOST_ZERO,INF}, 
+    ks_stat = baxcat::test_utils::testHyperparameterSampler(log_fs, x_0, {ALMOST_ZERO,INF},
         w, "results/continuous_s_hyper_single.png", "s hypers (s)");
     bool reject_s = baxcat::test_utils::ksTestRejectNull(ks_stat, num_samples, num_samples);
 
@@ -115,7 +132,7 @@ BOOST_AUTO_TEST_CASE(test_nu_posterior_update_single)
     double x_0 = 1;
     double ks_stat;
 
-    ks_stat = baxcat::test_utils::testHyperparameterSampler(log_fnu, x_0, {ALMOST_ZERO,INF}, 
+    ks_stat = baxcat::test_utils::testHyperparameterSampler(log_fnu, x_0, {ALMOST_ZERO,INF},
         w, "results/continuous_nu_hyper_single.png", "nu hypers (s)");
     bool reject_nu = baxcat::test_utils::ksTestRejectNull(ks_stat, num_samples, num_samples);
 
@@ -154,7 +171,7 @@ BOOST_AUTO_TEST_CASE(test_r_posterior_update_multiple)
     double x_0 = 1/config[2];
     double ks_stat;
 
-    auto log_fr = Continuous::constructRConditional(feature.models, config);    
+    auto log_fr = Continuous::constructRConditional(feature.models, config);
 
     ks_stat = baxcat::test_utils::testHyperparameterSampler(log_fr, x_0, {ALMOST_ZERO,10},
         w, "results/continuous_r_hyper_multiple.png", "r hypers (m)");
@@ -175,7 +192,7 @@ BOOST_AUTO_TEST_CASE(test_s_posterior_update_multiple)
     double x_0 = config[3];
     double ks_stat;
 
-    ks_stat = baxcat::test_utils::testHyperparameterSampler(log_fs, x_0, {ALMOST_ZERO,INF}, 
+    ks_stat = baxcat::test_utils::testHyperparameterSampler(log_fs, x_0, {ALMOST_ZERO,INF},
         w, "results/continuous_s_hyper_multiple.png", "s hypers (m)");
     bool reject_s = baxcat::test_utils::ksTestRejectNull(ks_stat, num_samples, num_samples);
 
@@ -194,7 +211,7 @@ BOOST_AUTO_TEST_CASE(test_nu_posterior_update_multiple)
     double x_0 = 1;
     double ks_stat;
 
-    ks_stat = baxcat::test_utils::testHyperparameterSampler(log_fnu, x_0, {ALMOST_ZERO,INF}, 
+    ks_stat = baxcat::test_utils::testHyperparameterSampler(log_fnu, x_0, {ALMOST_ZERO,INF},
         w, "results/continuous_nu_hyper_multiple.png", "\\nu hypers (m)");
     bool reject_nu = baxcat::test_utils::ksTestRejectNull(ks_stat, num_samples, num_samples);
 

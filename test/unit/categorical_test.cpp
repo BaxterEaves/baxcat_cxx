@@ -1,3 +1,20 @@
+
+// BaxCat: an extensible cross-catigorization engine.
+// Copyright (C) 2014 Baxter Eaves
+//
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU General Public License as published by the Free Software Foundation, version 3.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+// even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License (LICENSE.txt) along with this
+// program. If not, see <http://www.gnu.org/licenses/>.
+//
+// You may contact the mantainers of this software via github
+// <https://github.com/BaxterEaves/baxcat_cxx>.
+
 #define BOOST_TEST_DYN_LINK
 
 #include <boost/test/unit_test.hpp>
@@ -266,8 +283,8 @@ BOOST_AUTO_TEST_CASE(test_dirichlet_alpha_conditional_values_single)
     double dirichlet_alpha = 1.2;
     std::vector<size_t> counts = {2, 3, 5};
 
-    std::vector<size_t> X = {0, 0, 1, 1, 1, 2, 2, 2, 2, 2};
-    Categorical model(10, {2, 3, 5}, dirichlet_alpha);
+    std::vector<double> X = {0, 0, 1, 1, 1, 2, 2, 2, 2, 2};
+    Categorical model(10, counts, dirichlet_alpha);
 
     auto config = Categorical::constructHyperpriorConfig(X);
     std::vector<Categorical> models = {model};
@@ -282,7 +299,7 @@ BOOST_AUTO_TEST_CASE(test_dirichlet_alpha_conditional_values_single)
 
     double f_a = 0;
     f_a += baxcat::dist::gamma::logPdf(a, 1., config[0]);
-    f_a += msd.logMarginalLikelihood(n, counts, dirichlet_alpha);
+    f_a += msd.logMarginalLikelihood(n, counts, a);
 
     BOOST_CHECK_EQUAL(a_conditional(a), f_a);
 }
@@ -300,7 +317,7 @@ BOOST_AUTO_TEST_CASE(test_dirichlet_alpha_conditional_values_mulitple)
     std::vector<size_t> counts_1 = {2, 3, 0};
     Categorical model_1(n_1, counts_1, dirichlet_alpha);
 
-    std::vector<size_t> X = {0, 0, 1, 1, 1, 2, 2, 2, 2, 2};
+    std::vector<double> X = {0, 0, 1, 1, 1, 2, 2, 2, 2, 2};
 
     auto config = Categorical::constructHyperpriorConfig(X);
     std::vector<Categorical> models = {model_0, model_1};
@@ -312,8 +329,8 @@ BOOST_AUTO_TEST_CASE(test_dirichlet_alpha_conditional_values_mulitple)
 
     double f_a = 0;
     f_a += baxcat::dist::gamma::logPdf(a, 1., config[0]);
-    f_a += msd.logMarginalLikelihood(n_0, counts_0, dirichlet_alpha);
-    f_a += msd.logMarginalLikelihood(n_0, counts_0, dirichlet_alpha);
+    f_a += msd.logMarginalLikelihood(n_0, counts_0, a);
+    f_a += msd.logMarginalLikelihood(n_0, counts_0, a);
 
     BOOST_CHECK_EQUAL(a_conditional(a), f_a);
 }
@@ -324,7 +341,7 @@ BOOST_AUTO_TEST_CASE(test_dirichlet_alpha_conditional_values_mulitple)
 BOOST_AUTO_TEST_CASE(resample_hypers_should_change_hyper_values)
 {
     double dirichlet_alpha = 1.2;
-    std::vector<size_t> X = {0, 0, 1, 1, 1, 2, 2, 2, 2, 2};
+    std::vector<double> X = {0, 0, 1, 1, 1, 2, 2, 2, 2, 2};
 
     double n_0 = 5;
     std::vector<size_t> counts_0 = {2, 3, 0};

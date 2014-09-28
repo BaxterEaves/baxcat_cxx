@@ -1,9 +1,25 @@
+
+// BaxCat: an extensible cross-catigorization engine.
+// Copyright (C) 2014 Baxter Eaves
+//
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU General Public License as published by the Free Software Foundation, version 3.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+// even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License (LICENSE.txt) along with this
+// program. If not, see <http://www.gnu.org/licenses/>.
+//
+// You may contact the mantainers of this software via github
+// <https://github.com/BaxterEaves/baxcat_cxx>.
+
 #include "state.hpp"
 
 using std::vector;
 using std::string;
 using std::shared_ptr;
-
 
 
 namespace baxcat{
@@ -116,12 +132,12 @@ double State::__doPredictiveLogpObserved(size_t row, size_t col, double val)
 {
     auto type = _feature_types[col];
     auto view = _column_assignment[col];
-    auto cluster = _views[view].getAssignmentOfRow(row);
+    auto cluster_idx = _views[view].getAssignmentOfRow(row);
     if(helpers::is_discrete(type)){
         size_t casted_value = size_t(val);
-        return _features[col].get()->valueLogp(casted_value, cluster);
+        return _features[col].get()->valueLogp(casted_value, cluster_idx);
     }else{
-        return _features[col].get()->valueLogp(val, cluster);
+        return _features[col].get()->valueLogp(val, cluster_idx);
     }
 }
 
@@ -472,15 +488,15 @@ void State::__insertConstraints(vector<vector<size_t>> indices, vector<double> v
         auto row = indices[i][0];
         auto col = indices[i][1];
         auto view = _column_assignment[col];
-        auto cluster = _views[view].getAssignmentOfRow(row);
+        auto cluster_idx = _views[view].getAssignmentOfRow(row);
         auto type = _feature_types[col];
         // do cast and insert
         if(helpers::is_discrete(type)){
             // FIXME: add casting to different types
             size_t casted_value = size_t(values[i]);
-            _features[col].get()->insertValue(casted_value, cluster);
+            _features[col].get()->insertValue(casted_value, cluster_idx);
         }else{
-            _features[col].get()->insertValue(values[i], cluster);
+            _features[col].get()->insertValue(values[i], cluster_idx);
         }
     }
 }
@@ -493,15 +509,15 @@ void State::__removeConstraints(vector<vector<size_t>> indices, vector<double> v
         auto row = indices[i][0];
         auto col = indices[i][1];
         auto view = _column_assignment[col];
-        auto cluster = _views[view].getAssignmentOfRow(row);
+        auto cluster_idx = _views[view].getAssignmentOfRow(row);
         auto type = _feature_types[col];
         // do cast and remove
         if(helpers::is_discrete(type)){
             // FIXME: add casting to different types
             size_t casted_value = size_t(values[i]);
-            _features[col].get()->removeValue(casted_value, cluster);
+            _features[col].get()->removeValue(casted_value, cluster_idx);
         }else{
-            _features[col].get()->removeValue(values[i], cluster);
+            _features[col].get()->removeValue(values[i], cluster_idx);
         }
     }
 }
@@ -603,16 +619,10 @@ void State::__geweke_clear()
 
 vector<double> State::__geweke_pullDataColumn(size_t column_index) const
 {
-    // TODO: Figure out how to return variable types for different feature types
+    // TODO: Figure out how to return variable types for different feature types rather than casting
+    // in Container
     auto data_temp = _features[column_index].get()->getData();
-    if(std::is_integral< decltype(data_temp[0]) >::value){
-        vector<double> data_cast;
-        for( auto x : data_temp)
-            data_cast.push_back(static_cast<double>(x+.5));
-        return data_cast;
-    }else{
-        return data_temp;
-    }
+    return data_temp;
 }
 
 

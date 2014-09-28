@@ -1,3 +1,20 @@
+
+// BaxCat: an extensible cross-catigorization engine.
+// Copyright (C) 2014 Baxter Eaves
+//
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU General Public License as published by the Free Software Foundation, version 3.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+// even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License (LICENSE.txt) along with this
+// program. If not, see <http://www.gnu.org/licenses/>.
+//
+// You may contact the mantainers of this software via github
+// <https://github.com/BaxterEaves/baxcat_cxx>.
+
 #define BOOST_TEST_DYN_LINK
 
 #include <boost/test/unit_test.hpp>
@@ -9,12 +26,13 @@
 #include "distributions/gaussian.hpp"
 #include "distributions/students_t.hpp"
 #include "distributions/multinomial.hpp"
+#include "distributions/symmetric_dirichlet.hpp"
 
 
 BOOST_AUTO_TEST_SUITE (distributions_test)
 
 // gaussian
-//`````````````````````````````````````````````````````````````````````````````````````````````````
+// `````````````````````````````````````````````````````````````````````````````````````````````````
 BOOST_AUTO_TEST_CASE(gaussian_should_add_suffstats){
     double sum_x = 0;
     double sum_x_sq = 0;
@@ -75,8 +93,8 @@ BOOST_AUTO_TEST_CASE(gaussian_log_pdf_with_vector_value_check){
     double log_pdf;
 
     std::vector<double> X = {
-        0.537667139546100, 1.833885014595086, -2.258846861003648, 0.862173320368121, 
-        0.318765239858981, -1.307688296305273, -0.433592022305684, 0.342624466538650, 
+        0.537667139546100, 1.833885014595086, -2.258846861003648, 0.862173320368121,
+        0.318765239858981, -1.307688296305273, -0.433592022305684, 0.342624466538650,
         3.578396939725760, 2.769437029884877};
 
     log_pdf = baxcat::dist::gaussian::logPdf(X, 0.0, 1.0);
@@ -112,7 +130,7 @@ BOOST_AUTO_TEST_CASE(gaussian_cdf_value_check){
 }
 
 // gamma
-//`````````````````````````````````````````````````````````````````````````````````````````````````
+// `````````````````````````````````````````````````````````````````````````````````````````````````
 BOOST_AUTO_TEST_CASE(gamma_log_pdf_with_single_value_value_check){
     double log_pdf;
 
@@ -153,7 +171,7 @@ BOOST_AUTO_TEST_CASE(gamma_cdf_value_check){
 }
 
 // multinomial
-//`````````````````````````````````````````````````````````````````````````````````````````````````
+// `````````````````````````````````````````````````````````````````````````````````````````````````
 BOOST_AUTO_TEST_CASE(multinomial_insert_suffstats){
     std::vector<unsigned int> counts(5,0);
     std::vector<unsigned int> values = {0,1,2,3,4,4};
@@ -201,56 +219,56 @@ BOOST_AUTO_TEST_CASE(multinomial_remove_suffstats){
 
 BOOST_AUTO_TEST_CASE(multinomial_log_pdf_single_value_check){
 
-    std::vector<double> p = {.2,.5,.1,.1,.05};
-    
+    std::vector<double> p = {.2, .5, .1, .15, .05};
+
     double pdf;
 
     pdf = baxcat::dist::multinomial::logPdf(1, p);
-    BOOST_CHECK_CLOSE_FRACTION( pdf, log(.5), TOL);
+    BOOST_CHECK_CLOSE_FRACTION( pdf, -0.693147180559945, TOL);
 
     pdf = baxcat::dist::multinomial::logPdf(4, p);
-    BOOST_CHECK_CLOSE_FRACTION( pdf, log(.05), TOL);
+    BOOST_CHECK_CLOSE_FRACTION( pdf, -2.99573227355399, TOL);
 }
 
 BOOST_AUTO_TEST_CASE(multinomial_log_pdf_suffstat_value_check){
 
-    std::vector<double> p = {.2,.5,.1,.1,.05};
+    std::vector<double> p = {.2,.5,.1,.15,.05};
     std::vector<char> counts = {1,1,1,1,1};
 
-    double pdf;
+    double pdf, true_val;
 
-    double true_val = log(p[0]*p[1]*p[2]*p[3]*p[4]);
-
-    pdf = baxcat::dist::multinomial::logPdfSuffstats(counts, p);
+    true_val = -4.71053070164592;
+    pdf = baxcat::dist::multinomial::logPdfSuffstats(5, counts, p);
     BOOST_CHECK_CLOSE_FRACTION( pdf, true_val, TOL);
 
     counts = {2,2,2,2,2};
 
-    pdf = baxcat::dist::multinomial::logPdfSuffstats(counts, p);
-    BOOST_CHECK_CLOSE_FRACTION( pdf, true_val*2, TOL);
+    true_val = -7.35736821858014;
+    pdf = baxcat::dist::multinomial::logPdfSuffstats(10, counts, p);
+    BOOST_CHECK_CLOSE_FRACTION( pdf, true_val, TOL);
 }
 
 BOOST_AUTO_TEST_CASE(multinomial_log_pdf_vector_value_check){
 
-    std::vector<double> p = {.2,.5,.1,.1,.05};
+    std::vector<double> p = {.2,.5,.1,.15,.05};
     std::vector<char> X = {0,1,2,3,4};
 
-    double pdf;
+    double pdf, true_val;
 
-    double true_val = log(p[0]*p[1]*p[2]*p[3]*p[4]);
-
+    true_val = -4.71053070164592;
     pdf = baxcat::dist::multinomial::logPdf(X, p);
     BOOST_CHECK_CLOSE_FRACTION( pdf, true_val, TOL);
 
     X = {0,1,2,3,4,0,1,2,3,4};
 
+    true_val = -7.35736821858014;
     pdf = baxcat::dist::multinomial::logPdf(X, p);
-    BOOST_CHECK_CLOSE_FRACTION( pdf, true_val*2, TOL);
+    BOOST_CHECK_CLOSE_FRACTION( pdf, true_val, TOL);
 
 }
 
 // beta
-//`````````````````````````````````````````````````````````````````````````````````````````````````
+// `````````````````````````````````````````````````````````````````````````````````````````````````
 BOOST_AUTO_TEST_CASE(beta_should_add_suffstats){
     double sum_log_x = 0;
     double sum_log_minus_x = 0;
@@ -344,7 +362,7 @@ BOOST_AUTO_TEST_CASE(beta_cdf_value_check){
 
 
 // student's t
-//`````````````````````````````````````````````````````````````````````````````````````````````````
+// `````````````````````````````````````````````````````````````````````````````````````````````````
 BOOST_AUTO_TEST_CASE(t_log_pdf_with_single_value_value_check){
     double log_pdf;
 
@@ -361,7 +379,7 @@ BOOST_AUTO_TEST_CASE(t_log_pdf_with_single_value_value_check){
 
 BOOST_AUTO_TEST_CASE(t_log_pdf_with_vector_value_check){
     std::vector<double> X = {
-        -0.909948773540185, 1.025918923784846, 1.761090386120126, 
+        -0.909948773540185, 1.025918923784846, 1.761090386120126,
         0.669939425343656, -1.873966046190918, 0.145845574764761};
 
     double log_pdf;
@@ -376,5 +394,18 @@ BOOST_AUTO_TEST_CASE(t_log_pdf_with_vector_value_check){
     BOOST_CHECK_CLOSE_FRACTION(log_pdf,-16.0173232819958, TOL);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+// Dirichlet
+// ````````````````````````````````````````````````````````````````````````````````````````````````
+BOOST_AUTO_TEST_CASE(symmetric_dirichlet_value_check){
+    std::vector<double> p = {.2, .3, .5};
 
+    double log_pdf;
+
+    log_pdf = baxcat::dist::symmetric_dirichlet::logPdf(p, 1.0);
+    BOOST_CHECK_CLOSE_FRACTION(log_pdf,0.693147180559945, TOL);
+
+    log_pdf = baxcat::dist::symmetric_dirichlet::logPdf(p, 2.3);
+    BOOST_CHECK_CLOSE_FRACTION(log_pdf,1.37165082501073, TOL);
+}
+
+BOOST_AUTO_TEST_SUITE_END()

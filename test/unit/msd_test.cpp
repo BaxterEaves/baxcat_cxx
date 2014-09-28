@@ -1,3 +1,20 @@
+
+// BaxCat: an extensible cross-catigorization engine.
+// Copyright (C) 2014 Baxter Eaves
+//
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU General Public License as published by the Free Software Foundation, version 3.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+// even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License (LICENSE.txt) along with this
+// program. If not, see <http://www.gnu.org/licenses/>.
+//
+// You may contact the mantainers of this software via github
+// <https://github.com/BaxterEaves/baxcat_cxx>.
+
 #define BOOST_TEST_DYN_LINK
 
 #include <boost/test/unit_test.hpp>
@@ -65,14 +82,14 @@ BOOST_AUTO_TEST_CASE(remove_suffstats_should_clear_values)
 // ````````````````````````````````````````````````````````````````````````````````````````````````
 BOOST_AUTO_TEST_CASE(log_likelihood_should_be_same_as_dist)
 {
-    std::vector<size_t> X = {1,3,2,0,1};
-    std::vector<size_t> counts = {1,2,1,1};
-    std::vector<double> P(4,.25);
+    std::vector<size_t> X = {1, 3, 2, 0, 1};
+    std::vector<size_t> counts = {1 ,2, 1, 1};
+    std::vector<double> P = {.25, .25, .25, .25};
 
     size_t x = 2;
     double logpdf_multinomial = baxcat::dist::multinomial::logPdf(X, P);
-    double logpdf_msd = MultinomialDirichlet<size_t>::logLikelihood(X, P);
-    double logpdf_multinomial_suffstats = baxcat::dist::multinomial::logPdfSuffstats(counts, P);
+    double logpdf_msd = MultinomialDirichlet<size_t>::logLikelihood(counts, P);
+    double logpdf_multinomial_suffstats = baxcat::dist::multinomial::logPdfSuffstats(5, counts, P);
 
     BOOST_CHECK_EQUAL(logpdf_multinomial, logpdf_msd);
     BOOST_CHECK_EQUAL(logpdf_multinomial_suffstats, logpdf_msd);
@@ -83,7 +100,7 @@ BOOST_AUTO_TEST_CASE(log_prior_should_be_same_as_dist)
 {
     double alpha = 1.4;
     std::vector<double> X = {0.29509583511981724024, 0.32808108145162268032, 0.04599507934921470698,
-                0.33082800407934548348};
+                             0.33082800407934548348};
 
     double pdf_sd = baxcat::dist::symmetric_dirichlet::logPdf(X, alpha);
     double pdf_msd = MultinomialDirichlet<size_t>::logPrior(X, alpha);
@@ -188,26 +205,27 @@ BOOST_AUTO_TEST_CASE(logPredictiveProbability_value_checks)
 
 BOOST_AUTO_TEST_CASE(logSingletonProbability_value_checks)
 {
-    double n, alpha, log_z, msd_value;
-    std::vector<size_t> counts;
+    double n, alpha, msd_value;
 
-    n = 10;
-    counts = {1, 4, 5};
-
+    // singleton probability should be the same for any x (symmetric dirichlet only)
     alpha = 1;
-    log_z = MultinomialDirichlet<size_t>::logZ(n, counts, alpha);
-    msd_value = MultinomialDirichlet<size_t>::logSingletonProbability(0, alpha, log_z);
+    msd_value = MultinomialDirichlet<size_t>::logSingletonProbability(0, 3, alpha);
     BOOST_CHECK_CLOSE_FRACTION(-1.09861228866811, msd_value, TOL);
 
+    msd_value = MultinomialDirichlet<size_t>::logSingletonProbability(1, 3, alpha);
+    BOOST_CHECK_CLOSE_FRACTION(-1.09861228866811, msd_value, TOL);
+
+    msd_value = MultinomialDirichlet<size_t>::logSingletonProbability(2, 3, alpha);
+    BOOST_CHECK_CLOSE_FRACTION(-1.09861228866811, msd_value, TOL);
+
+    // check other alphas
     alpha = 2.5;
-    log_z = MultinomialDirichlet<size_t>::logZ(n, counts, alpha);
-    msd_value = MultinomialDirichlet<size_t>::logSingletonProbability(0, alpha, log_z);
-    BOOST_CHECK_CLOSE_FRACTION(-1.88031286656951, msd_value, TOL);
+    msd_value = MultinomialDirichlet<size_t>::logSingletonProbability(0, 3, alpha);
+    BOOST_CHECK_CLOSE_FRACTION(-1.09861228866811, msd_value, TOL);
 
     alpha = .25;
-    log_z = MultinomialDirichlet<size_t>::logZ(n, counts, alpha);
-    msd_value = MultinomialDirichlet<size_t>::logSingletonProbability(0, alpha, log_z);
-    BOOST_CHECK_CLOSE_FRACTION(-2.31363492918062, msd_value, TOL);
+    msd_value = MultinomialDirichlet<size_t>::logSingletonProbability(0, 3, alpha);
+    BOOST_CHECK_CLOSE_FRACTION(-1.09861228866811, msd_value, TOL);
 }
 
 

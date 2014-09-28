@@ -1,3 +1,20 @@
+
+// BaxCat: an extensible cross-catigorization engine.
+// Copyright (C) 2014 Baxter Eaves
+//
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU General Public License as published by the Free Software Foundation, version 3.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+// even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License (LICENSE.txt) along with this
+// program. If not, see <http://www.gnu.org/licenses/>.
+//
+// You may contact the mantainers of this software via github
+// <https://github.com/BaxterEaves/baxcat_cxx>.
+
 #define BOOST_TEST_DYN_LINK
 
 #include <boost/test/unit_test.hpp>
@@ -51,7 +68,7 @@ BOOST_AUTO_TEST_CASE(verify_constructor_one_view_one_cluster_continuous){
     vector<string> datatypes = {"continuous"};
     size_t seed = 10;
 
-    
+
     baxcat::SyntheticDataGenerator sdg(num_rows, view_weights, category_weights,
         category_separation, datatypes, seed);
 
@@ -69,10 +86,10 @@ BOOST_AUTO_TEST_CASE(verify_constructor_two_columns_continuous){
     vector<string> datatypes = {"continuous","continuous"};
     size_t seed = 10;
 
-    
+
     baxcat::SyntheticDataGenerator sdg(num_rows, view_weights, category_weights,
         category_separation, datatypes, seed);
-    
+
     auto data = sdg.getData();
 
     BOOST_REQUIRE_EQUAL( data.size(), 2 );
@@ -88,7 +105,7 @@ BOOST_AUTO_TEST_CASE(verify_constructor_one_view_two_cluster_continuous){
     vector<string> datatypes = {"continuous"};
     size_t seed = 10;
 
-    
+
     baxcat::SyntheticDataGenerator sdg(num_rows, view_weights, category_weights,
         category_separation, datatypes, seed);
 
@@ -106,7 +123,7 @@ BOOST_AUTO_TEST_CASE(verify_constructor_two_views_two_cluster_continuous){
     vector<string> datatypes = {"continuous","continuous"};
     size_t seed = 10;
 
-    
+
     baxcat::SyntheticDataGenerator sdg(num_rows, view_weights, category_weights,
         category_separation, datatypes, seed);
 

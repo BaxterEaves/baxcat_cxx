@@ -1,7 +1,5 @@
-# BaxCat CXX
-A fast, extensible implementation of CrossCat
-
-
+# baxcat_cxx
+A fast, extensible implementation of cross-categorization
 
 ## Currently implemented data types
 
@@ -10,3 +8,7 @@ Uses Normal likelihood with Normal-Gamma prior.
 
 ### Categorical
 Uses Categorical likelihood with symmetric Dirichlet prior.
+
+## License
+
+Licensed under the GNU General Public License, version 3. See LICENSE.txt for deatails.

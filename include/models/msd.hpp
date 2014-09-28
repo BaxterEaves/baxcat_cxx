@@ -1,4 +1,20 @@
 
+// BaxCat: an extensible cross-catigorization engine.
+// Copyright (C) 2014 Baxter Eaves
+//
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU General Public License as published by the Free Software Foundation, version 3.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+// even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License (LICENSE.txt) along with this
+// program. If not, see <http://www.gnu.org/licenses/>.
+//
+// You may contact the mantainers of this software via github
+// <https://github.com/BaxterEaves/baxcat_cxx>.
+
 #ifndef baxcat_cxx_datamodels_msd
 #define baxcat_cxx_datamodels_msd
 
@@ -28,6 +44,7 @@ namespace models{
 
     template <typename T>
     struct MultinomialDirichlet : __MDAllowed__<T>{
+
         static void suffstatInsert(T x, std::vector<T> &counts)
         {
             baxcat::dist::multinomial::suffstatInsert(x, counts);
@@ -51,14 +68,15 @@ namespace models{
 
         static double logLikelihood(const std::vector<T> &counts, const std::vector<double> &p)
         {
-            return baxcat::dist::multinomial::logPdf(counts, p);
+            double n = static_cast<double>(baxcat::utils::sum(counts));
+            return baxcat::dist::multinomial::logPdfSuffstats(n, counts, p);
         }
 
         static double logMarginalLikelihood(double n, const std::vector<T> &counts, double alpha)
         {
-            double A = static_cast<double>(counts.size())*alpha;
-            double sum_lgamma = 0;
             double K = static_cast<double>(counts.size());
+            double A = K*alpha;
+            double sum_lgamma = 0;
             for( auto w : counts)
                 sum_lgamma += lgamma( static_cast<double>(w)+alpha );
             return lgamma(A) - lgamma(A+n) + sum_lgamma - K*lgamma(alpha);
@@ -74,8 +92,10 @@ namespace models{
             return log( alpha + counts_w ) - log(baxcat::utils::sum(counts)+alpha*K);
         }
 
-        static double logSingletonProbability(T x, double alpha, double log_z){
-            return log( alpha ) - log_z;
+        static double logSingletonProbability(T x, size_t K, double alpha){
+
+            double logp = log(alpha) - log(alpha*static_cast<double>(K));
+            return logp;
         }
 
         static size_t predictiveSample(const std::vector<T> &counts, double alpha,

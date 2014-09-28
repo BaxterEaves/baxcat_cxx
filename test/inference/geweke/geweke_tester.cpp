@@ -1,4 +1,20 @@
 
+// BaxCat: an extensible cross-catigorization engine.
+// Copyright (C) 2014 Baxter Eaves
+//
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU General Public License as published by the Free Software Foundation, version 3.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+// even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License (LICENSE.txt) along with this
+// program. If not, see <http://www.gnu.org/licenses/>.
+//
+// You may contact the mantainers of this software via github
+// <https://github.com/BaxterEaves/baxcat_cxx>.
+
 #include "geweke_tester.hpp"
 
 using std::vector;
@@ -29,11 +45,11 @@ GewekeTester::GewekeTester(size_t num_rows, size_t num_cols, unsigned int seed)
     _state.__geweke_initHypers();
 }
 
-// GewekeTester::GewekeTester(size_t num_rows, svector<string> datatypes, size_t seed) : 
+// GewekeTester::GewekeTester(size_t num_rows, svector<string> datatypes, size_t seed) :
 //     _seeder(PRNG(seed))
 // {
 //     SyntheticDataGenerator sdg(num_rows, datatypes, seed);
-//     _seed_data = sdg.getData();   
+//     _seed_data = sdg.getData();
 // }
 
 void GewekeTester::forwardSample(size_t num_times, bool do_init)
@@ -96,9 +112,9 @@ void GewekeTester::posteriorSample(size_t num_times, bool do_init, size_t lag)
 
         for( size_t j = 0; j < lag; ++j ){
             _state.transition({},{},{},0,1);
-            _state.__geweke_resampleRows();    
+            _state.__geweke_resampleRows();
         }
-        
+
         // auto x = _state.__geweke_pullDataColumn(0);
         // utils::print_vector(x);
         __updateStats( _state, _state_crp_alpha_posterior, _all_stats_posterior);
@@ -150,7 +166,7 @@ void GewekeTester::__updateStats( const State &state, vector<double> &state_crp_
 
         auto data_stat = GewekeTester::__getDataStats( data, is_categorial);
 
-        if(is_categorial){  
+        if(is_categorial){
             all_stats[i]["chi-square"].push_back(data_stat[0]);
         }else{
             all_stats[i]["mean"].push_back(data_stat[0]);
@@ -176,7 +192,7 @@ void GewekeTester::__initStats( const State &state, vector<double> &state_crp_al
         string categorial_marker = "dirichlet_alpha";
         bool is_categorial = test_utils::hasElement(hyper_keys,categorial_marker) == 1;
 
-        if(is_categorial){  
+        if(is_categorial){
             all_stats[i]["chi-square"] = {};
         }else{
             all_stats[i]["mean"] = {};
@@ -199,7 +215,7 @@ void GewekeTester::run(size_t num_times, size_t num_posterior_chains, size_t lag
     std::cout << "Running posterior samples (1 of " << num_posterior_chains << ")"  << std::endl;
     posteriorSample(samples_per_chain, true, lag);
     for( size_t i = 0; i < num_posterior_chains-1; ++i){
-        std::cout << "Running posterior samples (" << i+2 << " of "; 
+        std::cout << "Running posterior samples (" << i+2 << " of ";
         std::cout << num_posterior_chains << ")"  << std::endl;
         posteriorSample(samples_per_chain, false, lag);
     }
@@ -242,10 +258,10 @@ void GewekeTester::outputResults()
             size_t n_posterior = _all_stats_posterior[i][key].size();
 
             gr.SubPlot(plots_x, plots_y, pp_plot_index);
-            auto ks_stat = test_utils::twoSampleKSTest(_all_stats_forward[i][key], 
+            auto ks_stat = test_utils::twoSampleKSTest(_all_stats_forward[i][key],
                 _all_stats_posterior[i][key], true, &gr, test_name.str());
 
-            
+
             bool distributions_differ = test_utils::ksTestRejectNull(ks_stat, n_forward, n_posterior);
             test_utils::__output_ks_test_result(distributions_differ, ks_stat, ss.str());
             test_utils::__update_pass_counters(num_pass, num_fail, all_pass, !distributions_differ);
@@ -256,7 +272,7 @@ void GewekeTester::outputResults()
             gr.SubPlot(plots_x, plots_y, posterior_hist_index);
             baxcat::plotting::hist(&gr, _all_stats_posterior[i][key], 31, "posterior");
 
-            index++; 
+            index++;
 
         }
         gr.WriteFrame(filename.str().c_str());

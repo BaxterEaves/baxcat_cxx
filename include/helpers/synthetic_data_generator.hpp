@@ -1,8 +1,26 @@
+
+// BaxCat: an extensible cross-catigorization engine.
+// Copyright (C) 2014 Baxter Eaves
+//
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU General Public License as published by the Free Software Foundation, version 3.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+// even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License (LICENSE.txt) along with this
+// program. If not, see <http://www.gnu.org/licenses/>.
+//
+// You may contact the mantainers of this software via github
+// <https://github.com/BaxterEaves/baxcat_cxx>.
+
 #ifndef baxcat_cxx_synthetic_data_generator_guard
 #define baxcat_cxx_synthetic_data_generator_guard
 
 #include <vector>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <map>
 
@@ -19,18 +37,19 @@ namespace baxcat{
 class SyntheticDataGenerator{
 public:
 	// Quick data
-	SyntheticDataGenerator(size_t num_rows, std::vector<std::string> datatypes, 
-		unsigned int rng_seed);
+	SyntheticDataGenerator(size_t num_rows, std::vector<std::string> datatypes,
+						   unsigned int rng_seed);
 
 	// TODO: implement
 	// Generate specific partition for benchmarking
-	// SyntheticDataGenerator(size_t num_rows, size_t num_cols, size_t num_views, 
+	// SyntheticDataGenerator(size_t num_rows, size_t num_cols, size_t num_views,
 	// 	size_t num_clusters_per_view, unsigned int rng_seed);
 
 	// get something specific for inference testing
-	SyntheticDataGenerator(size_t num_rows, std::vector<double> view_weights, 
-		std::vector<std::vector<double>> category_weights, std::vector<double> category_separation,
-		std::vector<std::string> datatypes, unsigned int rng_seed);
+	SyntheticDataGenerator(size_t num_rows, std::vector<double> view_weights,
+						   std::vector<std::vector<double>> category_weights,
+						   std::vector<double> category_separation,
+						   std::vector<std::string> datatypes, unsigned int rng_seed);
 
 	void initialize();
 
@@ -52,17 +71,18 @@ public:
 
 private:
 	std::vector<std::map<std::string, double>> __generateSeparatedParameters(baxcat::datatype type,
-		size_t num_categories, double separation);
+																			 size_t num_categories,
+																			 double separation);
 
 	// generate separated clusters for each type
-	std::vector<std::map<std::string, double>> __generateContinuousParameters(
-		size_t num_categories, double separation);
-	// std::vector<std::map<std::string, double>> __generateCategoricalParameters(
-	// 	size_t num_categories,double separation);
+	std::vector<std::map<std::string, double>> __generateContinuousParameters(size_t num_categories,
+																			  double separation);
+	std::vector<std::map<std::string, double>> __generateCategoricalParameters(size_t num_categories,
+																			   double separation);
 
 	// generate a datum from a set of parameters
 	double __generateContinuousDatum(std::map<std::string, double> params);
-	// double __generateCCategoricalDatum(std::map<std::string, double> params);
+	double __generateCCategoricalDatum(std::map<std::string, double> params);
 
 	// get log lieklihood for the data in X
 	double __continuousLogp(double x, size_t column);
@@ -81,7 +101,7 @@ private:
 	std::vector<std::vector<double>> _data;
 
 	std::shared_ptr<baxcat::PRNG> _rng;
-	
+
 };
 
 } // end namespace

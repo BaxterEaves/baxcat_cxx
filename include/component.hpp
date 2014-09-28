@@ -1,4 +1,20 @@
 
+// BaxCat: an extensible cross-catigorization engine.
+// Copyright (C) 2014 Baxter Eaves
+//
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU General Public License as published by the Free Software Foundation, version 3.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+// even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License (LICENSE.txt) along with this
+// program. If not, see <http://www.gnu.org/licenses/>.
+//
+// You may contact the mantainers of this software via github
+// <https://github.com/BaxterEaves/baxcat_cxx>.
+
 #ifndef baxcat_cxx_component
 #define baxcat_cxx_component
 
@@ -14,9 +30,6 @@
 template <typename T>
 class Component{
 public:
-    // Component() : n_(0){};
-    // Component(double n) : n_(n)c{};
-
     // insert element x into the sufficient statistics
     virtual void insertElement(T x) = 0;
     // remove element x from the sufficient statistics
@@ -35,7 +48,7 @@ public:
     virtual std::map<std::string, double> getHypersMap() const = 0;
     // returns a string-indexed map of the sufficient statistics
     virtual std::map<std::string, double> getSuffstatsMap() const = 0;
-    
+
     // probabilities
     // marginal/likelihood of the data currently assigned
     virtual double logp() const = 0;
@@ -52,7 +65,7 @@ public:
     // draw an element for the model given that the data in constraints
     // are also assigned to the model
     virtual T drawConstrained(std::vector<T> constraints, baxcat::PRNG *rng) const = 0;
-    
+
     size_t getCount(){ return static_cast<size_t>(_n+.5); };
 protected:
     // Number of data points assigned to the model
@@ -65,25 +78,25 @@ class SubComponent : public Component<T>{
 public:
 
     // construct the hyperprior config
-    static std::vector<double> constructHyperpriorConfig( const std::vector<T> &X )
+    static std::vector<double> constructHyperpriorConfig( const std::vector<double> &X )
     {
         return ModelType::constructHyperpriorConfig(X);
     };
-    
+
     // draw hyperparameters from hyperprior
-    static std::vector<double> initHypers( const std::vector<double> &hyperprior_config, 
+    static std::vector<double> initHypers( const std::vector<double> &hyperprior_config,
         baxcat::PRNG *rng )
     {
         return ModelType::initHypers( hyperprior_config, rng );
     }
-    
+
     // resample hyperparameters from posterior
     static std::vector<double> resampleHypers( std::vector<ModelType> &models,
         const std::vector<double> &hyperprior_config, baxcat::PRNG *rng)
     {
         return ModelType::resampleHypers(models, hyperprior_config, rng);
     }
-    
+
 };
 
 #endif

@@ -1,3 +1,20 @@
+
+// BaxCat: an extensible cross-catigorization engine.
+// Copyright (C) 2014 Baxter Eaves
+//
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU General Public License as published by the Free Software Foundation, version 3.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+// even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License (LICENSE.txt) along with this
+// program. If not, see <http://www.gnu.org/licenses/>.
+//
+// You may contact the mantainers of this software via github
+// <https://github.com/BaxterEaves/baxcat_cxx>.
+
 #define BOOST_TEST_DYN_LINK
 
 #include <boost/test/unit_test.hpp>
@@ -34,7 +51,7 @@ BOOST_AUTO_TEST_CASE(string_to_transition_should_create_transition)
 BOOST_AUTO_TEST_CASE(string_to_datatype_should_create_datatype)
 {
     auto output = baxcat::helpers::string_to_datatype.at("continuous");
-    BOOST_CHECK_EQUAL( output, baxcat::datatype::continuous );   
+    BOOST_CHECK_EQUAL( output, baxcat::datatype::continuous );
 }
 
 BOOST_AUTO_TEST_CASE(get_transitions_should_return_transitions_vector)

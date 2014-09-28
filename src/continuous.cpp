@@ -1,4 +1,20 @@
 
+// BaxCat: an extensible cross-catigorization engine.
+// Copyright (C) 2014 Baxter Eaves
+//
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU General Public License as published by the Free Software Foundation, version 3.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+// even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License (LICENSE.txt) along with this
+// program. If not, see <http://www.gnu.org/licenses/>.
+//
+// You may contact the mantainers of this software via github
+// <https://github.com/BaxterEaves/baxcat_cxx>.
+
 #include "datatypes/continuous.hpp"
 
 using std::map;
@@ -21,8 +37,8 @@ void Continuous::insertElement(double x)
     ASSERT_IS_A_NUMBER(cout, _sum_x_sq);
     ASSERT_INFO(cout, "Invalid suffstat", !(_n==1 && (_sum_x != 0 && _sum_x_sq == 0)) );
 
-    // optimization note: Strategically move updateConstants 
-    updateConstants(); 
+    // optimization note: Strategically move updateConstants
+    updateConstants();
 }
 
 void Continuous::removeElement(double x)
@@ -36,7 +52,7 @@ void Continuous::removeElement(double x)
         _sum_x_sq = 0;
     }else if (_n==1){
         _sum_x -= x;
-        _sum_x_sq = _sum_x*_sum_x; 
+        _sum_x_sq = _sum_x*_sum_x;
     }else{
         _nng.suffstatRemove( x, _sum_x, _sum_x_sq );
     }
@@ -45,7 +61,7 @@ void Continuous::removeElement(double x)
     ASSERT_IS_A_NUMBER(cout, _sum_x_sq);
     ASSERT_INFO(cout, "Invalid suffstat", !(_n==1 && (_sum_x != 0 && _sum_x_sq == 0)) );
 
-    // optimization note: Strategically move updateConstants 
+    // optimization note: Strategically move updateConstants
     updateConstants();
 }
 
@@ -140,7 +156,7 @@ vector<double> Continuous::constructHyperpriorConfig( const vector<double> &X){
 vector<double> Continuous::resampleHypers( vector<Continuous> &models,
     const vector<double> &hyperprior_config, baxcat::PRNG *rng, size_t burn )
 {
-    
+
     ASSERT_GREATER_THAN_ZERO(cout, hyperprior_config[HYPER_R]);
     ASSERT_GREATER_THAN_ZERO(cout, hyperprior_config[HYPER_S]);
     ASSERT_GREATER_THAN_ZERO(cout, hyperprior_config[HYPER_NU]);
@@ -156,10 +172,10 @@ vector<double> Continuous::resampleHypers( vector<Continuous> &models,
 
     // starting point and expected slice width
     double x_0, w;
-    
+
     double U = rng->urand(-1,1);
 
-    // resample m 
+    // resample m
     w = hyperprior_config[M_STD]/2.0;
     x_0 = hyperprior_config[M_MEAN] + U*w;
     hypers[HYPER_M] = sliceSample(x_0, m_unscaled_posterior, {-INF, INF}, w, burn, rng);
@@ -235,7 +251,7 @@ double Continuous::hyperpriorLogp(const std::vector<double> &hyperprior_config) 
 
 // Construct hyperparameter conditionals (unscaled)
 // ````````````````````````````````````````````````````````````````````````````````````````````````
-function<double(double)> Continuous::constructMConditional( 
+function<double(double)> Continuous::constructMConditional(
     const vector<Continuous> &models, const vector<double> &hyperprior_config)
 {
     ASSERT_GREATER_THAN_ZERO(cout, hyperprior_config[HYPER_R]);
@@ -254,7 +270,7 @@ function<double(double)> Continuous::constructMConditional(
     return m_unscaled_posterior;
 }
 
-function<double(double)> Continuous::constructRConditional( 
+function<double(double)> Continuous::constructRConditional(
     const vector<Continuous> &models, const vector<double> &hyperprior_config)
 {
     ASSERT_GREATER_THAN_ZERO(cout, hyperprior_config[HYPER_R]);
@@ -272,7 +288,7 @@ function<double(double)> Continuous::constructRConditional(
     return r_unscaled_posterior;
 }
 
-function<double(double)> Continuous::constructSConditional( 
+function<double(double)> Continuous::constructSConditional(
     const vector<Continuous> &models, const vector<double> &hyperprior_config)
 {
     ASSERT_GREATER_THAN_ZERO(cout, hyperprior_config[HYPER_R]);

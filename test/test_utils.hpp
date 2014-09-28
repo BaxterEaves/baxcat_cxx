@@ -1,4 +1,20 @@
 
+// BaxCat: an extensible cross-catigorization engine.
+// Copyright (C) 2014 Baxter Eaves
+//
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU General Public License as published by the Free Software Foundation, version 3.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+// even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License (LICENSE.txt) along with this
+// program. If not, see <http://www.gnu.org/licenses/>.
+//
+// You may contact the mantainers of this software via github
+// <https://github.com/BaxterEaves/baxcat_cxx>.
+
 #ifndef baxcat_cxx_test_utils
 #define baxcat_cxx_test_utils
 
@@ -66,11 +82,11 @@ namespace test_utils{
         }else{
             return 0;
         }
-    } 
+    }
 
     // returns -1 if a and be are differnt size, 1 if identical, and 0 if a and
     // b are not identical.
-    template <typename T> 
+    template <typename T>
     static int areIdentical(std::vector<T> a, std::vector<T> b)
     {
         size_t sa = a.size();
@@ -128,7 +144,7 @@ namespace test_utils{
         }
 
         if(do_plot and gr)
-            baxcat::plotting::pPPlot(gr, true_cdf_vector, sample_cdf, function_name, "true", 
+            baxcat::plotting::pPPlot(gr, true_cdf_vector, sample_cdf, function_name, "true",
                 "sample");
 
         return ks_stat;
@@ -166,7 +182,7 @@ namespace test_utils{
                 ++index_a;
                 F_a = double(index_a)/n_a;
             }
-            
+
             if(b[index_b] < x){
                 ++index_b;
                 F_b = double(index_b)/n_b;
@@ -215,8 +231,8 @@ namespace test_utils{
     }
 
     template <typename lambda>
-    static double testHyperparameterSampler(const lambda &log_f, double x_0, 
-        baxcat::Domain sampler_domain, double w, std::string filename=" ", 
+    static double testHyperparameterSampler(const lambda &log_f, double x_0,
+        baxcat::Domain sampler_domain, double w, std::string filename=" ",
         std::string function_name="f(x)", size_t n_samples=1000, size_t lag=50)
     {
 
@@ -244,7 +260,7 @@ namespace test_utils{
             a = baxcat::utils::vector_min(samples);
         else
             a = sampler_domain.lower;
-        
+
         b = baxcat::utils::vector_max(samples);
 
         const auto exp_f = [log_f](double x){ return exp(log_f(x)); };
@@ -318,14 +334,14 @@ namespace test_utils{
             x_predict[i] = x_predict_raw[0][i];
 
         std::stringstream ss;
-        ss << num_clusters << "-cluster, 1-columns " << datatype << " inference (sep="; 
+        ss << num_clusters << "-cluster, 1-columns " << datatype << " inference (sep=";
         ss << separation << ")";
 
         // plot results
         mglGraph gr;
         gr.SetSize(1000,1000);
         gr.SubPlot(2,2,0);
-        double ks_stat = baxcat::test_utils::twoSampleKSTest(x_orig[0], x_predict, true, &gr, 
+        double ks_stat = baxcat::test_utils::twoSampleKSTest(x_orig[0], x_predict, true, &gr,
             ss.str());
 
         gr.SubPlot(2,2,1);
@@ -363,7 +379,7 @@ namespace test_utils{
 
         return distributions_differ;
     }
-    
+
 }} // end namespaces
 
 #endif

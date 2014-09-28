@@ -1,10 +1,19 @@
+
+// BaxCat: an extensible cross-catigorization engine.
+// Copyright (C) 2014 Baxter Eaves
 //
-//  numerics.hpp
-//  baxcat_cxx_distributions
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU General Public License as published by the Free Software Foundation, version 3.
 //
-//  Created by Baxter Eaves on 6/28/14.
-//  Copyright (c) 2014 Baxter Eaves. All rights reserved.
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+// even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
 //
+// You should have received a copy of the GNU General Public License (LICENSE.txt) along with this
+// program. If not, see <http://www.gnu.org/licenses/>.
+//
+// You may contact the mantainers of this software via github
+// <https://github.com/BaxterEaves/baxcat_cxx>.
 
 #ifndef baxcat_cxx_distributions_numerics_hpp
 #define baxcat_cxx_distributions_numerics_hpp
@@ -24,7 +33,8 @@
 #define LOG_PI log(M_PI)
 #define INF std::numeric_limits<double>::infinity()
 
-namespace baxcat { namespace numerics{
+namespace baxcat {
+namespace numerics{
 
 
 template <typename T>
@@ -145,7 +155,6 @@ static double quadrature(const lambda &f, double a, double b, double eps=0)
         double max_probe = *std::max_element(probe.begin(),probe.end());
         eps = max_probe*10e-8;
     }
-
 
     double ret = __quadrature_recursion(f, a, b, eps, __simpsons_rule(f,a,b));
     return ret;

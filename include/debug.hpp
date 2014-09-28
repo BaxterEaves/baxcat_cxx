@@ -1,3 +1,20 @@
+
+// BaxCat: an extensible cross-catigorization engine.
+// Copyright (C) 2014 Baxter Eaves
+//
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU General Public License as published by the Free Software Foundation, version 3.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+// even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License (LICENSE.txt) along with this
+// program. If not, see <http://www.gnu.org/licenses/>.
+//
+// You may contact the mantainers of this software via github
+// <https://github.com/BaxterEaves/baxcat_cxx>.
+
 #ifndef baxcat_cxx_debug_guard
 #define baxcat_cxx_debug_guard
 
@@ -45,6 +62,17 @@
                 }                                                                           \
             }while(0)
 
+        #define ASSERT_EQUAL(os, X, Y)                                                      \
+            do{                                                                             \
+                if(X != Y){                                                                 \
+                    (os) << "DEBUG: " << __FILE__ << "(" << __LINE__ << ") in ";            \
+                    (os) << __PRETTY_FUNCTION__ << #X;                                      \
+                    (os) << "(" << X << ") is not equal to " << #Y ;                        \
+                    (os) << "(" << Y << ")." << std::endl;                                  \
+                }                                                                           \
+            }while(0)
+
+
         #define ASSERT_IS_A_NUMBER(os, number)                                      \
             do{                                                                     \
                 if(std::isnan(number) or std::isinf(number)){                       \
@@ -63,6 +91,7 @@
         #define ASSERT_INFO( os, msg, test )
         #define ASSERT_GREATER_THAN_ZERO(os, number)
         #define ASSERT_IS_A_NUMBER(os, number)
+        #define ASSERT_EQUAL(os, X, Y)
         #define DEBUG_MESSAGE(os, msg)
     #endif
 

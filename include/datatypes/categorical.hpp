@@ -1,4 +1,20 @@
 
+// BaxCat: an extensible cross-catigorization engine.
+// Copyright (C) 2014 Baxter Eaves
+//
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU General Public License as published by the Free Software Foundation, version 3.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+// even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License (LICENSE.txt) along with this
+// program. If not, see <http://www.gnu.org/licenses/>.
+//
+// You may contact the mantainers of this software via github
+// <https://github.com/BaxterEaves/baxcat_cxx>.
+
 #ifndef baxcat_cxx_categorical_hpp
 #define baxcat_cxx_categorical_hpp
 
@@ -26,7 +42,7 @@ public:
 	Categorical(std::vector<double> &distargs) : _dirichlet_alpha(1)
 	{
 		_n = 0;
-		_counts.resize(static_cast<size_t>(distargs[0]+.5),0);
+		_counts.resize(static_cast<size_t>(distargs[0]+.5), 0);
 		_log_Z0 = 0;
 	}
 
@@ -64,7 +80,7 @@ public:
 								   baxcat::PRNG *rng) const override;
 
     // hypers
-    static std::vector<double> constructHyperpriorConfig(const std::vector<size_t> &X);
+    static std::vector<double> constructHyperpriorConfig(const std::vector<double> &X);
     static std::vector<double> initHypers(const std::vector<double> &hyperprior_config,
         baxcat::PRNG *rng);
     static std::vector<double> resampleHypers(std::vector<Categorical> &models,

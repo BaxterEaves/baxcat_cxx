@@ -30,6 +30,7 @@
 # Test files
 *.test
 *.inftest
+*.xml
 
 # misc junk
 .DS_Store
