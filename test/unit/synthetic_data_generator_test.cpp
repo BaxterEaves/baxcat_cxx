@@ -168,6 +168,80 @@ BOOST_AUTO_TEST_CASE(verify_partition_generator){
 
 }
 
+// Categorical
+BOOST_AUTO_TEST_CASE(verify_constructor_one_view_one_cluster_categorical){
+    size_t num_rows = 10;
+    vector<double> view_weights = {1};
+    vector<vector<double>> category_weights = {{1}};
+    vector<double> category_separation = {.9}; // one column
+    vector<string> datatypes = {"categorical"};
+    size_t seed = 10;
+
+
+    baxcat::SyntheticDataGenerator sdg(num_rows, view_weights, category_weights,
+        category_separation, datatypes, seed);
+
+    auto data = sdg.getData();
+
+    BOOST_REQUIRE_EQUAL( data.size(), 1 );
+    BOOST_REQUIRE_EQUAL( data[0].size(), num_rows );
+}
+
+BOOST_AUTO_TEST_CASE(verify_constructor_two_columns_categorical){
+    size_t num_rows = 10;
+    vector<double> view_weights = {1};
+    vector<vector<double>> category_weights = {{1}};
+    vector<double> category_separation = {.9,.9}; // two columns
+    vector<string> datatypes = {"categorical","categorical"};
+    size_t seed = 10;
+
+
+    baxcat::SyntheticDataGenerator sdg(num_rows, view_weights, category_weights,
+        category_separation, datatypes, seed);
+
+    auto data = sdg.getData();
+
+    BOOST_REQUIRE_EQUAL( data.size(), 2 );
+    BOOST_REQUIRE_EQUAL( data[0].size(), num_rows );
+    BOOST_REQUIRE_EQUAL( data[1].size(), num_rows );
+}
+
+BOOST_AUTO_TEST_CASE(verify_constructor_one_view_two_cluster_categorical){
+    size_t num_rows = 10;
+    vector<double> view_weights = {1};
+    vector<vector<double>> category_weights = {{.5,.5}};
+    vector<double> category_separation = {.9}; // one column
+    vector<string> datatypes = {"categorical"};
+    size_t seed = 10;
+
+
+    baxcat::SyntheticDataGenerator sdg(num_rows, view_weights, category_weights,
+        category_separation, datatypes, seed);
+
+    auto data = sdg.getData();
+
+    BOOST_REQUIRE_EQUAL( data.size(), 1 );
+    BOOST_REQUIRE_EQUAL( data[0].size(), num_rows );
+}
+
+BOOST_AUTO_TEST_CASE(verify_constructor_two_views_two_cluster_categorical){
+    size_t num_rows = 10;
+    vector<double> view_weights = {.5,.5};
+    vector<vector<double>> category_weights = {{.5,.5},{.5,.5}};
+    vector<double> category_separation = {.9,.9}; // two columns
+    vector<string> datatypes = {"categorical","categorical"};
+    size_t seed = 10;
+
+
+    baxcat::SyntheticDataGenerator sdg(num_rows, view_weights, category_weights,
+        category_separation, datatypes, seed);
+
+    auto data = sdg.getData();
+
+    BOOST_REQUIRE_EQUAL( data.size(), 2 );
+    BOOST_REQUIRE_EQUAL( data[0].size(), num_rows );
+    BOOST_REQUIRE_EQUAL( data[1].size(), num_rows );
+}
 // TODO: value checks
 // ````````````````````````````````````````````````````````````````````````````````````````````````
 BOOST_AUTO_TEST_SUITE_END ()

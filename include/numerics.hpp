@@ -21,7 +21,6 @@
 #include "debug.hpp"
 
 #include <cmath>
-#include <cassert>
 #include <algorithm>
 #include <iostream>
 #include <cfloat>
@@ -127,7 +126,8 @@ static long double __simpsons_rule(const lambda &f, double a, double b)
 
 
 template<typename lambda>
-static double __quadrature_recursion(const lambda &f, double a, double b, double eps, double W)
+static double __quadrature_recursion(const lambda &f, double a, double b, double eps, double W,
+                                     size_t &RECURSION_COUNT, size_t MAX_RECURSIONS)
 {
     if(W==0)
         return 0;
@@ -141,7 +141,14 @@ static double __quadrature_recursion(const lambda &f, double a, double b, double
     if( err <= eps)
         return L+R;
 
-    return __quadrature_recursion(f,a,c,eps/2,L) + __quadrature_recursion(f,c,b,eps/2,R);
+    ++RECURSION_COUNT;
+
+    // TODO: Return value after max recursions or throw exception?
+    if(RECURSION_COUNT > MAX_RECURSIONS)
+        throw MaxIterationsReached(RECURSION_COUNT);
+
+    return __quadrature_recursion(f, a, c, eps/2, L, RECURSION_COUNT,  MAX_RECURSIONS) + 
+           __quadrature_recursion(f, c, b, eps/2, R, RECURSION_COUNT,  MAX_RECURSIONS);
 }
 
 
@@ -156,7 +163,11 @@ static double quadrature(const lambda &f, double a, double b, double eps=0)
         eps = max_probe*10e-8;
     }
 
-    double ret = __quadrature_recursion(f, a, b, eps, __simpsons_rule(f,a,b));
+    size_t MAX_RECURSIONS = 1000;  // Maybe too high?
+    size_t RECURSION_COUNT = 0;
+
+    double ret = __quadrature_recursion(f, a, b, eps, __simpsons_rule(f, a, b), RECURSION_COUNT,
+                                        MAX_RECURSIONS);
     return ret;
 }
 

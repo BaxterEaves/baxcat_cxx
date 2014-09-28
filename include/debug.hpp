@@ -18,7 +18,7 @@
 #ifndef baxcat_cxx_debug_guard
 #define baxcat_cxx_debug_guard
 
-    // TODO: refactor some of this redundant code
+    // TODO: refactor some of this redundant code and add common exceptions
     /* Custom assert macros.
     The goal of these macros is to provide more information than the standard cassert macros and to
     bypass cython killing casserts.
@@ -26,6 +26,21 @@
 
     #include <cmath>
     #include <iostream>
+    #include <sstream>
+
+    // Exception class for when an iterative algroithm fails to complete within the maximum allowed
+    // number of iterations.
+    class MaxIterationsReached {
+    public:
+        MaxIterationsReached(const size_t &iters) : _iters(iters){};
+        const char* what(){
+            std::ostringstream msg;
+            msg << "Maximum number of iterations (" << _iters << ") reached.\n";
+            return msg.str().c_str();
+        }
+    private:
+        size_t _iters;
+    };
 
     #ifdef DEBUG
         // #define PRINT_DEBUG_MESSAGE(os, msg)                                    \

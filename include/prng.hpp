@@ -21,13 +21,16 @@
 #define IndexError
 #define NoMatchFound
 
+
 #include <random>
 #include <cmath>
 #include <stdexcept>
 #include <vector>
 #include <iostream>
+#include <sstream>
 #include "template_helpers.hpp"
 #include "utils.hpp"
+#include "debug.hpp"
 #include "numerics.hpp"
 #include "omp.h"
 
@@ -36,6 +39,40 @@
 // Super-cool ski instructor says: If you don't inialize this as static, you're
 // gonna have a bad time.
 namespace baxcat{
+
+// Exception class for invalid multinomial probabilities leading to unsucessful draws.
+// This error is thrown when pflip or lpflip cannot draw because. The cause for failure is that
+// either every entry in P is zero or there is a NaN entry in P.
+class InvalidMultinomialProbabilities{
+public:
+    InvalidMultinomialProbabilities(const std::vector<double> &p) : _p(p){};
+    const char* what(){
+        std::ostringstream msg;
+
+        msg << "Invalid multinomial probabilities. ";
+
+        bool has_nan_entries = false;
+        size_t num_zero_entries = 0;
+        for(auto &x : _p){
+            num_zero_entries += (x == 0) ? 1 : 0;
+            if(std::isnan(x))
+                has_nan_entries = true;
+        }
+
+        if(num_zero_entries == _p.size())
+            msg << "All entries of p are 0. ";
+
+        if(has_nan_entries)
+            msg << "p containts NaN elements. ";
+
+        msg << "\n";
+
+        return msg.str().c_str();
+    }
+private:
+    std::vector<double> _p;
+};
+
 class PRNG{
 
     private:
@@ -150,7 +187,7 @@ class PRNG{
             size_t len = X.size();
             std::vector<T> ret;
             for( unsigned int i = 0; i < len; i++ ){
-                assert( X.size() > 0);
+                ASSERT(std::cout, X.size() > 0);
                 size_t index = randuint(X.size());
                 ret.push_back(X[index]);
                 X.erase(X.begin()+index);
@@ -172,8 +209,8 @@ class PRNG{
                 if( r < cumsum)
                     return i;
             }
-            std::cout << "pflip: no match found" << std::endl;
-            throw std::logic_error("NoMatchFound");
+
+            throw InvalidMultinomialProbabilities(P);
         }
 
         // multinomial draw from a vector of log probabilities
@@ -189,9 +226,7 @@ class PRNG{
                     return i;
             }
 
-            baxcat::utils::print_vector(P);
-            std::cout << "lpflip: no match found" << std::endl;
-            throw std::logic_error("NoMatchFound");
+            throw InvalidMultinomialProbabilities(P);
         }
 
         // constructs a parition, Z, with K categories, and counts, Nk, from CRP(alpha)
@@ -342,14 +377,13 @@ class PRNG{
 
         // dirichlet (symmetric)
         template <typename T>
-        typename baxcat::enable_if<std::is_integral<T>, std::vector<double>> dirrand(T K,
-                                                                                     double alpha)
+        typename baxcat::enable_if<std::is_integral<T>, std::vector<double>> dirrand(T K, double alpha)
         {
             std::vector<double> P(K);
             double sum = 0;
 
             for(auto &p : P){
-                p = gamrand(alpha, 1);
+                p = gamrand(alpha, 1.0);
                 sum += p;
             }
 
@@ -387,10 +421,8 @@ class PRNG{
                     return vmr;
                 }
 
-                if (ITERS > MAX_ITERS){
-                    printf("vmrand(%f, %f) reached max iters.\n", mu, kappa);
-                    return -1;
-                }
+                if (ITERS > MAX_ITERS)
+                    throw MaxIterationsReached(MAX_ITERS);
             }
         }
 

@@ -82,11 +82,11 @@ private:
 
 	// generate a datum from a set of parameters
 	double __generateContinuousDatum(std::map<std::string, double> params);
-	double __generateCCategoricalDatum(std::map<std::string, double> params);
+	double __generateCategoricalDatum(std::map<std::string, double> params);
 
 	// get log lieklihood for the data in X
 	double __continuousLogp(double x, size_t column);
-	// std::vector<double> __categoricalLogp(std::vector<double> X, size_t column);
+	double __categoricalLogp(double x, size_t column);
 
 	// MEMBERS
 	size_t _num_rows;

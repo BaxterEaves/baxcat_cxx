@@ -90,7 +90,7 @@ BOOST_AUTO_TEST_CASE(log_beta_value_checks){
 BOOST_AUTO_TEST_CASE(quadrature_value_checks_against_beta_distribution){
     const double QUADTOL = 10E-5;
 
-    double quad_epsilon = 10E-10;
+    double quad_epsilon = 10E-5;
 
     auto betajeff = [](double x){
         boost::math::beta_distribution<double> beta(.5,.5);

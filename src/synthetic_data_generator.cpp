@@ -99,6 +99,8 @@ void SyntheticDataGenerator::initialize()
 
 		if(type == datatype::continuous){
 			_params.push_back(__generateContinuousParameters(num_categories, separation));
+		}else if(type == datatype::categorical){
+			_params.push_back(__generateCategoricalParameters(num_categories, separation));
 		}else{
 			throw 1;
 				// FIXME: throw a proper exception
@@ -110,6 +112,8 @@ void SyntheticDataGenerator::initialize()
 			this_category = _row_assignments[this_view][row];
 			if(type == datatype::continuous){
 				data_column[row] = __generateContinuousDatum(_params[col][this_category]);
+			}else if(type == datatype::categorical){
+				data_column[row] = __generateCategoricalDatum(_params[col][this_category]);
 			}else{
 				throw 1;
 				// FIXME: throw a proper exception
@@ -157,7 +161,9 @@ vector<map<string, double>> SyntheticDataGenerator::__generateSeparatedParameter
 	vector<map<string, double>> param_set;
 
 	if(type == datatype::continuous){
-		param_set = __generateContinuousParameters( num_categories, separation);
+		param_set = __generateContinuousParameters(num_categories, separation);
+	}else if(type == datatype::categorical){
+		param_set = __generateCategoricalParameters(num_categories, separation);
 	}else{
 		throw 1; // FIXME: proper error
 	}
@@ -221,19 +227,24 @@ vector<map<string, double>> SyntheticDataGenerator::__generateCategoricalParamet
 	size_t K = 5;
 
 	// symmetric
-	vector<double> alpha_vec(K, 1.0-separation)
+	vector<double> alpha_vec(K, 1.0-separation);
+
+	ASSERT_EQUAL(std::cout, alpha_vec.size(), K);
 
 	vector<map<string, double>> params;
 
 	for(size_t i = 0; i < num_categories; ++i){
 		// draw multinomial vector for dirichlet
-		vector<double> P = rng.get()->dirrand(alpha_vec);
+		vector<double> p = _rng.get()->dirrand(alpha_vec);
+
+		ASSERT_EQUAL(std::cout, p.size(), K);
+		ASSERT_EQUAL(std::cout, p.size(), alpha_vec.size());
 
 		map<string, double> param;
 		for(size_t k = 0; k < K; ++k){
 			std::ostringstream key;
-			key << i;
-			param[key.str()] = P[k];
+			key << k;
+			param[key.str()] = p[k];
 		}
 		params.push_back(param);
 	}
@@ -248,8 +259,9 @@ double SyntheticDataGenerator::__generateCategoricalDatum(map<string, double> pa
 	vector<double> p(K);
 	for(size_t i = 0; i < K; ++i){
 		string key = std::to_string(i);
-		p[i] = param[key]
+		p[i] = param[key];
 	}
+
 	return static_cast<double>(_rng.get()->pflip(p));
 }
 
@@ -267,7 +279,7 @@ double SyntheticDataGenerator::__categoricalLogp(double x, size_t column)
 		vector<double> p(K);
 		for(size_t k = 0; k < K; ++k){
 			string key = std::to_string(k);
-			p[k] = param[key]
+			p[k] = _params[column][i][key];
 		}
 		weights[i] = log(weights[i]) + dist::multinomial::logPdf(y, p);
 	}

@@ -77,7 +77,7 @@ const std::map<std::string, transition_type> string_to_transition
 static std::vector<transition_type> getTransitions(std::vector< std::string > tstr)
 {
     std::vector<transition_type> ret;
-    for( auto s : tstr)
+    for(auto s : tstr)
         ret.push_back( string_to_transition.at(s) );
     return ret;
 };
@@ -87,7 +87,7 @@ static std::vector<transition_type> getTransitions(std::vector< std::string > ts
 static std::vector<datatype> getDatatypes(std::vector< std::string > dstr)
 {
     std::vector<datatype> ret;
-    for( auto s : dstr)
+    for(auto s : dstr)
         ret.push_back(string_to_datatype.at(s));
     return ret;
 };
