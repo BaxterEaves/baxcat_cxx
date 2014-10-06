@@ -164,13 +164,11 @@ struct NormalNormalGamma{
         if( n > 0)
             posteriorParameters(n, sum_x, sum_x_sq, m, r, s, nu);
 
-        s /= 2;
-
         double t_draw = rng->trand(nu);
 
         ASSERT_IS_A_NUMBER(std::cout, t_draw);
 
-        double scale = sqrt((s * (r + 1)) / (nu / 2. * r));
+        double scale = sqrt((.5*s*(r + 1)) / (.5*nu*r));
 
         ASSERT_IS_A_NUMBER(std::cout, scale);
 

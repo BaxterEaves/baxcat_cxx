@@ -147,6 +147,9 @@ vector<double> SyntheticDataGenerator::logLikelihood(vector<double> data, size_t
 	if(type == datatype::continuous){
 		for(auto x : data)
 			logps.push_back(__continuousLogp(x, column));
+	}else if(type == datatype::categorical){
+		for(auto x : data)
+			logps.push_back(__categoricalLogp(x, column));
 	}else{
 		throw 1; // FIXME: proper error
 	}

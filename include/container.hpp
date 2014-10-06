@@ -122,9 +122,8 @@ public:
     {
         std::vector<double> set_data;
         for(size_t i = 0; i < _data.size(); ++i){
-            if(_is_initalized[i]){
-                set_data.push_back( static_cast<double>(_data[i]+.5) );
-            }
+            if(_is_initalized[i])
+                set_data.push_back(static_cast<double>(_data[i]));
         }
         return set_data;
     }

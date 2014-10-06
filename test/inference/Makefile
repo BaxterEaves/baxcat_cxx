@@ -29,20 +29,27 @@ OPTS = -I$(BOOST_DIR) -I$(INCLUDE) \
 	-I /usr/local/Cellar/mathgl/2.2.2.1/include \
 	-L /usr/local/Cellar/mathgl/2.2.2.1/lib -lmgl \
 	-I ../ -std=c++14 -fopenmp \
-	-Wall -Wno-unused-function -Wno-unused-local-typedefs \
+	-Wall -Wno-unused-function -Wno-unused-local-typedefs -Wno-comment\
 	-L $(BOOST_LIB) -DDEBUG
 
 DEBUG_HEADER = $(INCLUDE)/debug.hpp
-OBJECTS = continuous.o state.o view.o feature_tree.o sdg.o
+OBJECTS = categorical.o continuous.o state.o view.o feature_tree.o sdg.o
 TEST_FILES = slice_sampler_inftest.cpp \
     datatypes/continuous/continuous_hyper_update.cpp \
-    datatypes/continuous/continuous_inference_single.cpp
+    datatypes/continuous/continuous_inference_single.cpp \
+    datatypes/categorical/categorical_hyper_update.cpp \
+    datatypes/categorical/categorical_inference_single.cpp \
 
 
 # test objects
 #``````````````````````````````````````````````````````````````````````````````````````````````````
 all : $(TEST_FILES) $(OBJECTS) test_main.cpp
 	$(CXX) test_main.cpp $(TEST_FILES) -o main.test $(OPTS) $(OBJECTS)
+
+categorical.o : $(INCLUDE)/component.hpp $(INCLUDE)/utils.hpp $(INCLUDE)/prng.hpp $(DEBUG_HEADER) \
+		$(DIST)/gamma.hpp $(DIST)/gaussian.hpp $(DIST)/students_t.hpp $(INCLUDE)/samplers/slice.hpp \
+		$(INCLUDE)/models/msd.hpp $(INCLUDE)/datatypes/categorical.hpp $(SRC)/categorical.cpp
+	$(CXX) -c $(SRC)/categorical.cpp $(OPTS)
 
 continuous.o : $(INCLUDE)/component.hpp $(INCLUDE)/utils.hpp $(INCLUDE)/prng.hpp $(DEBUG_HEADER) \
 		$(SRC)/continuous.cpp $(DIST)/gamma.hpp $(DIST)/gaussian.hpp $(DIST)/students_t.hpp \

@@ -22,8 +22,8 @@ using std::map;
 
 template<class DataType, typename T>
 baxcat::Feature<DataType, T>::Feature(unsigned int idx, baxcat::DataContainer<T> data,
-                                      vector<double> args, baxcat::PRNG *rng_ptr):
-                                      _index(idx), _data(data), _rng(rng_ptr), _N(data.size())
+                                      vector<double> args, baxcat::PRNG *rng_ptr)
+    : _index(idx), _data(data), _rng(rng_ptr), _N(data.size())
 {
     _distargs = args;
     _hyperprior_config = DataType::constructHyperpriorConfig(_data.getSetData());
@@ -34,8 +34,8 @@ baxcat::Feature<DataType, T>::Feature(unsigned int idx, baxcat::DataContainer<T>
 // FIXME: figure out how to get delegated constructors to work here
 template<class DataType, typename T>
 baxcat::Feature<DataType, T>::Feature(unsigned int idx, baxcat::DataContainer<T> data,
-                                      vector<double> args, vector<size_t> Z, baxcat::PRNG *_rngptr):
-                                      _index(idx), _data(data), _rng(_rngptr), _N(data.size())
+                                      vector<double> args, vector<size_t> Z, baxcat::PRNG *rngptr)
+    : _index(idx), _data(data), _rng(rngptr), _N(data.size())
 {
     _distargs = args;
     _hyperprior_config = DataType::constructHyperpriorConfig(_data.getSetData());
@@ -54,6 +54,22 @@ baxcat::Feature<DataType, T>::Feature(unsigned int idx, baxcat::DataContainer<T>
         this->insertElement( i, Z[i] );
 }
 
+
+// for geweke
+template<class DataType, typename T>
+baxcat::Feature<DataType, T>::Feature(unsigned int idx, baxcat::DataContainer<T> data,
+                                      vector<double> args, baxcat::PRNG *rng_ptr, 
+                                      vector<double> hypers, vector<double> hyperprior_config)
+    : _index(idx), _data(data), _rng(rng_ptr), _N(data.size()),
+      _hyperprior_config(hyperprior_config)
+{
+    if(hypers.empty()){
+        _hypers = DataType::initHypers(_hyperprior_config, _rng);
+    }else{
+        _hypers = hypers;
+    }
+    _distargs = args;
+}
 
 // Add/remove elements
 // ````````````````````````````````````````````````````````````````````````````````````````````````
@@ -138,16 +154,10 @@ double baxcat::Feature<DataType, T>::clusterLogp(size_t cluster) const
 template<class DataType, typename T>
 double baxcat::Feature<DataType, T>::logp() const
 {
-    size_t K = _clusters.size();
-
-    double logp = _clusters[0].hyperpriorLogp(_hyperprior_config);
-
-    // #pragma omp parallel for
-    for(size_t k = 0; k < K; k++){
-        auto p = _clusters[k].logp();
-        // #pragma omp atomic
-        logp += p;
-    }
+    double logp = 0;
+    // double logp = _clusters[0].hyperpriorLogp(_hyperprior_config);
+    for(auto &cluster : _clusters)
+        logp += cluster.logp();
 
     return logp;
 }
@@ -160,6 +170,7 @@ double baxcat::Feature<DataType, T>::drawFromCluster(size_t cluster_idx, baxcat:
 {
     return double(_clusters[cluster_idx].draw(rng));
 }
+
 
 // Cleanup
 // ````````````````````````````````````````````````````````````````````````````````````````````````
@@ -268,6 +279,7 @@ vector<map<string, double>> baxcat::Feature<DataType, T>::getModelSuffstats() co
     vector<map<string, double>> ret;
     for(const DataType &cluster : _clusters)
         ret.push_back(cluster.getSuffstatsMap());
+
     return ret;
 }
 
@@ -283,10 +295,22 @@ std::vector<double> baxcat::Feature<DataType, T>::getData() const
 // Setters
 // ````````````````````````````````````````````````````````````````````````````````````````````````
 template<class DataType, typename T>
-void baxcat::Feature<DataType, T>::setHypersByMap(map<string, double> hypers_map)
+void baxcat::Feature<DataType, T>::setHypers(map<string, double> hypers_map)
 {
     for(auto &cluster : _clusters)
         cluster.setHypersByMap(hypers_map);
+    // set feature hypers
+    _hypers = _clusters[0].getHypers();
+}
+
+
+template<class DataType, typename T>
+void baxcat::Feature<DataType, T>::setHypers(vector<double> hypers_vec)
+{
+    for(auto &cluster : _clusters)
+        cluster.setHypers(hypers_vec);
+    // set feature hypers
+    _hypers = hypers_vec;
 }
 
 
@@ -342,8 +366,9 @@ void baxcat::Feature<DataType, T>::__geweke_resampleRow(size_t which_row, size_t
         T x = _data.at(which_row);
         _clusters[which_cluster].removeElement(x);
     }
-    // draw a new point, set the data in the container, and insert it into the cluster
+    
     T y = _clusters[which_cluster].draw(rng);
+
     _data.set(which_row, y);
     _clusters[which_cluster].insertElement(y);
 }

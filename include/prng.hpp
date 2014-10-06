@@ -296,7 +296,7 @@ class PRNG{
             ASSERT(std::cout, shape > 0);
             ASSERT(std::cout, scale > 0);
 
-            std::gamma_distribution<double> dist(shape, 1./scale);
+            std::gamma_distribution<double> dist(shape, scale);
             return 1./dist(getRNG());
         }
 

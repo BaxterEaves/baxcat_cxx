@@ -87,7 +87,9 @@ public:
 
     // setters
     // sets the hypers of all clusters in a feature with a string-indexed map
-    virtual void setHypersByMap(std::map<std::string, double> hypers_map) = 0;
+    virtual void setHypers(std::map<std::string, double> hypers_map) = 0;
+    // sets the hypers of all clusters in a feature with a vector
+    virtual void setHypers(std::vector<double> hypers_vec) = 0;
     // sets the hyperprior config
     virtual void setHyperConfig(std::vector<double> hyperprior_config) = 0;
     // cast and append datum to last row in a singleton cluster
@@ -124,11 +126,13 @@ private:
         std::vector<double> _hyperprior_config;
 
 public:
-    // TODO: add constructor with hyper_config constructor (for Geweke tests)
+    
     Feature(unsigned int index, baxcat::DataContainer<T> data, std::vector<double> distargs,
         baxcat::PRNG *rng_ptr);
     Feature(unsigned int index, baxcat::DataContainer<T> data, std::vector<double> distargs,
         std::vector<size_t> assignment, baxcat::PRNG *rng_ptr);
+    Feature(unsigned int index, baxcat::DataContainer<T> data, std::vector<double> distargs,
+        baxcat::PRNG *rng_ptr, std::vector<double> hypers, std::vector<double> hyperprior_config);
 
     virtual void insertElement(size_t row, size_t cluster) final;
     virtual void removeElement(size_t row, size_t cluster) final;
@@ -157,7 +161,8 @@ public:
     virtual std::map<std::string, double> getHypersMap() const final;
     virtual std::vector<double> getData() const final;
 
-    virtual void setHypersByMap(std::map<std::string, double> hypers_map) final;
+    virtual void setHypers(std::map<std::string, double> hypers_map) final;
+    virtual void setHypers(std::vector<double> hypers_vec) final;
     virtual void setHyperConfig(std::vector<double> hyperprior_config) final;
     virtual void appendRow(double datum) final;
     virtual void popRow(size_t cluster_assignment) final;

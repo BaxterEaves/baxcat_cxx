@@ -44,7 +44,8 @@ void Categorical::removeElement(size_t x)
 void Categorical::clear(const std::vector<double> &distargs)
 {
 	_n = 0;
-	std::fill (_counts.begin(), _counts.end(), 0);
+    // _counts.resize(static_cast<size_t>(distargs[0]+.5));
+	std::fill(_counts.begin(), _counts.end(), 0);
 }
 
 

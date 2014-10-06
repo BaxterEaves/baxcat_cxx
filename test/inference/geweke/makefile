@@ -27,7 +27,7 @@ F_OUT = build/
 CXX = g++-4.9
 OPTS = -I$(BOOST_DIR) -I $(INCLUDE) -std=c++11 -fopenmp -I /usr/local/Cellar/mathgl/2.2.2.1/include \
 	-I ../../ -L /usr/local/Cellar/mathgl/2.2.2.1/lib -lmgl -Wall -Wextra -Wunreachable-code\
-	-Wno-unused-function -Wno-unused-local-typedefs -O3 -DDEBUG
+	-Wno-unused-function -Wno-unused-local-typedefs -O3 -DDEBUG -Wno-comment
 
 TEST_FILES = geweke.inftest
 
@@ -37,7 +37,7 @@ all: $(TEST_FILES)
 
 geweke.inftest:
 	$(CXX) geweke_test.cpp -o $(F_OUT)geweke.inftest \
-	$(SRC)/continuous.cpp $(SRC)/synthetic_data_generator.cpp \
+	$(SRC)/continuous.cpp $(SRC)/categorical.cpp $(SRC)/synthetic_data_generator.cpp \
 	$(SRC)/state.cpp $(SRC)/view.cpp $(SRC)/feature_tree.cpp \
 	geweke_tester.cpp \
 	$(OPTS)

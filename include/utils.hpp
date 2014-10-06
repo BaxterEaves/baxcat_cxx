@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <iostream>
 
+#include "debug.hpp"
 #include "template_helpers.hpp"
 
 namespace baxcat { namespace utils {
@@ -56,8 +57,8 @@ namespace baxcat { namespace utils {
     // vec[0] = a and vec[n-1] = b.
     static std::vector<double> linspace(double a, double b, unsigned int n)
     {
-        assert(a<b);
-        assert(n > 0);
+        ASSERT(std::cout, a < b);
+        ASSERT(std::cout, n > 0);
 
         std::vector<double> ret(n,a);
         double interval = (b-a)/double(n-1);
@@ -65,16 +66,16 @@ namespace baxcat { namespace utils {
             ret[i] = a + i*interval;
         }
         return ret;
-    };
+    }
 
 
     // returns an n-length vector with log spacing from a to b. Both a and b
     // must be positive.
     static std::vector<double> log_linspace(double a, double b, unsigned int n)
     {
-        assert(a>=0);
-        assert(a<b);
-        assert(n > 0);
+        ASSERT(std::cout, a >= 0);
+        ASSERT(std::cout, a < b);
+        ASSERT(std::cout, n > 0);
 
         // protct from log domain error
         double log_a = (a==0) ? -DBL_MAX/2 : log(a);
@@ -85,7 +86,7 @@ namespace baxcat { namespace utils {
         }
 
         return ret;
-    };
+    }
 
 
     // returns the minimum element of v
@@ -144,7 +145,7 @@ namespace baxcat { namespace utils {
         double sum = 0;
         double count = 0;
         for(double x : v){
-            if( !std::isnan(x) and !std::isinf(x) ){
+            if(!std::isnan(x) and !std::isinf(x)){
                 sum += x;
                 ++count;
             }

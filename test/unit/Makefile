@@ -29,7 +29,7 @@ OPTS = -I$(BOOST_DIR) -I$(INCLUDE) \
 	-I /usr/local/Cellar/mathgl/2.2.2.1/include \
 	-L /usr/local/Cellar/mathgl/2.2.2.1/lib -lmgl \
 	-I ../ -std=c++14 -fopenmp \
-	-Wall -Wno-unused-function -Wno-unused-local-typedefs \
+	-Wall -Wno-unused-function -Wno-unused-local-typedefs -Wno-comment \
 	-L $(BOOST_LIB) -DDEBUG
 
 DEBUG_HEADER = $(INCLUDE)/debug.hpp
@@ -69,7 +69,7 @@ sdg.o : $(HELPERS)/constants.hpp $(HELPERS)/state_helper.hpp $(DIST)/gaussian.hp
 	$(CXX) -c $(SRC)/synthetic_data_generator.cpp -o sdg.o $(OPTS)
 
 runtests:
-	./main.test  #--log_level=test_suite
+	./main.test #--log_level=test_suite
 
 runjenkins:
 	./main.test --log_format=XML --log_sink=results.xml --log_level=all --report_level=no

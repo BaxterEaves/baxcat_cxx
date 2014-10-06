@@ -322,7 +322,7 @@ BOOST_AUTO_TEST_CASE(test_r_conditional_values_single)
 	auto suffstats = model.getSuffstatsMap();
 
 	double f_r = 0;
-	f_r += baxcat::dist::gamma::logPdf(x, 1, config[2]);
+	f_r += baxcat::dist::gamma::logPdf(x, config[2], config[3]);
 	f_r += nng.logMarginalLikelihood(suffstats["n"], suffstats["sum_x"], suffstats["sum_x_sq"],
 									 hypers["m"], x, hypers["s"], hypers["nu"]);
 
@@ -345,7 +345,7 @@ BOOST_AUTO_TEST_CASE(test_s_conditional_values_single)
 	auto suffstats = model.getSuffstatsMap();
 
 	double f_s = 0;
-	f_s += baxcat::dist::gamma::logPdf(x, 1, config[3]);
+	f_s += baxcat::dist::gamma::logPdf(x, config[4], config[5]);
 	f_s += nng.logMarginalLikelihood(suffstats["n"], suffstats["sum_x"], suffstats["sum_x_sq"],
 									 hypers["m"], hypers["r"], x, hypers["nu"]);
 
@@ -358,7 +358,7 @@ BOOST_AUTO_TEST_CASE(test_nu_conditional_values_single)
 	baxcat::datatypes::Continuous model(4, 10, 30, 0, 1.2, 3, 2);
 	auto config = baxcat::datatypes::Continuous::constructHyperpriorConfig(X);
 	std::vector<baxcat::datatypes::Continuous> models = {model};
-	auto nu_conditional = baxcat::datatypes::Continuous::constructNuConditional(models);
+	auto nu_conditional = baxcat::datatypes::Continuous::constructNuConditional(models, config);
 
 	double x = 1.3;
 
@@ -368,7 +368,7 @@ BOOST_AUTO_TEST_CASE(test_nu_conditional_values_single)
 	auto suffstats = model.getSuffstatsMap();
 
 	double f_nu = 0;
-	f_nu += baxcat::dist::gamma::logPdf(x, 4., .25);
+	f_nu += baxcat::dist::gamma::logPdf(x, config[6], config[7]);
 	f_nu += nng.logMarginalLikelihood(suffstats["n"], suffstats["sum_x"], suffstats["sum_x_sq"],
 		hypers["m"], hypers["r"], hypers["s"], x);
 
@@ -399,10 +399,11 @@ BOOST_AUTO_TEST_CASE(test_m_conditional_values_multiple)
 	double m_std = config[1];
 
 	double f_m = 0;
-	f_m += baxcat::dist::gaussian::logPdf(x, config[0], 1/(m_std*m_std));
+	f_m += baxcat::dist::gaussian::logPdf(x, config[0], 1/(config[1]*config[1]));
 	f_m += nng.logMarginalLikelihood(suffstats_0["n"], suffstats_0["sum_x"],
 									 suffstats_0["sum_x_sq"], x, hypers["r"], hypers["s"],
 									 hypers["nu"]);
+
 	f_m += nng.logMarginalLikelihood(suffstats_1["n"], suffstats_1["sum_x"],
 									 suffstats_1["sum_x_sq"], x, hypers["r"], hypers["s"],
 									 hypers["nu"]);
@@ -428,7 +429,7 @@ BOOST_AUTO_TEST_CASE(test_r_conditional_values_multiple)
 	auto suffstats_1 = model_1.getSuffstatsMap();
 
 	double f_r = 0;
-	f_r += baxcat::dist::gamma::logPdf(x,1,config[2]);
+	f_r += baxcat::dist::gamma::logPdf(x, config[2], config[3]);
 	f_r += nng.logMarginalLikelihood(suffstats_0["n"], suffstats_0["sum_x"],
 		suffstats_0["sum_x_sq"], hypers["m"], x, hypers["s"], hypers["nu"]);
 	f_r += nng.logMarginalLikelihood(suffstats_1["n"], suffstats_1["sum_x"],
@@ -455,7 +456,7 @@ BOOST_AUTO_TEST_CASE(test_s_conditional_values_multiple)
 	auto suffstats_1 = model_1.getSuffstatsMap();
 
 	double f_s = 0;
-	f_s += baxcat::dist::gamma::logPdf(x,1,config[3]);
+	f_s += baxcat::dist::gamma::logPdf(x,config[4], config[5]);
 	f_s += nng.logMarginalLikelihood(suffstats_0["n"], suffstats_0["sum_x"],
 		suffstats_0["sum_x_sq"], hypers["m"], hypers["r"], x, hypers["nu"]);
 	f_s += nng.logMarginalLikelihood(suffstats_1["n"], suffstats_1["sum_x"],
@@ -471,7 +472,7 @@ BOOST_AUTO_TEST_CASE(test_nu_conditional_values_multiple)
 	baxcat::datatypes::Continuous model_1(5, 15, 55, 0, 1.2, 3, 2);
 	auto config = baxcat::datatypes::Continuous::constructHyperpriorConfig(X);
 	std::vector<baxcat::datatypes::Continuous> models = {model_0, model_1};
-	auto nu_conditional = baxcat::datatypes::Continuous::constructNuConditional(models);
+	auto nu_conditional = baxcat::datatypes::Continuous::constructNuConditional(models, config);
 
 	double x = 1.3;
 
@@ -482,13 +483,26 @@ BOOST_AUTO_TEST_CASE(test_nu_conditional_values_multiple)
 	auto suffstats_1 = model_1.getSuffstatsMap();
 
 	double f_nu = 0;
-	f_nu += baxcat::dist::gamma::logPdf(x,4,.25);
+	f_nu += baxcat::dist::gamma::logPdf(x, config[6], config[7]);
 	f_nu += nng.logMarginalLikelihood(suffstats_0["n"], suffstats_0["sum_x"],
 		suffstats_0["sum_x_sq"], hypers["m"], hypers["r"], hypers["s"], x);
 	f_nu += nng.logMarginalLikelihood(suffstats_1["n"], suffstats_1["sum_x"],
 		suffstats_1["sum_x_sq"], hypers["m"], hypers["r"], hypers["s"], x);
 
 	BOOST_CHECK_EQUAL(nu_conditional(x), f_nu);
+}
+
+
+// sample test
+BOOST_AUTO_TEST_CASE(predictive_sample_empty_suffstats_stress_test)
+{
+	baxcat::datatypes::Continuous model;
+	static baxcat::PRNG *prng = new baxcat::PRNG();
+
+	for(size_t i = 0; i < 100; ++i){
+		double x = model.draw(prng);
+		ASSERT_IS_A_NUMBER(std::cout, x);
+	}
 }
 
 // Rsample hypers test

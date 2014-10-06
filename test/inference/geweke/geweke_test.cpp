@@ -16,14 +16,20 @@
 // <https://github.com/BaxterEaves/baxcat_cxx>.
 
 #include "geweke_tester.hpp"
+#include <vector>
+#include <string>
 
 int main(){
 
-	baxcat::GewekeTester gwk(10,1,35515);
+    // std::vector<std::string> datatypes = {"categorical", "continuous", "categorical",
+    //                                       "continuous","categorical"};
+    std::vector<std::string> datatypes = {"categorical"};
+
+	baxcat::GewekeTester gwk(20, 1, datatypes, 84715, true, true, true);
 
     size_t lag = 5;
 
-	gwk.run(100000,5,lag);
+	gwk.run(100000, 5, lag);
 
 	gwk.outputResults();
 

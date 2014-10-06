@@ -56,6 +56,7 @@
                 (os) << "DEBUG: " << __FILE__ << "(" << __LINE__ << ") in ";    \
                 (os) << __PRETTY_FUNCTION__ << std::endl;                       \
                 (os) << "\t" << "TEST: " << #test << " failed." << std::endl;   \
+                throw 0;                                                        \
             }                                                                   \
             }while(0)
 
@@ -65,6 +66,7 @@
                 (os) << "DEBUG: " << __FILE__ << "(" << __LINE__ << ") in ";\
                 (os) << __PRETTY_FUNCTION__ << msg << std::endl;            \
                 (os) << "\t" << "TEST: " << #test << std::endl;             \
+                throw 0;                                                    \
             }                                                               \
             }while(0)
 
@@ -74,6 +76,7 @@
                     (os) << "DEBUG: " << __FILE__ << "(" << __LINE__ << ") in ";            \
                     (os) << __PRETTY_FUNCTION__ << #number;                                 \
                     (os) << "(" << number << ") should be greater than zero." << std::endl; \
+                    throw 0;                                                                \
                 }                                                                           \
             }while(0)
 
@@ -84,6 +87,7 @@
                     (os) << __PRETTY_FUNCTION__ << #X;                                      \
                     (os) << "(" << X << ") is not equal to " << #Y ;                        \
                     (os) << "(" << Y << ")." << std::endl;                                  \
+                    throw 0;                                                                \
                 }                                                                           \
             }while(0)
 
@@ -94,12 +98,14 @@
                     (os) << "DEBUG: " << __FILE__ << "(" << __LINE__ << ") in ";    \
                     (os) << __PRETTY_FUNCTION__ << #number;                         \
                     (os) << "(" << number << ") is Inf or NaN." << std::endl;       \
+                    throw 0;                                                        \
                 }                                                                   \
             }while(0)
 
         #define DEBUG_MESSAGE(os, msg)                                                          \
             do{                                                                                 \
                 (os) << "DEBUG: " << __FILE__ << "(" << __LINE__ << ") " << msg << std::endl;   \
+                throw 0;                                                                        \
             }while(0)
     #else
         #define ASSERT( os, test )

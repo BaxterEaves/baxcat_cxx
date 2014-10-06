@@ -33,7 +33,35 @@
 #define INF std::numeric_limits<double>::infinity()
 
 namespace baxcat {
-namespace numerics{
+namespace numerics {
+
+static double rgamma(double x, double a)
+{
+    double MAX_ITERS = 1000;
+    double err = 0;
+    double max_err = 10E-10;
+    double Z = exp(a*log(x)-x-lgamma(a+1));
+
+    double P_a = 0;
+    double P_b = 0;
+
+    double n = 0;
+
+    do{
+        P_a = P_b;
+        P_b = P_a + exp(n*log(x)+lgamma(a+1)-lgamma(n+a+1));
+        n++;
+        err = fabs(P_a-P_b);
+    }while(err > max_err && n < MAX_ITERS);
+
+    ASSERT(std::cout, n > 1);
+    ASSERT(std::cout, err <= max_err);
+
+    if(n >= MAX_ITERS)
+        throw MaxIterationsReached(static_cast<size_t>(MAX_ITERS));
+
+    return Z*P_b;
+}
 
 
 template <typename T>
@@ -178,6 +206,20 @@ static double kldivergence(const lambda_a &p, const lambda_b &log_p, lambda_c &l
 {
     auto kl_integral = [&p, &log_p, &log_q](double x){return p(x)*(log_p(x)-log_q(x));};
     return quadrature( kl_integral, a, b, eps);
+}
+
+// Calculates discrete KL-divergence given probability distributions p and q. p and q contain log 
+// probabilities over the same varaibles in the same order.
+static double discretekl(std::vector<double> p, std::vector<double> q)
+{
+    ASSERT_EQUAL(std::cout, p.size(), q.size());
+    
+    double kl = 0;
+    for(auto &logp_p : p)
+        for(auto &logp_q : q)
+            kl += exp(logp_p)*(logp_p-logp_q);
+
+    return kl;
 }
 
 }} // end namespaces

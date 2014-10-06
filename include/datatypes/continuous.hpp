@@ -105,10 +105,10 @@ public:
         const std::vector<Continuous> &models, const std::vector<double> &hyperprior_config);
 
     static std::function<double(double)> constructSConditional(
-        const std::vector<Continuous> &models,const std::vector<double> &hyperprior_config);
+        const std::vector<Continuous> &models, const std::vector<double> &hyperprior_config);
 
     static std::function<double(double)> constructNuConditional(
-        const std::vector<Continuous> &models);
+        const std::vector<Continuous> &models, const std::vector<double> &hyperprior_config);
 
     // updates normalizing constants
     void updateConstants();
@@ -126,7 +126,8 @@ private:
 
     // for indexing
     enum hyper_idx {HYPER_M=0, HYPER_R=1, HYPER_S=2, HYPER_NU=3};
-    enum hyperprior_config {M_MEAN=0, M_STD=1, R_SCALE=2, S_SCALE=3};
+    enum hyperprior_config {M_MEAN=0, M_STD=1, R_SHAPE=2, R_SCALE=3, S_SHAPE=4, S_SCALE=5, 
+                            NU_SHAPE=6, NU_SCALE=7};
 
     // normalizing constants (user will need to specify when to update!)
     double _log_Z0;

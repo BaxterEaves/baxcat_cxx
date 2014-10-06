@@ -25,9 +25,9 @@
 #include <typeinfo>
 #include "omp.h"
 
+#include "prng.hpp"
 #include "view.hpp"
 #include "feature.hpp"
-#include "prng.hpp"
 #include "helpers/feature_builder.hpp"
 #include "helpers/state_helper.hpp"
 #include "distributions/gamma.hpp"
@@ -43,6 +43,12 @@ class State{
 public:
 
     State(){};
+
+    // Gewke init mode
+    State(size_t num_rows, std::vector<std::string> datatypes, 
+          std::vector<std::vector<double>> distargs, bool fix_hypers, bool fix_row_alpha, 
+          bool fix_col_alpha);
+
     // init from prior
     // X is the table of data. X[f] is the data for feature X. Is cast to proper
     // type
@@ -58,12 +64,12 @@ public:
     // Zv[f] is the view to which feature f belongs
     // Zrcv[v][r] is the category to which row r of the features in view v are
     // assigned
-    State( std::vector<std::vector<double>> X,
-        std::vector<std::string> datatypes,
-        std::vector<std::vector<double>> distargs,
-        unsigned int rng_seed, std::vector<size_t> Zv,
-        std::vector<std::vector<size_t>> Zrcv,
-        std::vector<std::map<std::string, double>> hyper_maps);
+    State(std::vector<std::vector<double>> X,
+          std::vector<std::string> datatypes,
+          std::vector<std::vector<double>> distargs,
+          unsigned int rng_seed, std::vector<size_t> Zv,
+          std::vector<std::vector<size_t>> Zrcv,
+          std::vector<std::map<std::string, double>> hyper_maps);
 
     // do transitions.
     void transition( std::vector< std::string > which_transitions,
@@ -80,6 +86,8 @@ public:
 
     // setters
     void setHyperConfig(size_t column_index, std::vector<double> hyperprior_config);
+    void setHypers(size_t column_index, std::map<std::string, double> hypers_map);
+    void setHypers(size_t column_index, std::vector<double> hypers_vec);
 
     // predictive_logp
     // returns the logp of the values in query_values being in corresponding  indices in
@@ -118,7 +126,7 @@ public:
     // resample all rows
     void __geweke_resampleRow(size_t which_row);
     std::vector<double> __geweke_pullDataColumn(size_t column_index) const;
-    void __geweke_initHypers();
+    // void __geweke_initHypers();
 
 private:
 
@@ -144,7 +152,7 @@ private:
 
     // Column transition kernels
     // Gibbs method. Calculates probability under each view
-    void __transitionColumnAssignmentGibbs(size_t which_column);
+    void __transitionColumnAssignmentGibbs(size_t which_column, size_t m=10);
 
     // probability and sample helpers
     double __doPredictiveLogpObserved(size_t row, size_t column, double value);
@@ -168,6 +176,12 @@ private:
 
     // CRP parameter
     double _crp_alpha;
+    // for geweke. Will be set to baxcat::geweke_default_alpha if doing geweke with no column 
+    // hypers transitions (each view's CRP alpha will default to 1), or will be -1 
+    // (draw from prior) otherwise.
+    double _view_alpha_marker;
+    // and its config {shape, scale}
+    std::vector<double> _crp_alpha_config;
 
     // partition information
     // number of views

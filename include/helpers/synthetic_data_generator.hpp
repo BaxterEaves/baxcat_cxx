@@ -62,6 +62,10 @@ public:
 	std::vector<std::vector<double>> getData();
 
 	// TODO: implement
+	// return distribution parameters for each cluster in a column
+	// std::vector<std::map<std::string, double>> getColumnParams(size_t column_index);
+
+	// TODO: implement
 	// get assignment of columns to views
 	// std::vector<size_t> getColumnAssignment();
 

@@ -23,7 +23,7 @@ using std::shared_ptr;
 namespace baxcat{
 
 
-View::View( vector< shared_ptr<BaseFeature> > feature_vec, PRNG *rng )
+View::View(vector< shared_ptr<BaseFeature> > feature_vec, PRNG *rng)
     : _rng(rng)
 {
     _num_rows = feature_vec[0].get()->getN();
@@ -32,7 +32,7 @@ View::View( vector< shared_ptr<BaseFeature> > feature_vec, PRNG *rng )
     _crp_alpha = _rng->gamrand(1, 1);
 
     // construct Z, K, Nk from the prior
-    _rng->crpGen( _crp_alpha, _num_rows, _row_assignment, _num_clusters, _cluster_counts);
+    _rng->crpGen(_crp_alpha, _num_rows, _row_assignment, _num_clusters, _cluster_counts);
 
     // build features tree (insert and reassign)
     for(auto f: feature_vec){
@@ -43,19 +43,23 @@ View::View( vector< shared_ptr<BaseFeature> > feature_vec, PRNG *rng )
 
 
 View::View(vector< shared_ptr<BaseFeature> > feature_vec, PRNG *rng, double crp_alpha,
-           vector<size_t> row_assignemnt)
-    : _rng(rng), _row_assignment(row_assignemnt)
+           vector<size_t> row_assignment)
+    : _rng(rng), _row_assignment(row_assignment)
 {
     _num_rows = feature_vec[0].get()->getN();
 
     // alpha is a semi-optional argument. If it is less than zero, we'll choose ourself
     _crp_alpha = (crp_alpha < 0) ? _rng->gamrand(1, 1) : crp_alpha;
 
-    // build partitions
-    _num_clusters = utils::vector_max(_row_assignment)+1;
-    _cluster_counts.resize(_num_clusters, 0);
-    for( size_t z : _row_assignment)
-        _cluster_counts[z]++;
+    if(_row_assignment.empty()){
+        _rng->crpGen(_crp_alpha, _num_rows, _row_assignment, _num_clusters, _cluster_counts);
+    }else{
+        // build partitions
+        _num_clusters = utils::vector_max(_row_assignment)+1;
+        _cluster_counts.resize(_num_clusters, 0);
+        for( size_t z : _row_assignment)
+            _cluster_counts[z]++;
+    }
 
     // build features tree (insert and reassign)
     for(auto f: feature_vec){
@@ -77,10 +81,10 @@ void View::transitionCRPAlpha()
     };
 
     double slice_width = 2.0; // this is a guess
-    size_t burn = 30;
+    size_t burn = 50;
 
     // slice sample
-    _crp_alpha = samplers::sliceSample(_crp_alpha, log_crp_posterior, {ALMOST_ZERO, INF},
+    _crp_alpha = samplers::sliceSample(_crp_alpha, log_crp_posterior, {0, INF},
                                        slice_width, burn, _rng);
 }
 

@@ -28,18 +28,29 @@
 #include "state.hpp"
 #include "plotting.hpp"
 #include "utils.hpp"
+#include "debug.hpp"
 #include "samplers/slice.hpp"
+#include "helpers/constants.hpp"
+#include "helpers/state_helper.hpp"
 #include "helpers/synthetic_data_generator.hpp"
+
+using baxcat::helpers::getDatatypes;
 
 namespace baxcat{
 namespace test_utils{
 
     static double chi2Stat(std::vector<double> observed, std::vector<double> expected)
     {
+        double correction = 10E-6;
         double stat = 0;
-        for( size_t i = 0; i < observed.size(); ++i)
-            stat += (observed[i]-expected[i])*(observed[i]-expected[i])/expected[i];
-
+        for( size_t i = 0; i < observed.size(); ++i){ 
+            // avoids divide by zero error
+            if(expected[i] == 0){
+                observed[i] += correction;
+                expected[i] += correction;
+            }
+            stat += (observed[i]-expected[i])*(observed[i]-expected[i])/expected[i];    
+        }
         return stat;
     }
 
@@ -57,11 +68,14 @@ namespace test_utils{
         return chi2Stat(observed, expected);
     }
 
-    static double chi2Stat(std::vector<double> X)
+    static double chi2Stat(std::vector<double> X, size_t num_bins=0)
     {
         // null hypothesis is uniform
         double N = static_cast<double>(X.size());
-        size_t num_bins = baxcat::utils::vector_max(X)+1;
+
+        if(num_bins == 0)
+            num_bins = baxcat::utils::vector_max(X)+1;
+
         std::vector<double> observed(num_bins);
         std::vector<double> expected(num_bins, N/static_cast<double>(num_bins));
         for( double &x : X)
@@ -300,6 +314,7 @@ namespace test_utils{
         }
     }
 
+
     static bool testOneDimInfereneceQuality(size_t num_rows, size_t num_clusters, size_t num_transitions,
         double separation, std::string datatype, std::string filename)
     {
@@ -310,22 +325,31 @@ namespace test_utils{
         std::vector<string> datatypes = {datatype};
         size_t seed = 10;
 
-        // generate data
+        auto datatype_conv = getDatatypes({datatype})[0];
+
+        // Note: 5 is the number of categorical categories used by synthetic data generator.
+        size_t multinomial_k = 5;
+
+        // TODO: Valid distargs for all types
+        std::vector<std::vector<double>> distargs;
+        if(datatype_conv == baxcat::datatype::continuous){
+            distargs = {{0}};
+        }else if(datatype_conv == baxcat::datatype::categorical){
+            distargs = {{static_cast<double>(multinomial_k)}};
+        }
+
         baxcat::SyntheticDataGenerator sdg(num_rows, view_weights, category_weights,
-            category_separation, datatypes, seed);
+                                           category_separation, datatypes, seed);
 
-        // get synthetic data
         auto x_orig = sdg.getData();
-
-        // create a state and run transitions
-        baxcat::State state(x_orig, datatypes, {}, 0);
+        
+        baxcat::State state(x_orig, datatypes, distargs, 0);
         state.transition({},{},{},0,num_transitions);
 
         // FIXME: when unobserved sample is implemented, use unobserved query
         std::vector<std::vector<size_t>> query(num_rows);
         for(size_t i = 0; i < num_rows; ++i)
             query[i] = {i,0};
-        // std::vector<std::vector<size_t>> query = {{num_rows,0}};
 
         auto x_predict_raw = state.predictiveDraw(query,{},{},num_rows);
 
@@ -337,47 +361,108 @@ namespace test_utils{
         ss << num_clusters << "-cluster, 1-columns " << datatype << " inference (sep=";
         ss << separation << ")";
 
-        // plot results
-        mglGraph gr;
-        gr.SetSize(1000,1000);
-        gr.SubPlot(2,2,0);
-        double ks_stat = baxcat::test_utils::twoSampleKSTest(x_orig[0], x_predict, true, &gr,
-            ss.str());
+        // If categorical, compile into counts and compute expected counts from SDG
 
-        gr.SubPlot(2,2,1);
-        baxcat::plotting::hist(&gr, x_orig[0], 30, "Original Data");
+        if(datatype_conv == baxcat::datatype::categorical){
+            std::vector<double> original_data(multinomial_k, 0);
+            std::vector<double> counts_observed(multinomial_k, 0);
+            for(auto &x : x_orig[0]){
+                size_t idx = static_cast<size_t>(x + .5);
+                ++original_data[idx];
+            }
+            for(auto &x : x_predict){
+                size_t idx = static_cast<size_t>(x + .5);
+                ++counts_observed[idx];
+            }
 
-        gr.SubPlot(2,2,2);
-        baxcat::plotting::hist(&gr, x_predict, 30, "Sampled Data");
+            double scale = static_cast<double>(num_rows);
 
-        // get range for pdf plotting
-        auto x_min = baxcat::utils::vector_min(x_orig[0]);
-        auto x_max = baxcat::utils::vector_max(x_orig[0]);
+            std::vector<double> f_true(multinomial_k, 0);
+            std::vector<double> f_inferred(multinomial_k, 0);
+            std::vector<double> counts_expected(multinomial_k, 0);
 
-        auto X = baxcat::utils::linspace(x_min,x_max,200);
+            for(size_t k = 0; k < multinomial_k; ++k){
+                double x = static_cast<double>(k);
+                f_true[k] = exp(sdg.logLikelihood({x}, 0)[0]);
+                counts_expected[k] = f_true[k]*scale;
+                auto fx = state.predictiveLogp({{num_rows, 0}}, {x}, {}, {});
+                f_inferred[k] = exp(fx[0]);
+            }
 
-        // get pdfs
-        gr.SubPlot(2,2,3);
-        auto f_orignal = sdg.logLikelihood(X, 0);
-        for( auto &f : f_orignal)
-            f = exp(f);
+            ASSERT(std::cout, fabs(baxcat::utils::sum(counts_expected)-scale) < .1);
+            ASSERT(std::cout, fabs(baxcat::utils::sum(counts_observed)-scale) < .1);
 
-        std::vector<double> f_inferred;
-        for (auto x : X){
-            auto fx = state.predictiveLogp({{num_rows,0}}, {x}, {}, {});
-            f_inferred.push_back( exp(fx[0]) );
+            // uses observed counts rather than expected counts because the observed counts can be
+            // arr often different enough from the true distribution to throw off the Chi-square 
+            // test
+            double chi_sqared_stat = chi2Stat(counts_observed, original_data);
+            double df = static_cast<double>(multinomial_k)-1;
+            bool distributions_differ = (1-numerics::rgamma(chi_sqared_stat/2, df/2)) < .05;
+
+            mglGraph gr;
+            gr.SetSize(1000, 1000);
+
+            gr.SubPlot(2, 2, 0);
+            baxcat::plotting::hist(&gr, f_true, multinomial_k, "True distribution", true);
+
+            gr.SubPlot(2, 2, 1);
+            baxcat::plotting::hist(&gr, f_inferred, multinomial_k, "Inferred distribution", true);
+
+            gr.SubPlot(2, 2, 2);
+            baxcat::plotting::hist(&gr, original_data, multinomial_k, "Original Data", true);
+
+            gr.SubPlot(2, 2, 3);
+            baxcat::plotting::hist(&gr, counts_observed, multinomial_k, "Sampled Data", true);
+            gr.WriteFrame(filename.c_str());
+
+            return distributions_differ;
+
+        }else{
+            // plot results
+            mglGraph gr;
+            gr.SetSize(1000, 1000);
+            gr.SubPlot(2, 2, 0);
+            double ks_stat = baxcat::test_utils::twoSampleKSTest(x_orig[0], x_predict, true, &gr,
+                ss.str());
+
+            gr.SubPlot(2, 2, 1);
+            baxcat::plotting::hist(&gr, x_orig[0], 30, "Original Data");
+
+            gr.SubPlot(2, 2, 2);
+            baxcat::plotting::hist(&gr, x_predict, 30, "Sampled Data");
+
+            // get range for pdf plotting
+            auto x_min = baxcat::utils::vector_min(x_orig[0]);
+            auto x_max = baxcat::utils::vector_max(x_orig[0]);
+
+            auto X = baxcat::utils::linspace(x_min, x_max, 200);
+
+            // get pdfs
+            gr.SubPlot(2, 2, 3);
+            auto f_orignal = sdg.logLikelihood(X, 0);
+            for( auto &f : f_orignal)
+                f = exp(f);
+
+            std::vector<double> f_inferred;
+            for (auto x : X){
+                auto fx = state.predictiveLogp({{num_rows,0}}, {x}, {}, {});
+                f_inferred.push_back( exp(fx[0]) );
+            }
+
+            baxcat::plotting::compPlot(&gr, X, f_orignal, f_inferred, "original vs inferred pdf");
+
+            bool distributions_differ = baxcat::test_utils::ksTestRejectNull(ks_stat, num_rows, num_rows);
+
+            // __output_ks_test_result(distributions_differ, ks_stat, ss.str());
+
+            gr.WriteFrame(filename.c_str());
+
+            return distributions_differ;
         }
 
-        baxcat::plotting::compPlot(&gr, X, f_orignal, f_inferred, "original vs inferred pdf");
+        
 
-        // get and output test results
-        bool distributions_differ = baxcat::test_utils::ksTestRejectNull(ks_stat, num_rows, num_rows);
-
-        // __output_ks_test_result(distributions_differ, ks_stat, ss.str());
-
-        gr.WriteFrame(filename.c_str());
-
-        return distributions_differ;
+        
     }
 
 }} // end namespaces

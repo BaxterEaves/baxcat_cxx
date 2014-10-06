@@ -30,7 +30,7 @@ namespace multinomial{
 
 
 template <typename T>
-static typename baxcat::enable_if<std::is_integral<T>,double> suffstatInsert(T x,
+static typename baxcat::enable_if<std::is_integral<T>,void> suffstatInsert(T x,
     std::vector<T> &counts)
 {
     ++counts[x];
@@ -38,7 +38,7 @@ static typename baxcat::enable_if<std::is_integral<T>,double> suffstatInsert(T x
 
 
 template <typename T>
-static typename baxcat::enable_if<std::is_integral<T>,double> suffstatRemove(T x,
+static typename baxcat::enable_if<std::is_integral<T>,void> suffstatRemove(T x,
 std::vector<T> &counts)
 {
     --counts[x];

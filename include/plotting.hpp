@@ -25,6 +25,7 @@
 #include <mgl2/mgl.h> // MathGL plotting
 
 #include "utils.hpp"
+#include "debug.hpp"
 
 namespace baxcat { namespace plotting{
 
@@ -49,24 +50,42 @@ namespace baxcat { namespace plotting{
 	}
 
 
-	static void hist(mglGraph *gr, std::vector<double> X, size_t n_bins, std::string title=" ")
+	static void hist(mglGraph *gr, std::vector<double> X, size_t n_bins, std::string title=" ",
+				   	 bool already_binned=false)
 	{
 		std::vector<double> counts;
 		std::vector<double> edges;
 
-		__buildHistogram(X, counts, edges, n_bins);
-
-		// convert vectors to mglData
-		mglData edges_plt;
-		double* edges_ptr = &edges[0];
-		edges_plt.Set(edges_ptr, n_bins);
-
-		mglData counts_plt;
-		double* counts_ptr = &counts[0];
-		counts_plt.Set(counts_ptr, n_bins);
-
 		gr->Title(title.c_str());
-		gr->SetRanges(edges_plt, counts_plt);
+
+		mglData edges_plt;
+		mglData counts_plt;
+
+		if(not already_binned){
+			__buildHistogram(X, counts, edges, n_bins);
+			// convert vectors to mglData
+			
+			edges_plt.Set(&edges[0], n_bins);
+			counts_plt.Set(&counts[0], n_bins);
+
+			gr->SetRanges(edges_plt, counts_plt);
+
+		}else{
+			double K = static_cast<double>(n_bins);
+			edges = baxcat::utils::linspace(1, K, n_bins);
+			counts = X;
+
+			ASSERT_EQUAL(std::cout, n_bins, counts.size());
+			ASSERT_EQUAL(std::cout, edges.size(), counts.size());
+
+			// convert vectors to mglData
+			edges_plt.Set(&edges[0], n_bins);
+			counts_plt.Set(&counts[0], n_bins);
+
+			double y_max = baxcat::utils::vector_max(counts);
+			gr->SetRanges(0, K+1, 0, y_max*1.1);
+		}
+		
 		gr->Axis();
 		gr->Bars(edges_plt, counts_plt);
 	}

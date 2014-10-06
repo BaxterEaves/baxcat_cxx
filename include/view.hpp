@@ -38,16 +38,16 @@ class View{
 public:
     // Constructors
     // // We don't always need to supply features, we can push them in later
-    View( baxcat::PRNG &rng );
-    View( std::vector< std::shared_ptr<BaseFeature> > features, baxcat::PRNG *rng );
-    View( std::vector< std::shared_ptr<BaseFeature> > features, baxcat::PRNG *rng, double alpha,
-        std::vector<size_t> row_assignment );
+    View(baxcat::PRNG &rng);
+    View(std::vector< std::shared_ptr<BaseFeature> > features, baxcat::PRNG *rng);
+    View(std::vector< std::shared_ptr<BaseFeature> > features, baxcat::PRNG *rng, double alpha,
+         std::vector<size_t> row_assignment={});
 
     // Transitions
     // reassign all rows to categories
     void transitionRows();
     // reassign row
-    void transitionRow( size_t row, bool assign_to_max_p_cluster=false );
+    void transitionRow(size_t row, bool assign_to_max_p_cluster=false);
     // resample CRP parameter
     void transitionCRPAlpha();
 
@@ -64,9 +64,9 @@ public:
     void releaseFeature( size_t feature_index);
 
     // setters
-    void setRowAssignment( std::vector<size_t> new_row_assignment );
-    void appendRow(std::vector<double> data, std::vector<size_t> indices,
-        bool assign_to_max_p_cluster=false);
+    void setRowAssignment(std::vector<size_t> new_row_assignment);
+    void appendRow(std::vector<double> data, std::vector<size_t> indices, 
+                   bool assign_to_max_p_cluster=false);
     void popRow();
 
     // getters

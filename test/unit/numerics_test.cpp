@@ -142,6 +142,17 @@ BOOST_AUTO_TEST_CASE(test_kl_divergence_values_against_normal_closed_form){
     BOOST_CHECK_CLOSE_FRACTION(estimated_kl, true_kl, TOL);
 }
 
+BOOST_AUTO_TEST_CASE(kl_divergence_discrete_value_checks){
+    std::vector<double> p = {-2.30258509299405, -1.6094379124341, -1.20397280432594,
+                             -0.916290731874155};
+    std::vector<double> q = {-0.693147180559945, -2.30258509299405, -1.20397280432594,
+                             -2.30258509299405};
+
+    double kl = baxcat::numerics:: discretekl(p, q);
+
+    BOOST_CHECK_CLOSE_FRACTION(1.3828732675393, kl, TOL);
+}
+
 // lcrp
 //`````````````````````````````````````````````````````````````````````````````````````````````````
 BOOST_AUTO_TEST_CASE(lcrp_value_checks){
@@ -180,6 +191,18 @@ BOOST_AUTO_TEST_CASE(logsumexp_value_checks){
     val = baxcat::numerics::logsumexp(v3);
     BOOST_CHECK_CLOSE_FRACTION(val, -8.82420447065017, TOL);
 }
+
+// rgamma
+// ````````````````````````````````````````````````````````````````````````````````````````````````
+BOOST_AUTO_TEST_CASE(rgamma_value_checks){
+    BOOST_CHECK_CLOSE_FRACTION(0.773025454471811, baxcat::numerics::rgamma(4.2, 3.1), TOL);
+    BOOST_CHECK_CLOSE_FRACTION(0.0282303939648657, baxcat::numerics::rgamma(100, 120), TOL);
+    double x = 1.2;
+    double df = 4;
+    // Chi-square CDF
+    BOOST_CHECK_CLOSE_FRACTION(0.121901382249558, baxcat::numerics::rgamma(x/2, df/2), TOL);
+}
+
 
 
 BOOST_AUTO_TEST_SUITE_END()

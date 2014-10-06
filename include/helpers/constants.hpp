@@ -40,6 +40,23 @@ enum datatype{
     cyclic,         // von mises, von misses-inverse gamma
 };
 
+static std::map<std::string, std::vector<double>> geweke_default_hypers = {
+    {"continuous", {0, 1, 10, 10}},
+    {"categorical", {1}}
+};
+
+static std::map<std::string, std::vector<double>> geweke_default_hyperprior_config = {
+    {"continuous", {0, .1, 10, .1, 40, .25, 40, .25}},
+    {"categorical", {10}}
+};
+
+static std::map<std::string, std::vector<double>> geweke_default_distargs = {
+    {"continuous", {0}},
+    {"categorical", {5}}
+};
+
+static double geweke_default_alpha = 1;
+
 }
 
 #endif

@@ -88,8 +88,8 @@ BOOST_AUTO_TEST_CASE(test_r_posterior_update_single)
     // m conditionals
     auto config = Continuous::constructHyperpriorConfig(feature.X);
 
-    double w = config[2];
-    double x_0 = 1/config[2];
+    double w = config[2]*config[3];
+    double x_0 = config[2]*config[3]*config[3]/2;
     double ks_stat;
 
     auto log_fr = Continuous::constructRConditional(feature.models, config);
@@ -109,8 +109,8 @@ BOOST_AUTO_TEST_CASE(test_s_posterior_update_single)
     auto config = Continuous::constructHyperpriorConfig(feature.X);
     auto log_fs = Continuous::constructSConditional(feature.models, config);
 
-    double w = config[3];
-    double x_0 = config[3];
+    double w = config[4]*config[5];
+    double x_0 = config[4]*config[5]*config[5]/2;
     double ks_stat;
 
     ks_stat = baxcat::test_utils::testHyperparameterSampler(log_fs, x_0, {ALMOST_ZERO,INF},
@@ -126,10 +126,10 @@ BOOST_AUTO_TEST_CASE(test_nu_posterior_update_single)
 
     // m conditionals
     auto config = Continuous::constructHyperpriorConfig(feature.X);
-    auto log_fnu = Continuous::constructNuConditional(feature.models);
+    auto log_fnu = Continuous::constructNuConditional(feature.models, config);
 
-    double w = 1;
-    double x_0 = 1;
+    double w = config[6]*config[7];
+    double x_0 = config[6]*config[7]*config[7]/2;
     double ks_stat;
 
     ks_stat = baxcat::test_utils::testHyperparameterSampler(log_fnu, x_0, {ALMOST_ZERO,INF},
@@ -167,8 +167,8 @@ BOOST_AUTO_TEST_CASE(test_r_posterior_update_multiple)
     // m conditionals
     auto config = Continuous::constructHyperpriorConfig(feature.X);
 
-    double w = 1/config[2];
-    double x_0 = 1/config[2];
+    double w = config[2]*config[3];
+    double x_0 = config[2]*config[3]*config[3]/2;
     double ks_stat;
 
     auto log_fr = Continuous::constructRConditional(feature.models, config);
@@ -188,8 +188,8 @@ BOOST_AUTO_TEST_CASE(test_s_posterior_update_multiple)
     auto config = Continuous::constructHyperpriorConfig(feature.X);
     auto log_fs = Continuous::constructSConditional(feature.models, config);
 
-    double w = config[3];
-    double x_0 = config[3];
+    double w = config[4]*config[5];
+    double x_0 = config[4]*config[5]*config[5]/2;
     double ks_stat;
 
     ks_stat = baxcat::test_utils::testHyperparameterSampler(log_fs, x_0, {ALMOST_ZERO,INF},
@@ -205,10 +205,10 @@ BOOST_AUTO_TEST_CASE(test_nu_posterior_update_multiple)
 
     // m conditionals
     auto config = Continuous::constructHyperpriorConfig(feature.X);
-    auto log_fnu = Continuous::constructNuConditional(feature.models);
+    auto log_fnu = Continuous::constructNuConditional(feature.models, config);
 
-    double w = 1;
-    double x_0 = 1;
+    double w = config[6]*config[7];
+    double x_0 = config[6]*config[7]*config[7]/2;
     double ks_stat;
 
     ks_stat = baxcat::test_utils::testHyperparameterSampler(log_fnu, x_0, {ALMOST_ZERO,INF},

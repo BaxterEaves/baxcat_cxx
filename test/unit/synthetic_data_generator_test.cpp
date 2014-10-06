@@ -31,9 +31,11 @@ BOOST_AUTO_TEST_SUITE (test_synthetic_data_generator)
 using std::vector;
 using std::string;
 
+
 // Constructors
 // ````````````````````````````````````````````````````````````````````````````````````````````````
-BOOST_AUTO_TEST_CASE(verify_constructor_zero_one_column){
+BOOST_AUTO_TEST_CASE(verify_constructor_zero_one_column)
+{
     size_t num_rows = 10;
     vector<string> datatypes = {"continuous"};
     size_t seed = 10;
@@ -46,7 +48,9 @@ BOOST_AUTO_TEST_CASE(verify_constructor_zero_one_column){
     BOOST_REQUIRE_EQUAL( data[0].size(), num_rows );
 }
 
-BOOST_AUTO_TEST_CASE(verify_constructor_zero_two_column){
+
+BOOST_AUTO_TEST_CASE(verify_constructor_zero_two_column)
+{
     size_t num_rows = 10;
     vector<string> datatypes = {"continuous","continuous"};
     size_t seed = 10;
@@ -60,7 +64,9 @@ BOOST_AUTO_TEST_CASE(verify_constructor_zero_two_column){
     BOOST_REQUIRE_EQUAL( data[1].size(), num_rows );
 }
 
-BOOST_AUTO_TEST_CASE(verify_constructor_one_view_one_cluster_continuous){
+
+BOOST_AUTO_TEST_CASE(verify_constructor_one_view_one_cluster_continuous)
+{
     size_t num_rows = 10;
     vector<double> view_weights = {1};
     vector<vector<double>> category_weights = {{1}};
@@ -78,7 +84,9 @@ BOOST_AUTO_TEST_CASE(verify_constructor_one_view_one_cluster_continuous){
     BOOST_REQUIRE_EQUAL( data[0].size(), num_rows );
 }
 
-BOOST_AUTO_TEST_CASE(verify_constructor_two_columns_continuous){
+
+BOOST_AUTO_TEST_CASE(verify_constructor_two_columns_continuous)
+{
     size_t num_rows = 10;
     vector<double> view_weights = {1};
     vector<vector<double>> category_weights = {{1}};
@@ -97,7 +105,9 @@ BOOST_AUTO_TEST_CASE(verify_constructor_two_columns_continuous){
     BOOST_REQUIRE_EQUAL( data[1].size(), num_rows );
 }
 
-BOOST_AUTO_TEST_CASE(verify_constructor_one_view_two_cluster_continuous){
+
+BOOST_AUTO_TEST_CASE(verify_constructor_one_view_two_cluster_continuous)
+{
     size_t num_rows = 10;
     vector<double> view_weights = {1};
     vector<vector<double>> category_weights = {{.5,.5}};
@@ -115,7 +125,9 @@ BOOST_AUTO_TEST_CASE(verify_constructor_one_view_two_cluster_continuous){
     BOOST_REQUIRE_EQUAL( data[0].size(), num_rows );
 }
 
-BOOST_AUTO_TEST_CASE(verify_constructor_two_views_two_cluster_continuous){
+
+BOOST_AUTO_TEST_CASE(verify_constructor_two_views_two_cluster_continuous)
+{
     size_t num_rows = 10;
     vector<double> view_weights = {.5,.5};
     vector<vector<double>> category_weights = {{.5,.5},{.5,.5}};
@@ -134,9 +146,11 @@ BOOST_AUTO_TEST_CASE(verify_constructor_two_views_two_cluster_continuous){
     BOOST_REQUIRE_EQUAL( data[1].size(), num_rows );
 }
 
+
 // Weighted partition function
 // ````````````````````````````````````````````````````````````````````````````````````````````````
-BOOST_AUTO_TEST_CASE(verify_partition_generator){
+BOOST_AUTO_TEST_CASE(verify_partition_generator)
+{
     size_t num_rows = 10;
     vector<double> view_weights = {1};
     vector<vector<double>> category_weights = {{1}};
@@ -168,8 +182,10 @@ BOOST_AUTO_TEST_CASE(verify_partition_generator){
 
 }
 
+
 // Categorical
-BOOST_AUTO_TEST_CASE(verify_constructor_one_view_one_cluster_categorical){
+BOOST_AUTO_TEST_CASE(verify_constructor_one_view_one_cluster_categorical)
+{
     size_t num_rows = 10;
     vector<double> view_weights = {1};
     vector<vector<double>> category_weights = {{1}};
@@ -187,7 +203,9 @@ BOOST_AUTO_TEST_CASE(verify_constructor_one_view_one_cluster_categorical){
     BOOST_REQUIRE_EQUAL( data[0].size(), num_rows );
 }
 
-BOOST_AUTO_TEST_CASE(verify_constructor_two_columns_categorical){
+
+BOOST_AUTO_TEST_CASE(verify_constructor_two_columns_categorical)
+{
     size_t num_rows = 10;
     vector<double> view_weights = {1};
     vector<vector<double>> category_weights = {{1}};
@@ -206,7 +224,9 @@ BOOST_AUTO_TEST_CASE(verify_constructor_two_columns_categorical){
     BOOST_REQUIRE_EQUAL( data[1].size(), num_rows );
 }
 
-BOOST_AUTO_TEST_CASE(verify_constructor_one_view_two_cluster_categorical){
+
+BOOST_AUTO_TEST_CASE(verify_constructor_one_view_two_cluster_categorical)
+{
     size_t num_rows = 10;
     vector<double> view_weights = {1};
     vector<vector<double>> category_weights = {{.5,.5}};
@@ -224,7 +244,9 @@ BOOST_AUTO_TEST_CASE(verify_constructor_one_view_two_cluster_categorical){
     BOOST_REQUIRE_EQUAL( data[0].size(), num_rows );
 }
 
-BOOST_AUTO_TEST_CASE(verify_constructor_two_views_two_cluster_categorical){
+
+BOOST_AUTO_TEST_CASE(verify_constructor_two_views_two_cluster_categorical)
+{
     size_t num_rows = 10;
     vector<double> view_weights = {.5,.5};
     vector<vector<double>> category_weights = {{.5,.5},{.5,.5}};

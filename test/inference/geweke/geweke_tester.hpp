@@ -18,13 +18,13 @@
 #ifndef baxcat_cxx_geweke_tester_guard
 #define baxcat_cxx_geweke_tester_guard
 
+#include <map>
 #include <string>
 #include <vector>
 #include <random>
 #include <cassert>
 #include <utility>
 #include <mgl2/mgl.h> // MathGL plotting
-#include <map>
 
 #include "state.hpp"
 #include "utils.hpp"
@@ -39,7 +39,9 @@ class GewekeTester
 {
 public:
     // generate state with all continuous data
-    GewekeTester(size_t num_rows, size_t num_cols, unsigned int seed);
+    GewekeTester(size_t num_rows, size_t num_cols, std::vector<std::string> datatypes, 
+                 unsigned int seed, bool do_hypers=true, bool do_row_alpha=true,
+                 bool do_col_alpha=true);
 
     // TODO: implement generate state with mixed datatypes
     // GewekeTester(size_t num_rows, std::vector<string> datatypes, size_t seed);
@@ -51,24 +53,30 @@ public:
     void outputResults();
 
     template <typename T>
-    static std::vector<std::string> __getMapKeys(std::map<std::string, T> map_in);
+    std::vector<std::string> __getMapKeys(std::map<std::string, T> map_in);
 
     template <typename T>
-    static std::vector<double> __getDataStats(const std::vector<T> &data, bool is_categorial);
+    std::vector<double> __getDataStats(const std::vector<T> &data, size_t categorial_k);
 
-    static void __updateStats( const baxcat::State &state, std::vector<double> &state_crp_alpha,
+    void __updateStats( const baxcat::State &state, std::vector<double> &state_crp_alpha,
         std::vector<std::map<std::string, std::vector<double>>> &all_stats);
 
-    static void __initStats( const baxcat::State &state, std::vector<double> &state_crp_alpha,
+    void __initStats( const baxcat::State &state, std::vector<double> &state_crp_alpha,
         std::vector<std::map<std::string, std::vector<double>>> &all_stats);
 
 private:
+    std::vector<std::string> _transition_list;
+    
     size_t _num_cols;
+    size_t _num_rows;
+
+    bool _do_hypers;
+    bool _do_row_alpha;
+    bool _do_col_alpha;
 
     baxcat::State _state;
 
-    std::vector<std::vector<double>> _seed_data;
-    std::vector<std::vector<double>> _seed_args;
+    std::vector<std::vector<double>> _distargs;
     std::vector<std::string> _datatypes;
 
     std::vector<double> _state_crp_alpha_forward;

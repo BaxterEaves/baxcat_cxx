@@ -28,7 +28,7 @@ namespace baxcat{
 // todo: add more complete constructors (alphas)
 State::State(vector<vector<double>> X, vector<string> datatypes, vector<vector<double>> distargs,
              unsigned int rng_seed )
-    : _rng(shared_ptr<PRNG>(new PRNG(rng_seed)))
+    : _rng(shared_ptr<PRNG>(new PRNG(rng_seed))), _crp_alpha_config({1, 1}), _view_alpha_marker(-1)
 {
     _num_columns = X.size();
     _num_rows = X[0].size();
@@ -36,7 +36,7 @@ State::State(vector<vector<double>> X, vector<string> datatypes, vector<vector<d
     _features = helpers::genFeatures(X, datatypes, distargs, _rng.get());
 
     // generate alpha
-    _crp_alpha = _rng->gamrand(1, 1);
+    _crp_alpha = _rng->gamrand(_crp_alpha_config[0], _crp_alpha_config[1]);
 
     // generate partitions;
     _rng.get()->crpGen(_crp_alpha, _num_columns, _column_assignment, _num_views, _view_counts);
@@ -56,8 +56,9 @@ State::State(vector<vector<double>> X, vector<string> datatypes, vector<vector<d
 
 State::State(vector<vector<double>> X, vector<string> datatypes, vector<vector<double>> distargs,
              unsigned int rng_seed, vector<size_t> Zv, vector<vector<size_t>> Zrcv,
-             vector<map<string, double>> hypers_maps )
-    : _column_assignment(Zv), _rng(shared_ptr<PRNG>(new PRNG(rng_seed)))
+             vector<map<string, double>> hypers_maps)
+    : _column_assignment(Zv), _rng(shared_ptr<PRNG>(new PRNG(rng_seed))), 
+      _crp_alpha_config({1, 1}), _view_alpha_marker(-1)
 {
     _num_columns = X.size();
     _num_rows = X[0].size();
@@ -65,7 +66,7 @@ State::State(vector<vector<double>> X, vector<string> datatypes, vector<vector<d
     _feature_types = helpers::getDatatypes(datatypes);
     _features = helpers::genFeatures(X, datatypes, distargs, _rng.get());
 
-    _crp_alpha = _rng->gamrand(1, 1);
+    _crp_alpha = _rng->gamrand(_crp_alpha_config[0], _crp_alpha_config[1]);
 
     _num_views = utils::vector_max(_column_assignment)+1;
     _view_counts.resize(_num_views,0);
@@ -85,11 +86,48 @@ State::State(vector<vector<double>> X, vector<string> datatypes, vector<vector<d
     if(!hypers_maps.empty()){
         assert(hypers_maps.size() == _features.size());
         for (size_t f=0; f < hypers_maps.size(); ++f) {
-            _features[f].get()->setHypersByMap(hypers_maps[f]);
+            _features[f].get()->setHypers(hypers_maps[f]);
         }
     }
 }
 
+
+State::State(size_t num_rows, vector<string> datatypes, vector<vector<double>> distargs, 
+             bool fix_hypers, bool fix_row_alpha, bool fix_col_alpha)
+    : _num_rows(num_rows), _num_columns(datatypes.size()),  _rng(shared_ptr<PRNG>(new PRNG()))
+{
+    _crp_alpha_config = {5, .2};
+
+    _view_alpha_marker = fix_row_alpha ? baxcat::geweke_default_alpha : -1;
+
+    if(fix_col_alpha){
+        _crp_alpha = baxcat::geweke_default_alpha;
+    }else{
+        _crp_alpha = _rng->gamrand(_crp_alpha_config[0], _crp_alpha_config[1]);
+    }
+
+    // generate partitions
+    _rng.get()->crpGen(_crp_alpha, _num_columns, _column_assignment, _num_views, _view_counts);
+
+    vector<vector<double>> X;
+    vector<double> Y(num_rows, NAN);
+    for(size_t col = 0; col < _num_columns; ++col)
+        X.push_back(Y);
+
+    _feature_types = helpers::getDatatypes(datatypes);
+    _features = helpers::genFeatures(X, datatypes, distargs, _rng.get(), true, fix_hypers);
+
+    // create views
+    vector<vector<shared_ptr<BaseFeature>>> view_features(_num_views);
+
+    for( size_t i = 0; i < _num_columns; ++i){
+        auto v = _column_assignment[i];
+        view_features[v].push_back(_features[i]);
+    }
+
+    for(size_t v = 0; v < _num_views; ++v)
+        _views.push_back(View(view_features[v], _rng.get(), _view_alpha_marker, {}));
+}
 
 // probability
 //`````````````````````````````````````````````````````````````````````````````````````````````````
@@ -253,9 +291,9 @@ void State::transition(vector< string > which_transitions, vector<size_t> which_
     for(int i = 0; i < N; ++i){
         if (do_shuffle)
             t_list = _rng.get()->shuffle(t_list);
-        for( auto transition: t_list){
+
+        for( auto transition: t_list)
             __doTransition(transition, which_rows, which_cols, which_kernel);
-        }
     }
 }
 
@@ -299,12 +337,15 @@ void State::__transitionStateCRPAlpha()
     double k = _num_views;
     double n = _num_columns;
 
-    auto log_crp_posterior = [k, n](double x){
-        return numerics::lcrpUNormPost(k, n, x) + dist::gamma::logPdf(x,1,1);
+    double alpha_shape = _crp_alpha_config[0];
+    double alpha_scale = _crp_alpha_config[1];
+
+    auto log_crp_posterior = [alpha_shape, alpha_scale, k, n](double x){
+        return numerics::lcrpUNormPost(k, n, x) + dist::gamma::logPdf(x, alpha_shape, alpha_scale);
     };
 
-    double slice_width = 2.0; // this is a guess
-    size_t burn = 30;
+    double slice_width = alpha_shape*alpha_scale*alpha_scale/2;  // this is a guess
+    size_t burn = 25;
 
     // slice sample
     _crp_alpha = samplers::sliceSample(_crp_alpha, log_crp_posterior, {0, INF},
@@ -374,26 +415,26 @@ void State::__transitionColumnAssignment(vector<size_t> which_cols, size_t which
 
 
 // column transition kernels
-// ````````````````````````````````````````````````````````````````````````````
-// FIXME: add m parameter (controls number of singletons)
-void State::__transitionColumnAssignmentGibbs(size_t col)
+// ````````````````````````````````````````````````````````````````````````````````````````````````
+void State::__transitionColumnAssignmentGibbs(size_t col, size_t m)
 {
-    double log_crp_denom = log(double(_num_columns-1) + _crp_alpha);
+    // double log_crp_denom = log(double(_num_columns-1) + _crp_alpha);
 
     auto view_index_current = _column_assignment[col];
     bool is_singleton = (_view_counts[view_index_current] == 1);
 
     vector<double> log_crps(_num_views,0);
     for(size_t v = 0; v < _num_views; ++v)
-        log_crps[v] = log(double(_view_counts[v])) - log_crp_denom;
+        log_crps[v] = log(double(_view_counts[v]));
 
     if (is_singleton){
-        log_crps[view_index_current] = log(_crp_alpha) - log_crp_denom;
+        log_crps[view_index_current] = log(_crp_alpha);
     }else{
         --log_crps[view_index_current];
         log_crps.push_back(_crp_alpha);
     }
 
+    // TODO: optimization: preallocate
     vector<double> logps;
 
     auto feature = _features[col];
@@ -407,14 +448,20 @@ void State::__transitionColumnAssignmentGibbs(size_t col)
     // if this is not already a singleton view, we must propose a singleton
     if(!is_singleton){
         vector<shared_ptr<BaseFeature>> fvec = {feature};
-        View proposal_view(fvec, _rng.get());
-        double logp = feature.get()->logp()+log_crps.back();
-        logps.push_back(logp);
+        vector<View> view_holder;
+        double log_m = log(static_cast<double>(m));
+        for(size_t i = 0; i < m; ++i){
+            View proposal_view(fvec, _rng.get(), _view_alpha_marker, {});
+            view_holder.push_back(proposal_view);
+            double logp = feature.get()->logp()+log_crps.back()-log_m;
+            logps.push_back(logp);
+        }
 
         auto view_index_new = _rng.get()->lpflip(logps);
 
         if (view_index_new != view_index_current){
-            if (view_index_new == _num_views) {
+            if (view_index_new >= _num_views){
+                auto proposal_view = view_holder[view_index_new-_num_views];
                 __createSingletonView(col, view_index_current, proposal_view);
             }else{
                 __moveFeatureToView(col, view_index_current, view_index_new);
@@ -578,7 +625,7 @@ vector<map<string, double>> State::getColumnHypers() const
 vector<vector<map<string, double>>> State::getSuffstats() const
 {
     vector<vector<map<string, double>>> feature_suffstats;
-    for(auto feature : _features)
+    for(auto &feature : _features)
         feature_suffstats.push_back(feature.get()->getModelSuffstats());
 
     return feature_suffstats;
@@ -605,6 +652,18 @@ double State::getStateCRPAlpha() const
 void State::setHyperConfig(size_t column_index, std::vector<double> hyperprior_config)
 {
     _features[column_index].get()->setHyperConfig(hyperprior_config);
+}
+
+
+void State::setHypers(size_t column_index, std::map<std::string, double> hypers_map)
+{
+    _features[column_index].get()->setHypers(hypers_map);
+}
+
+
+void State::setHypers(size_t column_index, std::vector<double> hypers_vec)
+{
+    _features[column_index].get()->setHypers(hypers_vec);
 }
 
 
@@ -638,6 +697,7 @@ void State::__geweke_resampleRow(size_t which_row)
 
 void State::__geweke_resampleRows()
 {
+
     vector<size_t> rows(_num_rows);
     for(size_t i = 0; i < _num_rows; i++)
         rows[i] = i;
@@ -646,13 +706,6 @@ void State::__geweke_resampleRows()
 
     for(size_t i = 0; i < _num_rows; i++)
         __geweke_resampleRow(rows[i]);
-}
-
-
-void State::__geweke_initHypers()
-{
-    for(size_t f = 0; f < _num_columns; ++f)
-        _features[f].get()->__geweke_initHypers();
 }
 
 
