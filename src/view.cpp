@@ -23,7 +23,7 @@ using std::shared_ptr;
 namespace baxcat{
 
 
-View::View(vector< shared_ptr<BaseFeature> > feature_vec, PRNG *rng)
+View::View(vector< shared_ptr<BaseFeature> > &feature_vec, PRNG *rng)
     : _rng(rng)
 {
     _num_rows = feature_vec[0].get()->getN();
@@ -35,14 +35,14 @@ View::View(vector< shared_ptr<BaseFeature> > feature_vec, PRNG *rng)
     _rng->crpGen(_crp_alpha, _num_rows, _row_assignment, _num_clusters, _cluster_counts);
 
     // build features tree (insert and reassign)
-    for(auto f: feature_vec){
+    for(auto &f: feature_vec){
         _features.insert(f);
         f.get()->reassign(_row_assignment);
     }
 }
 
 
-View::View(vector< shared_ptr<BaseFeature> > feature_vec, PRNG *rng, double crp_alpha,
+View::View(vector< shared_ptr<BaseFeature> > &feature_vec, PRNG *rng, double crp_alpha,
            vector<size_t> row_assignment)
     : _rng(rng), _row_assignment(row_assignment)
 {
@@ -57,12 +57,12 @@ View::View(vector< shared_ptr<BaseFeature> > feature_vec, PRNG *rng, double crp_
         // build partitions
         _num_clusters = utils::vector_max(_row_assignment)+1;
         _cluster_counts.resize(_num_clusters, 0);
-        for( size_t z : _row_assignment)
+        for(size_t &z : _row_assignment)
             _cluster_counts[z]++;
     }
 
     // build features tree (insert and reassign)
-    for(auto f: feature_vec){
+    for(auto &f: feature_vec){
         _features.insert(f);
         f.get()->reassign(_row_assignment);
     }
@@ -107,7 +107,7 @@ void View::transitionRows()
 
 void View::transitionRow(size_t row, bool assign_to_max_p_cluster)
 {
-    double log_crp_denom = log(double(_num_rows-1) + _crp_alpha);
+    // double log_crp_denom = log(double(_num_rows-1) + _crp_alpha);
     double log_alpha = log(_crp_alpha);
 
     size_t assign_start = _row_assignment[row];
@@ -132,12 +132,12 @@ void View::transitionRow(size_t row, bool assign_to_max_p_cluster)
             log_crp_numer = log(double(_cluster_counts[k]));
         }
 
-        lp += (log_crp_numer - log_crp_denom);
+        lp += log_crp_numer;
         logps[k] = lp;
     }
     // if it's not already in a singleton, we need to propose one
     if(!is_singleton){
-        double lp = rowSingletonLogp(row) + log_alpha - log_crp_denom;
+        double lp = rowSingletonLogp(row) + log_alpha;
         logps.back() = lp;
     }
 
@@ -237,7 +237,7 @@ void View::__moveRowToCluster(size_t row, size_t move_from, size_t move_to)
 
 // adding and removing dims
 // ````````````````````````````````````````````````````````````````````````````````````````````````
-void View::assimilateFeature(std::shared_ptr<BaseFeature> feature)
+void View::assimilateFeature(std::shared_ptr<BaseFeature> &feature)
 {
     feature.get()->reassign(_row_assignment);
     _features.insert( feature );
