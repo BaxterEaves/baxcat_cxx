@@ -39,8 +39,8 @@ public:
     // Constructors
     // // We don't always need to supply features, we can push them in later
     View(baxcat::PRNG &rng);
-    View(std::vector< std::shared_ptr<BaseFeature> > features, baxcat::PRNG *rng);
-    View(std::vector< std::shared_ptr<BaseFeature> > features, baxcat::PRNG *rng, double alpha,
+    View(std::vector< std::shared_ptr<BaseFeature> > &features, baxcat::PRNG *rng);
+    View(std::vector< std::shared_ptr<BaseFeature> > &features, baxcat::PRNG *rng, double alpha,
          std::vector<size_t> row_assignment={});
 
     // Transitions
@@ -59,9 +59,9 @@ public:
 
     // adding and removing dims
     // add feature to the view (reassign data, add to lookup)
-    void assimilateFeature( std::shared_ptr<BaseFeature> feature);
+    void assimilateFeature(std::shared_ptr<BaseFeature> &feature);
     // remove the feature from the view (remove from lookup)
-    void releaseFeature( size_t feature_index);
+    void releaseFeature(size_t feature_index);
 
     // setters
     void setRowAssignment(std::vector<size_t> new_row_assignment);
