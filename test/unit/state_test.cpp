@@ -73,7 +73,6 @@ BOOST_AUTO_TEST_CASE(verify_constructor_1){
     auto col_hypers = state.getColumnHypers();
     BOOST_REQUIRE_EQUAL(col_hypers.size(), 2);
 
-    BOOST_REQUIRE_EQUAL(state.getNumViews(), 2);
 }
 
 BOOST_AUTO_TEST_CASE(verify_constructor_2){
