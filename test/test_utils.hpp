@@ -39,6 +39,7 @@ using baxcat::helpers::getDatatypes;
 namespace baxcat{
 namespace test_utils{
 
+
     static double chi2Stat(std::vector<double> observed, std::vector<double> expected)
     {
         double correction = 10E-6;
@@ -52,6 +53,35 @@ namespace test_utils{
             stat += (observed[i]-expected[i])*(observed[i]-expected[i])/expected[i];    
         }
         return stat;
+    }
+
+    template <typename T>
+    static typename baxcat::enable_if<std::is_integral<T>,double> chi2gof(std::vector<T> X, 
+                                                                          std::vector<T> Y)
+    {
+        double N_X = static_cast<double>(X.size());
+        double N_Y = static_cast<double>(Y.size());
+        size_t num_bins_x = baxcat::utils::vector_max(X)+1;
+        size_t num_bins_y = baxcat::utils::vector_max(Y)+1;
+
+        size_t num_bins = num_bins_x > num_bins_y ? num_bins_x : num_bins_y;
+
+        std::vector<double> x_count(num_bins);
+        std::vector<double> y_count(num_bins);
+
+        for(T &x : X)
+            ++x_count[x];
+
+        for(T &y : Y)
+            ++y_count[y];
+
+        for(auto &c : x_count)
+            c /= N_X;
+
+        for(auto &c : y_count)
+            c /= N_Y;
+
+        return chi2Stat(x_count, y_count);
     }
 
     template <typename T>
