@@ -72,6 +72,8 @@ BOOST_AUTO_TEST_CASE(verify_constructor_1){
 
     auto col_hypers = state.getColumnHypers();
     BOOST_REQUIRE_EQUAL(col_hypers.size(), 2);
+
+    BOOST_REQUIRE_EQUAL(state.getNumViews(), 2);
 }
 
 BOOST_AUTO_TEST_CASE(verify_constructor_2){
@@ -94,6 +96,8 @@ BOOST_AUTO_TEST_CASE(verify_constructor_2){
 
     auto col_hypers = state.getColumnHypers();
     BOOST_REQUIRE_EQUAL(col_hypers.size(), 2);
+
+    BOOST_REQUIRE_EQUAL(state.getNumViews(), 2);
 
     // check that all the things are what I set them to
     // column_assignment
