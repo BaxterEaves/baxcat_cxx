@@ -19,8 +19,8 @@
 
 SRC = ../../src
 INCLUDE = ../../include
-BOOST_DIR = /usr/local/Cellar/boost/1.55.0_2/include
-BOOST_LIB = /usr/local/Cellar/boost/1.55.0_2/lib
+BOOST_DIR = /usr/local/Cellar/boost/1.56/include
+BOOST_LIB = /usr/local/Cellar/boost/1.56/lib
 DIST = $(INCLUDE)/distributions
 HELPERS = $(INCLUDE)/helpers
 
