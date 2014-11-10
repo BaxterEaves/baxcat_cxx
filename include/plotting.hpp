@@ -49,6 +49,37 @@ namespace baxcat { namespace plotting{
 		}
 	}
 
+	// 
+	static void hist(mglGraph *gr, std::vector<size_t> X, std::string title=" ", size_t bins=0)
+	{
+		size_t n_bins = baxcat::utils::vector_max(X)+1;
+
+		if(bins > n_bins) n_bins = bins;
+
+		std::vector<double> counts(n_bins);
+		std::vector<double> edges(n_bins);
+
+		for(size_t i = 1; i <= n_bins; ++i)
+			edges[i] = i;
+
+		for(size_t &x : X)
+			++counts[x];
+
+		gr->Title(title.c_str());
+
+		mglData edges_plt;
+		mglData counts_plt;
+
+		edges_plt.Set(&edges[0], n_bins);
+		counts_plt.Set(&counts[0], n_bins);
+
+		gr->SetRanges(edges_plt, counts_plt);
+
+		gr->Axis();
+		gr->Bars(edges_plt, counts_plt);
+
+	}
+
 
 	static void hist(mglGraph *gr, std::vector<double> X, size_t n_bins, std::string title=" ",
 				   	 bool already_binned=false)
