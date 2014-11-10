@@ -24,9 +24,11 @@ using std::map;
 namespace baxcat {
 
 GewekeTester::GewekeTester(size_t num_rows, size_t num_cols, vector<string> datatypes, 
-                           unsigned int seed, bool do_hypers, bool do_row_alpha, bool do_col_alpha)
-    : _num_cols(num_cols), _num_rows(num_rows), _do_hypers(do_hypers), _do_row_alpha(do_row_alpha),
-      _do_col_alpha(do_col_alpha), _datatypes(datatypes)
+                           unsigned int seed, bool do_hypers, bool do_row_alpha, bool do_col_alpha,
+                           bool do_row_z, bool do_col_z)
+    : _num_cols(num_cols), _num_rows(num_rows), _datatypes(datatypes), _do_hypers(do_hypers), 
+      _do_row_alpha(do_row_alpha), _do_col_alpha(do_col_alpha), 
+      _do_col_z(do_col_z), _do_row_z(do_row_z)
 {
 
     ASSERT(std::cout, _num_cols >= 1);
@@ -41,23 +43,17 @@ GewekeTester::GewekeTester(size_t num_rows, size_t num_cols, vector<string> data
     printf("done.\n");
 
     printf("Intializing State...");
-    _state =  State(_num_rows, _datatypes, _distargs, !do_hypers, !do_row_alpha, !do_col_alpha);
+    _state =  State(_num_rows, _datatypes, _distargs, !do_hypers, !do_row_alpha, !do_col_alpha,
+                    !do_row_z, !do_col_z);
     printf("done.\n");
 
-    _transition_list = {"row_assignment", "column_assignment"};
+    _transition_list = {};
 
-    if(_do_hypers){
-        printf("Intializing hypers from config...");
-        // _state.__geweke_initHypers();
-        _transition_list.push_back("column_hypers");
-        printf("done.\n");
-    }
-
-    if(do_row_alpha)
-        _transition_list.push_back("row_alpha");
-
-    if(do_col_alpha)
-        _transition_list.push_back("column_alpha");
+    if(_do_row_z) _transition_list.push_back("row_assignment");
+    if(_do_col_z) _transition_list.push_back("column_assignment");
+    if(_do_hypers) _transition_list.push_back("column_hypers");
+    if(do_row_alpha) _transition_list.push_back("row_alpha");
+    if(do_col_alpha) _transition_list.push_back("column_alpha");
 
     printf("Intialized.\n");
 }
@@ -67,20 +63,20 @@ void GewekeTester::forwardSample(size_t num_times, bool do_init)
 {
     std::uniform_int_distribution<unsigned int> urnd;
     if(do_init)
-        __initStats(_state, _state_crp_alpha_forward, _all_stats_forward);
+        __initStats(_state, _state_crp_alpha_forward, _all_stats_forward, _num_views_forward);
 
     for(size_t i = 0; i < num_times; ++i){
         if( !((i+1) % 5))
             printf("\rSample %zu of %zu", i+1, num_times); fflush(stdout);
 
-        _state = State(_num_rows, _datatypes, _distargs, !_do_hypers, !_do_row_alpha, 
-                       !_do_col_alpha);
+        _state = State(_num_rows, _datatypes, _distargs, !_do_hypers, 
+                       !_do_row_alpha, !_do_col_alpha, !_do_row_z, !_do_col_z);
 
         // _state.__geweke_initHypers();
     
         _state.__geweke_clear();
         _state.__geweke_resampleRows();
-        __updateStats(_state, _state_crp_alpha_forward, _all_stats_forward);
+        __updateStats(_state, _state_crp_alpha_forward, _all_stats_forward, _num_views_forward);
     }
     printf("\n");
 }
@@ -88,12 +84,13 @@ void GewekeTester::forwardSample(size_t num_times, bool do_init)
 
 void GewekeTester::posteriorSample(size_t num_times, bool do_init, size_t lag)
 {
-    // std::uniform_int_distribution<unsigned int> urnd;
     if(do_init)
-        __initStats(_state, _state_crp_alpha_posterior, _all_stats_posterior);
+        __initStats(_state, _state_crp_alpha_posterior, _all_stats_posterior, 
+                    _num_views_posterior);
 
     // forward sample
-    _state = State(_num_rows, _datatypes, _distargs, !_do_hypers, !_do_row_alpha, !_do_col_alpha);
+    _state = State(_num_rows, _datatypes, _distargs, !_do_hypers, !_do_row_alpha, !_do_col_alpha,
+                   !_do_row_z, !_do_col_z);
 
     // _state.__geweke_initHypers();
 
@@ -109,7 +106,8 @@ void GewekeTester::posteriorSample(size_t num_times, bool do_init, size_t lag)
             _state.__geweke_resampleRows();
         }
 
-        __updateStats(_state, _state_crp_alpha_posterior, _all_stats_posterior);
+        __updateStats(_state, _state_crp_alpha_posterior, _all_stats_posterior, 
+                      _num_views_posterior);
     }
     printf("\n");
 }
@@ -148,8 +146,10 @@ vector<double> GewekeTester::__getDataStats(const vector<T> &data, size_t catego
 
 
 void GewekeTester::__updateStats(const State &state, vector<double> &state_crp_alpha,
-                                 vector<map<string, vector<double>>> &all_stats)
+                                 vector<map<string, vector<double>>> &all_stats,
+                                 vector<size_t> &num_views)
 {
+    num_views.push_back(state.getNumViews());
     state_crp_alpha.push_back(state.getStateCRPAlpha());
     auto column_hypers = state.getColumnHypers();
 
@@ -180,9 +180,11 @@ void GewekeTester::__updateStats(const State &state, vector<double> &state_crp_a
 
 
 void GewekeTester::__initStats(const State &state, vector<double> &state_crp_alpha,
-                               vector<map<string, vector<double>>> &all_stats)
+                               vector<map<string, vector<double>>> &all_stats,
+                               vector<size_t> &num_views)
 {
     state_crp_alpha = {};
+    num_views = {};
     auto column_hypers = state.getColumnHypers();
 
     all_stats.resize(column_hypers.size());
@@ -289,15 +291,60 @@ void GewekeTester::outputResults()
         gr.WriteFrame(filename.str().c_str());
     }
 
+    size_t plots_x = 0;
+    if(_do_col_z and _do_col_alpha and _num_cols > 1){
+        plots_x = 2;
+    }else if(_do_col_alpha){
+        plots_x = 1;
+    }else if(_do_col_z){
+        plots_x = 1;
+    }
+
+    mglGraph gr;
+
+    gr.SetSize(500*plots_x,500*2);
+
+    size_t n_forward = 0;
+    size_t n_posterior = 0;
+    size_t plot_num = 0;
+
+    if(_do_col_z and _num_cols > 1){
+        printf("plot num views.\n");
+        n_forward = _num_views_forward.size();
+        n_posterior = _num_views_posterior.size();
+        // auto chi2Stat = test_utils::chi2gof(_num_views_posterior, _num_views_forward);
+        // TODO: p-value and output
+        
+        gr.SubPlot(plots_x, 2, 0);
+        baxcat::plotting::hist(&gr, _num_views_forward, "V forward", _num_cols);
+
+        gr.SubPlot(plots_x, 2, 1);
+        baxcat::plotting::hist(&gr, _num_views_posterior, "V posterior", _num_cols);
+
+        plot_num = 2;
+    }
+
     if(_do_col_alpha){
+        printf("plot col alpha.\n");
         std::stringstream ss;
         ss << "ks-test [state alpha]";
-        size_t n_forward = _state_crp_alpha_forward.size();
-        size_t n_posterior = _state_crp_alpha_posterior.size();
+        n_forward = _state_crp_alpha_forward.size();
+        n_posterior = _state_crp_alpha_posterior.size();
         auto ks_stat = test_utils::twoSampleKSTest(_state_crp_alpha_forward, _state_crp_alpha_posterior);
         bool distributions_differ = test_utils::ksTestRejectNull(ks_stat, n_forward, n_posterior);
         test_utils::__output_ks_test_result(distributions_differ, ks_stat, ss.str());
         test_utils::__update_pass_counters(num_pass, num_fail, all_pass, !distributions_differ);
+
+        gr.SubPlot(plots_x, 2, plot_num);
+        baxcat::plotting::hist(&gr, _state_crp_alpha_forward, 31, "State alpha forward");
+
+        gr.SubPlot(plots_x, 2, plot_num+1);
+        baxcat::plotting::hist(&gr, _state_crp_alpha_posterior, 31, "State alpha posterior");
+    }
+
+    if(plots_x > 0){
+        printf("plot state.\n");
+        gr.WriteFrame("results/state.png");
     }
 
     if(all_pass){

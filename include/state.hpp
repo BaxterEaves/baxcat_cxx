@@ -46,8 +46,10 @@ public:
 
     // Gewke init mode
     State(size_t num_rows, std::vector<std::string> datatypes, 
-          std::vector<std::vector<double>> distargs, bool fix_hypers, bool fix_row_alpha, 
-          bool fix_col_alpha);
+          std::vector<std::vector<double>> distargs, 
+          bool fix_hypers, 
+          bool fix_row_alpha, bool fix_col_alpha, 
+          bool fix_row_z, bool fix_col_z);
 
     // init from prior
     // X is the table of data. X[f] is the data for feature X. Is cast to proper
@@ -55,7 +57,7 @@ public:
     // datatypes[f] is the datatype for feature feature
     // n_grid is the number of bins for hyperparameters
     // rng_seed seeds the rng starting state
-    State( std::vector<std::vector<double>> X,
+    State(std::vector<std::vector<double>> X,
         std::vector<std::string> datatypes,
         std::vector<std::vector<double>> distargs,
         unsigned int rng_seed);
@@ -82,6 +84,7 @@ public:
     std::vector<std::map<std::string, double>> getColumnHypers() const;
     std::vector<double> getViewCRPAlphas() const;
     double getStateCRPAlpha() const;
+    size_t getNumViews() const;
     std::vector<std::vector<std::map<std::string, double>>> getSuffstats() const;
 
     // setters
@@ -152,7 +155,7 @@ private:
 
     // Column transition kernels
     // Gibbs method. Calculates probability under each view
-    void __transitionColumnAssignmentGibbs(size_t which_column, size_t m=10);
+    void __transitionColumnAssignmentGibbs(size_t which_column, size_t m=1);
 
     // probability and sample helpers
     double __doPredictiveLogpObserved(size_t row, size_t column, double value);

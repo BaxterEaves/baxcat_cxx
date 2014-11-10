@@ -91,9 +91,10 @@ State::State(vector<vector<double>> X, vector<string> datatypes, vector<vector<d
     }
 }
 
-
+// For Geweke testers
 State::State(size_t num_rows, vector<string> datatypes, vector<vector<double>> distargs, 
-             bool fix_hypers, bool fix_row_alpha, bool fix_col_alpha)
+             bool fix_hypers, bool fix_row_alpha, bool fix_col_alpha, 
+             bool fix_row_z, bool fix_col_z)
     : _num_rows(num_rows), _num_columns(datatypes.size()),  _rng(shared_ptr<PRNG>(new PRNG()))
 {
     _crp_alpha_config = {5, .2};
@@ -106,9 +107,23 @@ State::State(size_t num_rows, vector<string> datatypes, vector<vector<double>> d
         _crp_alpha = _rng->gamrand(_crp_alpha_config[0], _crp_alpha_config[1]);
     }
 
-    // generate partitions
-    _rng.get()->crpGen(_crp_alpha, _num_columns, _column_assignment, _num_views, _view_counts);
+    // should fix column Z if row Z is fixed
+    vector<size_t> row_assignment = {};
+    if(fix_row_z){
+        fix_col_z = true;
+        row_assignment.assign(_num_rows, 0);
+    }
 
+    // generate partitions
+    if(fix_col_z){
+        // if fix column assignment, then put everything in one view
+        _column_assignment.assign(_num_columns,0);
+        _num_views = 1;
+        _view_counts = {_num_columns};
+    }else{
+        _rng.get()->crpGen(_crp_alpha, _num_columns, _column_assignment, _num_views, _view_counts);
+    }
+    
     vector<vector<double>> X;
     vector<double> Y(num_rows, NAN);
     for(size_t col = 0; col < _num_columns; ++col)
@@ -126,7 +141,7 @@ State::State(size_t num_rows, vector<string> datatypes, vector<vector<double>> d
     }
 
     for(size_t v = 0; v < _num_views; ++v)
-        _views.push_back(View(view_features[v], _rng.get(), _view_alpha_marker, {}));
+        _views.push_back(View(view_features[v], _rng.get(), _view_alpha_marker, row_assignment));
 }
 
 // probability
@@ -256,7 +271,6 @@ vector<vector<double>> State::predictiveDraw(vector<vector<size_t>> query_indice
 }
 
 
-// FIXME: implement
 double  State::__doPredictiveDrawObserved(size_t row, size_t col)
 {
     auto view = _column_assignment[col];
@@ -424,15 +438,15 @@ void State::__transitionColumnAssignmentGibbs(size_t col, size_t m)
     bool is_singleton = (_view_counts[view_index_current] == 1);
 
     vector<double> log_crps(_num_views,0);
-    for(size_t v = 0; v < _num_views; ++v)
-        log_crps[v] = log(double(_view_counts[v]));
-
-    if (is_singleton){
-        log_crps[view_index_current] = log(_crp_alpha);
-    }else{
-        --log_crps[view_index_current];
-        log_crps.push_back(_crp_alpha);
+    for(size_t v = 0; v < _num_views; v++){
+        if(v == view_index_current){
+            log_crps[v] = is_singleton ? log(_crp_alpha) : log(double(_view_counts[v]-1.0));
+        }else{
+            log_crps[v] = log(double(_view_counts[v]));
+        }
     }
+
+    // if (not is_singleton) log_crps.push_back(log(_crp_alpha));
 
     // TODO: optimization: preallocate
     vector<double> logps;
@@ -450,10 +464,11 @@ void State::__transitionColumnAssignmentGibbs(size_t col, size_t m)
         vector<shared_ptr<BaseFeature>> fvec = {feature};
         vector<View> view_holder;
         double log_m = log(static_cast<double>(m));
+        double log_crp_m = log(_crp_alpha)-log_m;
         for(size_t i = 0; i < m; ++i){
             View proposal_view(fvec, _rng.get(), _view_alpha_marker, {});
             view_holder.push_back(proposal_view);
-            double logp = feature.get()->logp()+log_crps.back()-log_m;
+            double logp = feature.get()->logp()+log_crp_m;
             logps.push_back(logp);
         }
 
@@ -644,6 +659,11 @@ vector<double> State::getViewCRPAlphas() const
 double State::getStateCRPAlpha() const
 {
     return _crp_alpha;
+}
+
+size_t State::getNumViews() const
+{
+    return _num_views;
 }
 
 
