@@ -41,7 +41,7 @@ public:
     View(baxcat::PRNG &rng);
     View(std::vector< std::shared_ptr<BaseFeature> > &features, baxcat::PRNG *rng);
     View(std::vector< std::shared_ptr<BaseFeature> > &features, baxcat::PRNG *rng, double alpha,
-         std::vector<size_t> row_assignment={});
+         std::vector<size_t> row_assignment={}, bool gibbs_init=false);
 
     // Transitions
     // reassign all rows to categories
@@ -53,7 +53,7 @@ public:
 
     // Probabilities
     // the likelihood of the data in row belonging to the models in cluster
-    double rowLogp(size_t row, size_t cluster);
+    double rowLogp(size_t row, size_t cluster, bool is_init=false);
     // the likelihood of the data in row belonging to a singleton
     double rowSingletonLogp(size_t row);
 
@@ -91,6 +91,8 @@ private:
     void __createSingletonCluster( size_t row, size_t current);
     // move row from cluster move_from to cluster move_to
     void __moveRowToCluster( size_t row, size_t move_from, size_t move_to);
+    // init view using gibbs transition
+    void __gibbsInit();
 
     //
     baxcat::PRNG *_rng;

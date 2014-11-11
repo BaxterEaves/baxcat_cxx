@@ -43,7 +43,7 @@ View::View(vector< shared_ptr<BaseFeature> > &feature_vec, PRNG *rng)
 
 
 View::View(vector< shared_ptr<BaseFeature> > &feature_vec, PRNG *rng, double crp_alpha,
-           vector<size_t> row_assignment)
+           vector<size_t> row_assignment, bool gibbs_init)
     : _rng(rng), _row_assignment(row_assignment)
 {
     _num_rows = feature_vec[0].get()->getN();
@@ -51,7 +51,13 @@ View::View(vector< shared_ptr<BaseFeature> > &feature_vec, PRNG *rng, double crp
     // alpha is a semi-optional argument. If it is less than zero, we'll choose ourself
     _crp_alpha = (crp_alpha < 0) ? _rng->gamrand(1, 1) : crp_alpha;
 
-    if(_row_assignment.empty()){
+    // build features tree (insert and reassign)
+    for(auto &f: feature_vec)
+        _features.insert(f);
+
+    if(gibbs_init){
+        this->__gibbsInit();
+    }else if(_row_assignment.empty()){
         _rng->crpGen(_crp_alpha, _num_rows, _row_assignment, _num_clusters, _cluster_counts);
     }else{
         // build partitions
@@ -62,10 +68,57 @@ View::View(vector< shared_ptr<BaseFeature> > &feature_vec, PRNG *rng, double crp
     }
 
     // build features tree (insert and reassign)
-    for(auto &f: feature_vec){
-        _features.insert(f);
+    for(auto &f: _features)
         f.get()->reassign(_row_assignment);
+
+}
+
+
+// init with sequential Gibbs
+void View::__gibbsInit()
+{
+    vector<size_t> rows(_num_rows, 0);
+    for(size_t r = 0; r < _num_rows; r++)
+        rows[r] = r;
+
+    for(auto &f: _features){
+        f.get()->clear();
+        f.get()->insertElementToSingleton(rows[0]);
     }
+
+    rows = _rng->shuffle(rows);
+
+    _row_assignment.assign(_num_rows, 0);
+    _cluster_counts = {1};
+    _num_clusters = 1;
+
+    double log_alpha = log(_crp_alpha);
+
+    for(size_t i = 1; i < _num_rows; ++i){
+        vector<double> logps(_num_clusters+1);
+        size_t row = rows[i];
+        for(size_t k = 0; k < _num_clusters; ++k)
+            logps[k] = rowLogp(row, k, true)+log(static_cast<double>(_cluster_counts[k]));
+        
+        logps.back() = rowSingletonLogp(row) + log_alpha;
+
+        size_t assignment = _rng->lpflip(logps);
+        _row_assignment[row] = assignment;
+
+        if(assignment == _num_clusters){
+            _cluster_counts.push_back(1);
+            ++_num_clusters;
+            for(auto &f : _features)
+                f.get()->insertElementToSingleton(row);
+        }else{
+            ++_cluster_counts[assignment];
+            for(auto &f : _features)
+                f.get()->insertElement(row, assignment);
+        }
+    }
+
+    // TODO: wrap in debug-only asser
+    checkPartitions();
 }
 
 
@@ -167,13 +220,13 @@ void View::transitionRow(size_t row, bool assign_to_max_p_cluster)
 
 // probabilities
 // ````````````````````````````````````````````````````````````````````````````````````````````````
-double View::rowLogp(size_t row, size_t query_cluster)
+double View::rowLogp(size_t row, size_t query_cluster, bool is_init)
 {
     auto current_cluster = _row_assignment[row];
     double lp = 0;
 
-    if(query_cluster == current_cluster){
-        for(auto f: _features){
+    if(query_cluster == current_cluster and not is_init){
+        for(auto &f: _features){
             BaseFeature *feature = f.get();
             feature->removeElement(row, query_cluster);
             lp += feature->elementLogp(row, query_cluster);
