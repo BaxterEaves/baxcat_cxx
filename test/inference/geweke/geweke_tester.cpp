@@ -24,9 +24,11 @@ using std::map;
 namespace baxcat {
 
 GewekeTester::GewekeTester(size_t num_rows, size_t num_cols, vector<string> datatypes, 
-                           unsigned int seed, bool do_hypers, bool do_row_alpha, bool do_col_alpha,
-                           bool do_row_z, bool do_col_z)
-    : _num_cols(num_cols), _num_rows(num_rows), _datatypes(datatypes), _do_hypers(do_hypers), 
+                           unsigned int seed, size_t m, bool do_hypers, 
+                           bool do_row_alpha, bool do_col_alpha,
+                           bool do_row_z, bool do_col_z, size_t ct_kernel)
+    : _m(m), _num_cols(num_cols), _num_rows(num_rows), _datatypes(datatypes),
+      _do_hypers(do_hypers), _ct_kernel(ct_kernel),
       _do_row_alpha(do_row_alpha), _do_col_alpha(do_col_alpha), 
       _do_col_z(do_col_z), _do_row_z(do_row_z)
 {
@@ -102,7 +104,7 @@ void GewekeTester::posteriorSample(size_t num_times, bool do_init, size_t lag)
             printf("\rSample %zu of %zu", i+1, num_times); fflush(stdout);
 
         for( size_t j = 0; j < lag; ++j ){
-            _state.transition(_transition_list, {}, {}, 0, 1);
+            _state.transition(_transition_list, {}, {}, _ct_kernel, 1, _m);
             _state.__geweke_resampleRows();
         }
 
@@ -294,8 +296,6 @@ void GewekeTester::outputResults()
     size_t plots_x = 0;
     if(_do_col_z and _do_col_alpha and _num_cols > 1){
         plots_x = 2;
-    }else if(_do_col_alpha){
-        plots_x = 1;
     }else if(_do_col_z){
         plots_x = 1;
     }
@@ -316,15 +316,15 @@ void GewekeTester::outputResults()
         // TODO: p-value and output
         
         gr.SubPlot(plots_x, 2, 0);
-        baxcat::plotting::hist(&gr, _num_views_forward, "V forward", _num_cols);
+        baxcat::plotting::hist(&gr, _num_views_forward, "V forward", _num_cols+1);
 
         gr.SubPlot(plots_x, 2, 1);
-        baxcat::plotting::hist(&gr, _num_views_posterior, "V posterior", _num_cols);
+        baxcat::plotting::hist(&gr, _num_views_posterior, "V posterior", _num_cols+1);
 
         plot_num = 2;
     }
 
-    if(_do_col_alpha){
+    if(_do_col_alpha and _do_col_z and _num_cols > 1){
         printf("plot col alpha.\n");
         std::stringstream ss;
         ss << "ks-test [state alpha]";

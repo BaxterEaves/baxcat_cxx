@@ -40,8 +40,9 @@ class GewekeTester
 public:
     // generate state with all continuous data
     GewekeTester(size_t num_rows, size_t num_cols, std::vector<std::string> datatypes, 
-                 unsigned int seed, bool do_hypers=true, bool do_row_alpha=true,
-                 bool do_col_alpha=true, bool do_row_z=true, bool do_col_z=true);
+                 unsigned int seed, size_t m=1, bool do_hypers=true, bool do_row_alpha=true,
+                 bool do_col_alpha=true, bool do_row_z=true, bool do_col_z=true, 
+                 size_t ct_kernel=0);
 
     void run(size_t num_times, size_t num_posterior_chains, size_t lag);
 
@@ -68,6 +69,9 @@ private:
     
     size_t _num_cols;
     size_t _num_rows;
+
+    size_t _m;
+    size_t _ct_kernel;
 
     bool _do_hypers;
     bool _do_row_alpha;
