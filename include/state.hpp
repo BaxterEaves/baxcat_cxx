@@ -76,7 +76,7 @@ public:
     // do transitions.
     void transition( std::vector< std::string > which_transitions,
         std::vector<size_t> which_rows, std::vector<size_t> which_cols,
-        size_t which_kernel, int N);
+        size_t which_kernel, int N, size_t m=1);
 
     // getters
     std::vector<size_t> getColumnAssignment() const;
@@ -135,7 +135,7 @@ private:
 
     // METHODS
     void __doTransition(baxcat::transition_type t, std::vector<size_t> which_rows,
-        std::vector<size_t> which_cols, size_t which_kernel);
+        std::vector<size_t> which_cols, size_t which_kernel, size_t m=1);
 
     // Transition methods
     // transition state alpha --- alpha over columns
@@ -147,7 +147,8 @@ private:
     void __transitionColumnHypers(std::vector<size_t> which_columns);
     // transition the assignment of columns to views
     // if which_cols is empty, all columns, in shuffled order are transistioned
-    void __transitionColumnAssignment(std::vector<size_t> which_columns, size_t which_kernel);
+    void __transitionColumnAssignment(std::vector<size_t> which_columns, size_t which_kernel, 
+                                      size_t m);
     // transition the assignment of rows in views to categories
     // if which_rows is empty, all rows, in shuffled order are transistioned
     // shuffling is handled by the view
@@ -156,6 +157,7 @@ private:
     // Column transition kernels
     // Gibbs method. Calculates probability under each view
     void __transitionColumnAssignmentGibbs(size_t which_column, size_t m=1);
+    void __transitionColumnAssignmentGibbsBootstrap(size_t which_column, size_t m=1);
 
     // probability and sample helpers
     double __doPredictiveLogpObserved(size_t row, size_t column, double value);
@@ -165,8 +167,8 @@ private:
 
     // Cleanup methods
     void __destroySingletonView( size_t feature_index, size_t to_destroy, size_t move_to);
-    void __swapSingletonViews( size_t feature_index, size_t view_index, View proposal_view);
-    void __createSingletonView( size_t feature_index, size_t current_view_index, View proposal_view);
+    void __swapSingletonViews( size_t feature_index, size_t view_index, View &proposal_view);
+    void __createSingletonView( size_t feature_index, size_t current_view_index, View &proposal_view);
     void __moveFeatureToView( size_t feature_index, size_t move_from, size_t move_to );
 
     void __insertConstraints( std::vector<std::vector<size_t>> indices, std::vector<double> values);

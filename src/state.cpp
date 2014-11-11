@@ -290,7 +290,7 @@ double  State::__doPredictiveDrawUnobserved(size_t col)
 // Transition helpers
 //`````````````````````````````````````````````````````````````````````````````````````````````````
 void State::transition(vector< string > which_transitions, vector<size_t> which_rows,
-                       vector<size_t> which_cols, size_t which_kernel, int N)
+                       vector<size_t> which_cols, size_t which_kernel, int N, size_t m)
 {
     // conver strings to transitions
     vector<transition_type> t_list;
@@ -307,13 +307,13 @@ void State::transition(vector< string > which_transitions, vector<size_t> which_
             t_list = _rng.get()->shuffle(t_list);
 
         for( auto transition: t_list)
-            __doTransition(transition, which_rows, which_cols, which_kernel);
+            __doTransition(transition, which_rows, which_cols, which_kernel, m);
     }
 }
 
 
 void State::__doTransition(transition_type t, vector<size_t> which_rows, vector<size_t> which_cols,
-                           size_t which_kernel)
+                           size_t which_kernel, size_t m)
 {
     switch(t){
         case transition_type::row_assignment:
@@ -322,7 +322,7 @@ void State::__doTransition(transition_type t, vector<size_t> which_rows, vector<
             break;
         case transition_type::column_assignment:
             // std::cout << "Doing col_z" << std::endl;
-            __transitionColumnAssignment(which_cols, which_kernel);
+            __transitionColumnAssignment(which_cols, which_kernel, m);
             break;
         case transition_type::row_alpha:
             // std::cout << "Doing row_alphas" << std::endl;
@@ -359,7 +359,7 @@ void State::__transitionStateCRPAlpha()
     };
 
     double slice_width = alpha_shape*alpha_scale*alpha_scale/2;  // this is a guess
-    size_t burn = 25;
+    size_t burn = 50;
 
     // slice sample
     _crp_alpha = samplers::sliceSample(_crp_alpha, log_crp_posterior, {0, INF},
@@ -405,7 +405,7 @@ void State::__transitionRowAssignments(vector<size_t> which_rows)
 }
 
 
-void State::__transitionColumnAssignment(vector<size_t> which_cols, size_t which_kernel)
+void State::__transitionColumnAssignment(vector<size_t> which_cols, size_t which_kernel, size_t m)
 {
 
     // don't transition columns if there is only one
@@ -420,9 +420,12 @@ void State::__transitionColumnAssignment(vector<size_t> which_cols, size_t which
 
     if(which_kernel == 0){
         for(auto col : which_cols)
-            __transitionColumnAssignmentGibbs(col);
+            __transitionColumnAssignmentGibbs(col, m);
+    }else if(which_kernel == 1){
+        for(auto col : which_cols)
+            __transitionColumnAssignmentGibbsBootstrap(col, m);
     }else{
-        // FIXME: proper exceptino
+        // FIXME: proper exception
         throw 1;
     }
 }
@@ -437,6 +440,7 @@ void State::__transitionColumnAssignmentGibbs(size_t col, size_t m)
     auto view_index_current = _column_assignment[col];
     bool is_singleton = (_view_counts[view_index_current] == 1);
 
+    // TODO: optimization calculate logp for current view first
     vector<double> log_crps(_num_views,0);
     for(size_t v = 0; v < _num_views; v++){
         if(v == view_index_current){
@@ -463,8 +467,7 @@ void State::__transitionColumnAssignmentGibbs(size_t col, size_t m)
     if(!is_singleton){
         vector<shared_ptr<BaseFeature>> fvec = {feature};
         vector<View> view_holder;
-        double log_m = log(static_cast<double>(m));
-        double log_crp_m = log(_crp_alpha)-log_m;
+        double log_crp_m = log(_crp_alpha)-log(static_cast<double>(m));
         for(size_t i = 0; i < m; ++i){
             View proposal_view(fvec, _rng.get(), _view_alpha_marker, {});
             view_holder.push_back(proposal_view);
@@ -494,6 +497,67 @@ void State::__transitionColumnAssignmentGibbs(size_t col, size_t m)
     }
 }
 
+// samples only one other view, but runs row_z and CRP alpha transitions on it m times
+void State::__transitionColumnAssignmentGibbsBootstrap(size_t col, size_t m)
+{
+    // double log_crp_denom = log(double(_num_columns-1) + _crp_alpha);
+
+    auto view_index_current = _column_assignment[col];
+    bool is_singleton = (_view_counts[view_index_current] == 1);
+
+    // TODO: optimization calculate logp for current view first
+    vector<double> log_crps(_num_views,0);
+    for(size_t v = 0; v < _num_views; v++){
+        if(v == view_index_current){
+            log_crps[v] = is_singleton ? log(_crp_alpha) : log(double(_view_counts[v]-1.0));
+        }else{
+            log_crps[v] = log(double(_view_counts[v]));
+        }
+    }
+
+    // TODO: optimization: preallocate
+    vector<double> logps;
+
+    auto feature = _features[col];
+
+    for(size_t v = 0; v < _num_views; ++v){
+        feature.get()->reassign(_views[v].getRowAssignments());
+        double logp = feature.get()->logp()+log_crps[v];
+        logps.push_back(logp);
+    }
+
+    // if this is not already a singleton view, we must propose a singleton
+    if(!is_singleton){
+        // TODO: optimization: do this (cache) for each column in parallel
+        vector<shared_ptr<BaseFeature>> fvec = {feature};
+        View proposal_view(fvec, _rng.get(), _view_alpha_marker, {}, true);
+        for(size_t i = 0; i < m; ++i){
+            proposal_view.transitionRows();
+            proposal_view.transitionCRPAlpha();
+        }
+        double logp = feature.get()->logp()+log(_crp_alpha);
+        logps.push_back(logp);
+
+        auto view_index_new = _rng.get()->lpflip(logps);
+
+        if (view_index_new != view_index_current){
+            if (view_index_new == _num_views){
+                __createSingletonView(col, view_index_current, proposal_view);
+            }else{
+                __moveFeatureToView(col, view_index_current, view_index_new);
+            }
+        }else{
+            feature.get()->reassign(_views[view_index_current].getRowAssignments());
+        }
+    }else{
+        auto view_index_new = _rng.get()->lpflip(logps);
+        if (view_index_new != view_index_current){
+            __destroySingletonView(col, view_index_current, view_index_new);
+        }else{
+            feature.get()->reassign(_views[view_index_current].getRowAssignments());
+        }
+    }
+}
 
 // Cleanup
 //`````````````````````````````````````````````````````````````````````````````````````````````````
@@ -512,14 +576,14 @@ void State::__destroySingletonView(size_t feat_idx, size_t to_destroy, size_t mo
 }
 
 
-void State::__swapSingletonViews(size_t feat_idx, size_t view_index, View proposal_view)
+void State::__swapSingletonViews(size_t feat_idx, size_t view_index, View &proposal_view)
 {
     _views[view_index] = proposal_view;
     _features[feat_idx].get()->reassign(proposal_view.getRowAssignments());
 }
 
 
-void State::__createSingletonView(size_t feat_idx, size_t current_view_index, View proposal_view)
+void State::__createSingletonView(size_t feat_idx, size_t current_view_index, View &proposal_view)
 {
     _column_assignment[feat_idx] = _num_views;
     _features[feat_idx].get()->reassign(proposal_view.getRowAssignments());
