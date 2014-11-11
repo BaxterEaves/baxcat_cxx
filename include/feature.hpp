@@ -37,6 +37,7 @@ class BaseFeature{
 public:
     // insert X[row] into cluster
     virtual void insertElement(size_t row, size_t cluster) = 0;
+    virtual void insertElementToSingleton(size_t row) = 0;
     virtual void removeElement(size_t row, size_t cluster) = 0;
     // cast value and insert into cluster
     virtual void insertValue(double value, size_t cluster) = 0;
@@ -86,6 +87,8 @@ public:
     virtual std::vector<double> getData() const = 0;  // implement
 
     // setters
+    // remove all clusters
+    virtual void clear() = 0;
     // sets the hypers of all clusters in a feature with a string-indexed map
     virtual void setHypers(std::map<std::string, double> hypers_map) = 0;
     // sets the hypers of all clusters in a feature with a vector
@@ -135,6 +138,7 @@ public:
         baxcat::PRNG *rng_ptr, std::vector<double> hypers, std::vector<double> hyperprior_config);
 
     virtual void insertElement(size_t row, size_t cluster) final;
+    virtual void insertElementToSingleton(size_t row) final;
     virtual void removeElement(size_t row, size_t cluster) final;
     virtual void insertValue(double value, size_t cluster) final;
     virtual void removeValue(double value, size_t cluster) final;
@@ -161,6 +165,7 @@ public:
     virtual std::map<std::string, double> getHypersMap() const final;
     virtual std::vector<double> getData() const final;
 
+    virtual void clear() final;
     virtual void setHypers(std::map<std::string, double> hypers_map) final;
     virtual void setHypers(std::vector<double> hypers_vec) final;
     virtual void setHyperConfig(std::vector<double> hyperprior_config) final;

@@ -82,6 +82,15 @@ void baxcat::Feature<DataType, T>::insertElement(size_t row, size_t cluster)
 
 
 template<class DataType, typename T>
+void baxcat::Feature<DataType, T>::insertElementToSingleton(size_t row)
+{
+    _clusters.emplace_back(_distargs);
+    _clusters.back().setHypers(_hypers);
+    this->insertElement(row, _clusters.size()-1);
+}
+
+
+template<class DataType, typename T>
 void baxcat::Feature<DataType, T>::removeElement(size_t row, size_t cluster)
 {
     if(_data.is_set(row))
@@ -294,6 +303,13 @@ std::vector<double> baxcat::Feature<DataType, T>::getData() const
 
 // Setters
 // ````````````````````````````````````````````````````````````````````````````````````````````````
+template<class DataType, typename T>
+void baxcat::Feature<DataType, T>::clear()
+{
+    _clusters.clear();
+}
+
+
 template<class DataType, typename T>
 void baxcat::Feature<DataType, T>::setHypers(map<string, double> hypers_map)
 {
