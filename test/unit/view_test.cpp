@@ -76,13 +76,24 @@ BOOST_AUTO_TEST_CASE(verify_assignment_constructor){
 
     View view( s.features, rng, alpha, assignment);
 
-    BOOST_CHECK_EQUAL( view.checkPartitions(), 1);
-    BOOST_CHECK_EQUAL( view.getCRPAlpha(), alpha);
-    BOOST_CHECK( baxcat::test_utils::areIdentical(assignment, view.getRowAssignments() ) );
-    BOOST_CHECK( baxcat::test_utils::areIdentical({2,3}, view.getClusterCounts() ) );
-    BOOST_CHECK_EQUAL( view.getNumCategories(), 2 );
+    BOOST_CHECK_EQUAL(view.checkPartitions(), 1);
+    BOOST_CHECK_EQUAL(view.getCRPAlpha(), alpha);
+    BOOST_CHECK(baxcat::test_utils::areIdentical(assignment, view.getRowAssignments()));
+    BOOST_CHECK(baxcat::test_utils::areIdentical({2,3}, view.getClusterCounts()));
+    BOOST_CHECK_EQUAL(view.getNumCategories(), 2);
 }
 
+BOOST_AUTO_TEST_CASE(gibbs_init_should_work){
+    static baxcat::PRNG *rng = new baxcat::PRNG(10);
+    Setup s(rng);
+
+    View view( s.features, rng, -1, {}, true);
+
+    BOOST_CHECK_EQUAL(view.checkPartitions(), 1);
+}
+
+
+//`````````````````````````````````````````````````````````````````````````````
 BOOST_AUTO_TEST_CASE(release_feature_should_affect_counts){
     static baxcat::PRNG *rng = new baxcat::PRNG(10);
     Setup s(rng);
