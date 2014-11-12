@@ -49,7 +49,7 @@ View::View(vector< shared_ptr<BaseFeature> > &feature_vec, PRNG *rng, double crp
     _num_rows = feature_vec[0].get()->getN();
 
     // alpha is a semi-optional argument. If it is less than zero, we'll choose ourself
-    _crp_alpha = (crp_alpha < 0) ? _rng->gamrand(1, 1) : crp_alpha;
+    _crp_alpha = (crp_alpha <= 0) ? _rng->gamrand(1, 1) : crp_alpha;
 
     // build features tree (insert and reassign)
     for(auto &f: feature_vec)
