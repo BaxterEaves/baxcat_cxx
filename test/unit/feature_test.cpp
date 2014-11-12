@@ -20,6 +20,7 @@
 #include <boost/test/unit_test.hpp>
 #include <iostream>
 #include "feature.hpp"
+#include "numerics.hpp"
 #include "utils.hpp"
 #include "test_utils.hpp"
 #include "datatypes/continuous.hpp"
@@ -132,8 +133,8 @@ BOOST_AUTO_TEST_CASE(reassign_should_create_clusters){
     vector<map<string, double>> suffstats = feature.getModelSuffstats();
     vector<map<string, double>> hypers = feature.getModelHypers();
 
-    BOOST_REQUIRE( suffstats.size() == 5);
-    BOOST_REQUIRE( hypers.size() == 5);
+    BOOST_REQUIRE(suffstats.size() == 5);
+    BOOST_REQUIRE(hypers.size() == 5);
 }
 
 BOOST_AUTO_TEST_CASE(reassign_set_cluster_hypers){
@@ -189,13 +190,11 @@ BOOST_AUTO_TEST_CASE(create_singleton_cluster_should_create_new_cluster)
     static baxcat::PRNG *rng = new baxcat::PRNG(10);
     auto feature = Setup(rng);
 
-    vector<map<string, double>> suffstats = feature.getModelSuffstats();
-    BOOST_REQUIRE( suffstats.size() == 1);
+    BOOST_REQUIRE(feature.getNumClusters() == 1);
 
     feature.createSingletonCluster( 1, 0 );
 
-    suffstats = feature.getModelSuffstats();
-    BOOST_REQUIRE( suffstats.size() == 2);
+    BOOST_REQUIRE(feature.getNumClusters() == 2);
 }
 
 BOOST_AUTO_TEST_CASE(create_singleton_cluster_should_update_suffstats_and_hypers)
@@ -204,24 +203,24 @@ BOOST_AUTO_TEST_CASE(create_singleton_cluster_should_update_suffstats_and_hypers
     auto feature = Setup(rng);
 
     vector<map<string, double>> suffstats = feature.getModelSuffstats();
-    BOOST_REQUIRE( suffstats.size() == 1);
-    BOOST_CHECK_CLOSE_FRACTION( suffstats[0]["sum_x"], 15, EPSILON );
-    BOOST_CHECK_CLOSE_FRACTION( suffstats[0]["sum_x_sq"], 55, EPSILON );
+    BOOST_REQUIRE(suffstats.size() == 1);
+    BOOST_CHECK_CLOSE_FRACTION( suffstats[0]["sum_x"], 15, EPSILON);
+    BOOST_CHECK_CLOSE_FRACTION( suffstats[0]["sum_x_sq"], 55, EPSILON);
 
     feature.createSingletonCluster( 1, 0 );
 
     suffstats = feature.getModelSuffstats();
-    BOOST_REQUIRE( suffstats.size() == 2);
-    BOOST_CHECK_CLOSE_FRACTION( suffstats[0]["sum_x"], 15-2, EPSILON );
-    BOOST_CHECK_CLOSE_FRACTION( suffstats[0]["sum_x_sq"], 55-2*2, EPSILON );
-    BOOST_CHECK_CLOSE_FRACTION( suffstats[1]["sum_x"], 2, EPSILON );
-    BOOST_CHECK_CLOSE_FRACTION( suffstats[1]["sum_x_sq"], 2*2, EPSILON );
+    BOOST_REQUIRE(suffstats.size() == 2);
+    BOOST_CHECK_CLOSE_FRACTION(suffstats[0]["sum_x"], 15-2, EPSILON);
+    BOOST_CHECK_CLOSE_FRACTION(suffstats[0]["sum_x_sq"], 55-2*2, EPSILON);
+    BOOST_CHECK_CLOSE_FRACTION(suffstats[1]["sum_x"], 2, EPSILON);
+    BOOST_CHECK_CLOSE_FRACTION(suffstats[1]["sum_x_sq"], 2*2, EPSILON);
 
     vector<map<string, double>> hypers = feature.getModelHypers();
-    BOOST_CHECK_EQUAL( hypers[0]["m"], hypers[1]["m"] );
-    BOOST_CHECK_EQUAL( hypers[0]["r"], hypers[1]["r"] );
-    BOOST_CHECK_EQUAL( hypers[0]["s"], hypers[1]["s"] );
-    BOOST_CHECK_EQUAL( hypers[0]["nu"], hypers[1]["nu"] );
+    BOOST_CHECK_EQUAL(hypers[0]["m"], hypers[1]["m"]);
+    BOOST_CHECK_EQUAL(hypers[0]["r"], hypers[1]["r"]);
+    BOOST_CHECK_EQUAL(hypers[0]["s"], hypers[1]["s"]);
+    BOOST_CHECK_EQUAL(hypers[0]["nu"], hypers[1]["nu"]);
 }
 
 BOOST_AUTO_TEST_CASE(move_should_update_suffstats){
@@ -254,18 +253,17 @@ BOOST_AUTO_TEST_CASE(destroy_singleton_should_remove_cluster){
     auto feature = Setup(rng);
 
     vector<size_t> assignment = {0,0,0,0,1};
-    vector<map<string, double>> suffstats;
 
-    feature.reassign(assignment);
-    suffstats = feature.getModelSuffstats();
+    feature.reassign(assignment);;
 
-    BOOST_REQUIRE( suffstats.size() == 2 );
+    auto suffstats = feature.getModelSuffstats();
+    BOOST_REQUIRE(suffstats.size() == 2);
 
     // moves X[4] out of clusters[1] to clusters[0] and destroys clusters[1]
     feature.destroySingletonCluster(4, 1, 0);
 
     suffstats = feature.getModelSuffstats();
-    BOOST_REQUIRE( suffstats.size() == 1 );
+    BOOST_REQUIRE(suffstats.size() == 1);
     BOOST_CHECK_CLOSE_FRACTION( suffstats[0]["sum_x"], 15, EPSILON );
     BOOST_CHECK_CLOSE_FRACTION( suffstats[0]["sum_x_sq"], 55, EPSILON );
 }
@@ -348,8 +346,8 @@ BOOST_AUTO_TEST_CASE(pop_row_should_remove_element_non_singleton)
     auto data = feature.getData();
     auto n_elem = data.size();
     auto last_element =  data[n_elem-1];
-    auto suffstats = feature.getModelSuffstats();
-    size_t K_start = suffstats.size();
+
+    size_t K_start = feature.getNumClusters();
 
     feature.popRow(0);
     data = feature.getData();
@@ -357,8 +355,7 @@ BOOST_AUTO_TEST_CASE(pop_row_should_remove_element_non_singleton)
     BOOST_REQUIRE_EQUAL( data.size(), n_elem-1 );
     BOOST_REQUIRE( data[data.size()-1] != last_element );
 
-    suffstats = feature.getModelSuffstats();
-    size_t K_end = suffstats.size();
+    size_t K_end = feature.getNumClusters();
 
     BOOST_REQUIRE_EQUAL( K_start, K_end );
 
@@ -376,15 +373,14 @@ BOOST_AUTO_TEST_CASE(pop_row_should_remove_element_singleton)
 
     auto data_out = feature.getData();
     auto n_elem = data.size();
-    auto suffstats = feature.getModelSuffstats();
-    size_t K_start = suffstats.size();
+    
+    size_t K_start = feature.getNumClusters();
 
     // remove element from singleton
     feature.popRow(1);
     data_out = feature.getData();
 
-    suffstats = feature.getModelSuffstats();
-    size_t K_end = suffstats.size();
+    size_t K_end = feature.getNumClusters();
 
     BOOST_REQUIRE_EQUAL( data_out.size(), n_elem-1 );
     BOOST_REQUIRE_EQUAL( K_end, K_start-1 );
@@ -392,5 +388,87 @@ BOOST_AUTO_TEST_CASE(pop_row_should_remove_element_singleton)
 
 }
 
+// Clear
+//`````````````````````````````````````````````````````````````````````````````````````````````````
+BOOST_AUTO_TEST_CASE(clear_should_remove_clusters)
+{
+    static baxcat::PRNG *rng = new baxcat::PRNG(10);
+    unsigned int index = 0;
+
+    baxcat::DataContainer<double> data({1,2,3,4,5});
+    vector<size_t> assignment = {0,0,1,1,2};
+
+    baxcat::Feature<Continuous, double> feature(index, data, {}, assignment, rng);
+
+    size_t K_start = feature.getNumClusters();
+    BOOST_REQUIRE_EQUAL(K_start, 3);
+
+    feature.clear();
+
+    size_t K_end = feature.getNumClusters();
+    BOOST_REQUIRE_EQUAL(K_end, 0);
+}
+
+// Clear
+//`````````````````````````````````````````````````````````````````````````````````````````````````
+BOOST_AUTO_TEST_CASE(insert_to_singleton_should_work_with_set_values)
+{
+    static baxcat::PRNG *rng = new baxcat::PRNG(10);
+    unsigned int index = 0;
+
+    baxcat::DataContainer<double> data({1,2,3,4,5});
+    vector<size_t> assignment = {0,0,1,1,2};
+
+    baxcat::Feature<Continuous, double> feature(index, data, {}, assignment, rng);
+
+    feature.clear();
+
+    BOOST_REQUIRE_EQUAL(feature.getNumClusters(), 0);
+
+    feature.insertElementToSingleton(0);
+    BOOST_REQUIRE_EQUAL(feature.getNumClusters(), 1);
+
+    feature.insertElementToSingleton(1);
+    BOOST_REQUIRE_EQUAL(feature.getNumClusters(), 2);
+
+    feature.insertElementToSingleton(2);
+    BOOST_REQUIRE_EQUAL(feature.getNumClusters(), 3);
+
+    feature.insertElementToSingleton(3);
+    BOOST_REQUIRE_EQUAL(feature.getNumClusters(), 4);
+
+    feature.insertElementToSingleton(4);
+    BOOST_REQUIRE_EQUAL(feature.getNumClusters(), 5);
+}
+
+BOOST_AUTO_TEST_CASE(insert_to_singleton_should_work_with_unset_values)
+{
+    static baxcat::PRNG *rng = new baxcat::PRNG(10);
+    unsigned int index = 0;
+
+    baxcat::DataContainer<double> data({1,NAN,3,NAN,5});
+    vector<size_t> assignment = {0,0,1,1,2};
+
+    baxcat::Feature<Continuous, double> feature(index, data, {}, assignment, rng);
+
+    feature.clear();
+
+    BOOST_REQUIRE_EQUAL(feature.getNumClusters(), 0);
+
+    feature.insertElementToSingleton(0);
+    BOOST_REQUIRE_EQUAL(feature.getNumClusters(), 1);
+
+    feature.insertElementToSingleton(1);
+    BOOST_REQUIRE_EQUAL(feature.getNumClusters(), 2);
+
+    feature.insertElementToSingleton(2);
+    BOOST_REQUIRE_EQUAL(feature.getNumClusters(), 3);
+
+    feature.insertElementToSingleton(3);
+    BOOST_REQUIRE_EQUAL(feature.getNumClusters(), 4);
+
+    feature.insertElementToSingleton(4);
+    BOOST_REQUIRE_EQUAL(feature.getNumClusters(), 5);
+}
 
 BOOST_AUTO_TEST_SUITE_END()
