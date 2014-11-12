@@ -122,6 +122,47 @@ BOOST_AUTO_TEST_CASE(should_load_appropriate_data_for_double){
     BOOST_REQUIRE_EQUAL( Y.at(4), X[4] );
 }
 
+// check nan values for double, int, and boolean types
+//`````````````````````````````````````````````````````````````````````````````````````````````````
+BOOST_AUTO_TEST_CASE(nan_should_not_have_unset_values_double){
+    std::vector<double> X = {1,NAN,3,NAN,5};
+    baxcat::DataContainer<double> Y;
+
+    Y.load_and_cast_data(X);
+
+    BOOST_REQUIRE(not Y.is_missing(0));
+    BOOST_REQUIRE(not Y.is_missing(2));
+    BOOST_REQUIRE(not Y.is_missing(4));
+    BOOST_REQUIRE(Y.is_missing(1));
+    BOOST_REQUIRE(Y.is_missing(3));
+}
+
+BOOST_AUTO_TEST_CASE(nan_should_not_have_unset_values_size_t){
+    std::vector<double> X = {1,NAN,3,NAN,5};
+    baxcat::DataContainer<size_t> Y;
+
+    Y.load_and_cast_data(X);
+
+    BOOST_REQUIRE(not Y.is_missing(0));
+    BOOST_REQUIRE(not Y.is_missing(2));
+    BOOST_REQUIRE(not Y.is_missing(4));
+    BOOST_REQUIRE(Y.is_missing(1));
+    BOOST_REQUIRE(Y.is_missing(3));
+}
+
+BOOST_AUTO_TEST_CASE(nan_should_not_have_unset_values_bool){
+    std::vector<double> X = {0,NAN,1,NAN,1};
+    baxcat::DataContainer<bool> Y;
+
+    Y.load_and_cast_data(X);
+
+    BOOST_REQUIRE(not Y.is_missing(0));
+    BOOST_REQUIRE(not Y.is_missing(2));
+    BOOST_REQUIRE(not Y.is_missing(4));
+    BOOST_REQUIRE(Y.is_missing(1));
+    BOOST_REQUIRE(Y.is_missing(3));
+}
+
 // check append
 //`````````````````````````````````````````````````````````````````````````````````````````````````
 BOOST_AUTO_TEST_CASE(append_should_add_set_element_to_back){
