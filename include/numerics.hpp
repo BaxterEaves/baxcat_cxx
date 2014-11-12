@@ -31,6 +31,7 @@
 #define LOG_2 log(2.0)
 #define LOG_PI log(M_PI)
 #define INF std::numeric_limits<double>::infinity()
+#define NAN std::numeric_limits<double>::quiet_NaN()
 
 namespace baxcat {
 namespace numerics {
