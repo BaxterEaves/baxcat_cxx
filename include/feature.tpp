@@ -246,6 +246,13 @@ size_t baxcat::Feature<DataType, T>::getIndex() const
 
 
 template<class DataType, typename T>
+size_t baxcat::Feature<DataType, T>::getNumClusters() const
+{
+    return _clusters.size();
+}
+
+
+template<class DataType, typename T>
 size_t baxcat::Feature<DataType, T>::getN() const
 {
     return _N;

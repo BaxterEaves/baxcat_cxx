@@ -72,6 +72,8 @@ public:
     // getters
     // returns the feature index
     virtual size_t getIndex() const = 0;
+    // get the number of clusters
+    virtual size_t getNumClusters() const = 0;
     // returns the number of rows
     virtual size_t getN() const = 0;
     // returns the hypers vector
@@ -159,6 +161,7 @@ public:
 
     virtual size_t getIndex() const final;
     virtual size_t getN() const final;
+    virtual size_t getNumClusters() const final;
     virtual std::vector<double> getHypers() const final;
     virtual std::vector<std::map<std::string, double>> getModelSuffstats() const final;
     virtual std::vector<std::map<std::string, double>> getModelHypers() const final;
