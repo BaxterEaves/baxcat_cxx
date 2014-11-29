@@ -141,7 +141,7 @@ State::State(size_t num_rows, vector<string> datatypes, vector<vector<double>> d
     }
 
     for(size_t v = 0; v < _num_views; ++v)
-        _views.push_back(View(view_features[v], _rng.get(), _view_alpha_marker, row_assignment));
+        _views.push_back(View(view_features[v], _rng.get(), _view_alpha_marker, row_assignment, false));
 }
 
 // probability
@@ -354,15 +354,21 @@ void State::__transitionStateCRPAlpha()
     double alpha_shape = _crp_alpha_config[0];
     double alpha_scale = _crp_alpha_config[1];
 
-    auto log_crp_posterior = [alpha_shape, alpha_scale, k, n](double x){
-        return numerics::lcrpUNormPost(k, n, x) + dist::gamma::logPdf(x, alpha_shape, alpha_scale);
+    // auto log_crp_posterior = [alpha_shape, alpha_scale, k, n](double x){
+    //     return numerics::lcrpUNormPost(k, n, x) + dist::gamma::logPdf(x, alpha_shape, alpha_scale);
+    // };
+
+    auto counts = _view_counts;
+
+    auto log_crp_posterior = [alpha_shape, alpha_scale, counts, n](double x){
+        return numerics::lcrp(counts, n, x) + dist::gamma::logPdf(x, alpha_shape, alpha_scale);
     };
 
     double slice_width = alpha_shape*alpha_scale*alpha_scale/2;  // this is a guess
     size_t burn = 50;
 
     // slice sample
-    _crp_alpha = samplers::sliceSample(_crp_alpha, log_crp_posterior, {0, INF},
+    _crp_alpha = samplers::sliceSample(_crp_alpha, log_crp_posterior, {ALMOST_ZERO, INF},
                                        slice_width, burn, _rng.get());
 }
 
@@ -424,6 +430,9 @@ void State::__transitionColumnAssignment(vector<size_t> which_cols, size_t which
     }else if(which_kernel == 1){
         for(auto col : which_cols)
             __transitionColumnAssignmentGibbsBootstrap(col, m);
+    }else if(which_kernel == 2){
+        for(auto col : which_cols)
+            __transitionColumnAssignmentEnumeration(col);
     }else{
         // FIXME: proper exception
         throw 1;
@@ -469,7 +478,7 @@ void State::__transitionColumnAssignmentGibbs(size_t col, size_t m)
         vector<View> view_holder;
         double log_crp_m = log(_crp_alpha)-log(static_cast<double>(m));
         for(size_t i = 0; i < m; ++i){
-            View proposal_view(fvec, _rng.get(), _view_alpha_marker, {});
+            View proposal_view(fvec, _rng.get(), _view_alpha_marker, {}, false);
             view_holder.push_back(proposal_view);
             double logp = feature.get()->logp()+log_crp_m;
             logps.push_back(logp);
@@ -496,6 +505,7 @@ void State::__transitionColumnAssignmentGibbs(size_t col, size_t m)
         }
     }
 }
+
 
 // samples only one other view, but runs row_z and CRP alpha transitions on it m times
 void State::__transitionColumnAssignmentGibbsBootstrap(size_t col, size_t m)
@@ -533,9 +543,9 @@ void State::__transitionColumnAssignmentGibbsBootstrap(size_t col, size_t m)
         View proposal_view(fvec, _rng.get(), _view_alpha_marker, {}, true);
         for(size_t i = 0; i < m; ++i){
             proposal_view.transitionRows();
-            proposal_view.transitionCRPAlpha();
+            if(_view_alpha_marker <= 0) proposal_view.transitionCRPAlpha();
         }
-        double logp = feature.get()->logp()+log(_crp_alpha);
+        double logp = feature.get()->logp() + log(_crp_alpha);
         logps.push_back(logp);
 
         auto view_index_new = _rng.get()->lpflip(logps);
@@ -558,6 +568,94 @@ void State::__transitionColumnAssignmentGibbsBootstrap(size_t col, size_t m)
         }
     }
 }
+
+// ````````````````````````````````````````````````````````````````````````````````````````````````
+void State::__transitionColumnAssignmentEnumeration(size_t col)
+{
+    // double log_crp_denom = log(double(_num_columns-1) + _crp_alpha);
+
+    auto view_index_current = _column_assignment[col];
+    bool is_singleton = (_view_counts[view_index_current] == 1);
+
+    // TODO: optimization calculate logp for current view first
+    vector<double> log_crps(_num_views,0);
+    for(size_t v = 0; v < _num_views; v++){
+        if(v == view_index_current){
+            log_crps[v] = is_singleton ? log(_crp_alpha) : log(double(_view_counts[v]-1.0));
+        }else{
+            log_crps[v] = log(double(_view_counts[v]));
+        }
+    }
+
+    // if (not is_singleton) log_crps.push_back(log(_crp_alpha));
+
+    // TODO: optimization: preallocate
+    vector<double> logps;
+
+    auto feature = _features[col];
+
+    for(size_t v = 0; v < _num_views; ++v){
+        feature.get()->reassign(_views[v].getRowAssignments());
+        double logp = feature.get()->logp()+log_crps[v];
+        logps.push_back(logp);
+    }
+
+    // if this is not already a singleton view, we must propose a singleton
+    if(!is_singleton){
+        auto n = _num_rows;
+        auto log_crp_posterior = [n](double x, vector<size_t> const &counts){
+            return numerics::lcrp(counts, n, x);// + dist::gamma::logPdf(x, 1, 1);
+        };
+        // auto log_crp_posterior = [n](double x, size_t k){
+        //     return numerics::lcrpUNormPost(k, n, x) + dist::gamma::logPdf(x, 1, 1);
+        // };
+
+        vector<shared_ptr<BaseFeature>> fvec = {feature};
+        vector<View> view_holder;
+
+        vector<size_t> kappa(_num_rows, 0);
+        vector<size_t> Z(_num_rows, 0);
+
+        vector<double> proposal_logps;
+        vector<double> singleton_logps;
+        do{
+            View proposal_view(fvec, _rng.get(), _view_alpha_marker, Z, false);
+            view_holder.push_back(proposal_view);
+            auto counts = proposal_view.getClusterCounts();
+            auto view_alpha = proposal_view.getCRPAlpha();
+            auto logp = feature.get()->logp();
+            // proposal_logps.push_back(logp+log_crp_posterior(view_alpha, counts.size()));
+            proposal_logps.push_back(logp+log_crp_posterior(view_alpha, counts));
+            // proposal_logps.push_back(logp);
+            singleton_logps.push_back(logp);
+        }while(utils::next_partition(kappa, Z));
+
+        auto proposal_view_index = _rng.get()->lpflip(proposal_logps);
+
+        logps.push_back(singleton_logps[proposal_view_index]+log(_crp_alpha));
+        auto proposal_view = view_holder[proposal_view_index];
+
+        auto view_index_new = _rng.get()->lpflip(logps);
+
+        if (view_index_new != view_index_current){
+            if (view_index_new >= _num_views){
+                __createSingletonView(col, view_index_current, proposal_view);
+            }else{
+                __moveFeatureToView(col, view_index_current, view_index_new);
+            }
+        }else{
+            feature.get()->reassign(_views[view_index_current].getRowAssignments());
+        }
+    }else{
+        auto view_index_new = _rng.get()->lpflip(logps);
+        if (view_index_new != view_index_current){
+            __destroySingletonView(col, view_index_current, view_index_new);
+        }else{
+            feature.get()->reassign(_views[view_index_current].getRowAssignments());
+        }
+    }
+}
+
 
 // Cleanup
 //`````````````````````````````````````````````````````````````````````````````````````````````````
@@ -792,5 +890,24 @@ void State::__geweke_resampleRows()
         __geweke_resampleRow(rows[i]);
 }
 
+// debugging
+// ````````````````````````````````````````````````````````````````````````````````````````````````
+int State::checkPartitions()
+{
+
+    if (_num_views > _num_columns or _views.size() > _num_columns)
+        return -3;
+
+    if (utils::sum(_view_counts) != _num_columns)
+        return -2;
+
+    if (_view_counts.size() != _num_views)
+        return -1;
+
+    if (_num_views != _views.size())
+        return 0;
+
+    return 1;
+}
 
 } // end namespace baxcat

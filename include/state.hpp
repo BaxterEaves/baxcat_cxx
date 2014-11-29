@@ -131,6 +131,9 @@ public:
     std::vector<double> __geweke_pullDataColumn(size_t column_index) const;
     // void __geweke_initHypers();
 
+    // for debugging
+    int checkPartitions();
+
 private:
 
     // METHODS
@@ -158,6 +161,7 @@ private:
     // Gibbs method. Calculates probability under each view
     void __transitionColumnAssignmentGibbs(size_t which_column, size_t m=1);
     void __transitionColumnAssignmentGibbsBootstrap(size_t which_column, size_t m=1);
+    void __transitionColumnAssignmentEnumeration(size_t which_column);
 
     // probability and sample helpers
     double __doPredictiveLogpObserved(size_t row, size_t column, double value);
