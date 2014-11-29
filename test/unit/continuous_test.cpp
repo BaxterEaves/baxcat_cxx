@@ -104,6 +104,35 @@ BOOST_AUTO_TEST_CASE(fill_in_constructor_values_test)
 	BOOST_REQUIRE_EQUAL( model.getCount(), 4);
 }
 
+BOOST_AUTO_TEST_CASE(copy_constructor_should_copy_values){
+	double n = 4;
+	double sum_x = 10;
+	double sum_x_sq = 30;
+	double m = 1;
+	double r = 2;
+	double s = 3;
+	double nu = 4;
+
+	baxcat::datatypes::Continuous model(n, sum_x, sum_x_sq, m, r, s, nu);
+	baxcat::datatypes::Continuous model_copy(model);
+
+	auto suffstats = model.getSuffstatsMap();
+	auto hypers = model.getHypers();
+
+	auto suffstats_copy = model_copy.getSuffstatsMap();
+	auto hypers_copy = model_copy.getHypers();
+
+	BOOST_CHECK_EQUAL(suffstats["n"], suffstats_copy["n"]);
+	BOOST_CHECK_EQUAL(suffstats["sum_x"], suffstats_copy["sum_x"]);
+	BOOST_CHECK_EQUAL(suffstats["sum_x_sq"], suffstats_copy["sum_x_sq"]);
+
+	BOOST_CHECK_EQUAL(hypers.size(), hypers_copy.size());
+	BOOST_CHECK_EQUAL(hypers[0], hypers_copy[0]);
+	BOOST_CHECK_EQUAL(hypers[1], hypers_copy[1]);
+	BOOST_CHECK_EQUAL(hypers[2], hypers_copy[2]);
+	BOOST_CHECK_EQUAL(hypers[3], hypers_copy[3]);
+}
+
 // check  setters
 BOOST_AUTO_TEST_CASE(set_hypers_should_set_values)
 {

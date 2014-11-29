@@ -63,8 +63,12 @@ BOOST_AUTO_TEST_CASE(verify_base_constructor){
     Setup s(rng);
 
     View view( s.features, rng);
+    auto K = view.getNumCategories();
 
     BOOST_CHECK_EQUAL( view.checkPartitions(), 1);
+
+    for(auto &f : s.features)
+        BOOST_CHECK_EQUAL(f.get()->getNumClusters(), K);
 }
 
 BOOST_AUTO_TEST_CASE(verify_assignment_constructor){
@@ -81,6 +85,15 @@ BOOST_AUTO_TEST_CASE(verify_assignment_constructor){
     BOOST_CHECK(baxcat::test_utils::areIdentical(assignment, view.getRowAssignments()));
     BOOST_CHECK(baxcat::test_utils::areIdentical({2,3}, view.getClusterCounts()));
     BOOST_CHECK_EQUAL(view.getNumCategories(), 2);
+
+    for(auto &f : s.features){
+        auto suffstats = f.get()->getModelSuffstats();
+        size_t n_0 = static_cast<size_t>(suffstats[0]["n"]+.5);
+        size_t n_1 = static_cast<size_t>(suffstats[1]["n"]+.5);
+        BOOST_CHECK_EQUAL(f.get()->getNumClusters(), 2);
+        BOOST_CHECK_EQUAL(n_0, 2);
+        BOOST_CHECK_EQUAL(n_1, 3);
+    }
 }
 
 BOOST_AUTO_TEST_CASE(gibbs_init_should_work){

@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_CASE(constructor_should_produce_valid_object){
    unsigned int index = 0;
 
    baxcat::DataContainer<double> data({1,2,3,4,5});
-   vector<size_t> assignment = {0,0,0,0,0};
+   vector<size_t> assignment = {0,0,1,1,1};
 
    static baxcat::PRNG *rng = new baxcat::PRNG(10);
 
@@ -65,18 +65,82 @@ BOOST_AUTO_TEST_CASE(constructor_should_produce_valid_object){
 
    // check suffstats
    vector<map<string, double>> suffstats = feature.getModelSuffstats();
-   BOOST_REQUIRE( suffstats.size() == 1);
-   BOOST_CHECK_CLOSE_FRACTION( suffstats[0]["n"], 5, EPSILON );
-   BOOST_CHECK_CLOSE_FRACTION( suffstats[0]["sum_x"], 15, EPSILON );
-   BOOST_CHECK_CLOSE_FRACTION( suffstats[0]["sum_x_sq"], 55, EPSILON );
+   BOOST_REQUIRE( suffstats.size() == 2);
+   BOOST_CHECK_CLOSE_FRACTION(suffstats[0]["n"], 2, EPSILON);
+   BOOST_CHECK_CLOSE_FRACTION(suffstats[0]["sum_x"], 3, EPSILON);
+   BOOST_CHECK_CLOSE_FRACTION(suffstats[0]["sum_x_sq"], 5, EPSILON);
+
+   BOOST_CHECK_CLOSE_FRACTION(suffstats[1]["n"], 3, EPSILON);
+   BOOST_CHECK_CLOSE_FRACTION(suffstats[1]["sum_x"], 12, EPSILON);
+   BOOST_CHECK_CLOSE_FRACTION(suffstats[1]["sum_x_sq"], 50, EPSILON);
 
     // check hypers
    vector<map<string, double>> hypers = feature.getModelHypers();
-   BOOST_REQUIRE( hypers.size() == 1);
-   BOOST_REQUIRE( hypers[0].size() == 4 );
-   BOOST_REQUIRE( feature.getN() == 5 );
+   BOOST_REQUIRE_EQUAL(hypers.size(), 2);
+   BOOST_REQUIRE_EQUAL(hypers[0].size(), 4);
+   BOOST_REQUIRE_EQUAL(feature.getN(), 5);
 }
 
+// Copy ctor
+// ````````````````````````````````````````````````````````````````````````````
+BOOST_AUTO_TEST_CASE(copy_constructor_should_copy_all_members)
+{
+    unsigned int index = 0;
+
+    baxcat::DataContainer<double> data({1,2,3,4,5});
+    vector<size_t> assignment = {0,0,1,1,1};
+
+    static baxcat::PRNG *rng = new baxcat::PRNG(10);
+
+    baxcat::Feature<Continuous, double> feature(index, data, {}, assignment, rng);
+    auto feature_copy = baxcat::Feature<Continuous, double>(feature);
+
+    auto suffstats = feature.getModelSuffstats();
+    auto suffstats_copy = feature_copy.getModelSuffstats();
+
+    BOOST_CHECK_EQUAL(suffstats.size(), suffstats_copy.size());
+
+    BOOST_CHECK_EQUAL(suffstats[0]["n"], suffstats_copy[0]["n"]);
+    BOOST_CHECK_EQUAL(suffstats[1]["n"], suffstats_copy[1]["n"]);
+
+    BOOST_CHECK_EQUAL(suffstats[0]["sum_x"], suffstats_copy[0]["sum_x"]);
+    BOOST_CHECK_EQUAL(suffstats[1]["sum_x"], suffstats_copy[1]["sum_x"]);
+
+    BOOST_CHECK_EQUAL(suffstats[0]["sum_x_sq"], suffstats_copy[0]["sum_x_sq"]);
+    BOOST_CHECK_EQUAL(suffstats[1]["sum_x_sq"], suffstats_copy[1]["sum_x_sq"]);
+
+}
+
+// clone
+// ````````````````````````````````````````````````````````````````````````````
+BOOST_AUTO_TEST_CASE(basefeature_clone_should_copy_members_for_continuous)
+{
+    unsigned int index = 0;
+
+    baxcat::DataContainer<double> data({1,2,3,4,5});
+    vector<size_t> assignment = {0,0,1,1,1};
+
+    static baxcat::PRNG *rng = new baxcat::PRNG(10);
+
+    std::shared_ptr<baxcat::BaseFeature> feature_ptr(new baxcat::Feature<Continuous, double> 
+        (index, data, {}, assignment, rng));
+    auto cloned_feature_ptr = feature_ptr.get()->clone();
+
+    auto suffstats = feature_ptr.get()->getModelSuffstats();
+    auto suffstats_clone = cloned_feature_ptr.get()->getModelSuffstats();
+
+    BOOST_CHECK_EQUAL(suffstats.size(), suffstats_clone.size());
+
+    BOOST_CHECK_EQUAL(suffstats[0]["n"], suffstats_clone[0]["n"]);
+    BOOST_CHECK_EQUAL(suffstats[1]["n"], suffstats_clone[1]["n"]);
+
+    BOOST_CHECK_EQUAL(suffstats[0]["sum_x"], suffstats_clone[0]["sum_x"]);
+    BOOST_CHECK_EQUAL(suffstats[1]["sum_x"], suffstats_clone[1]["sum_x"]);
+
+    BOOST_CHECK_EQUAL(suffstats[0]["sum_x_sq"], suffstats_clone[0]["sum_x_sq"]);
+    BOOST_CHECK_EQUAL(suffstats[1]["sum_x_sq"], suffstats_clone[1]["sum_x_sq"]);
+
+}
 
 //  insert/remove test
 // ````````````````````````````````````````````````````````````````````````````
@@ -91,10 +155,10 @@ BOOST_AUTO_TEST_CASE(remove_all_should_clear_suffstats){
     feature.removeElement(4,0);
 
     vector<map<string, double>> suffstats = feature.getModelSuffstats();
-    BOOST_REQUIRE( suffstats.size() == 1);
-    BOOST_CHECK_CLOSE_FRACTION( suffstats[0]["n"], 0, EPSILON );
-    BOOST_CHECK_CLOSE_FRACTION( suffstats[0]["sum_x"], 0, EPSILON );
-    BOOST_CHECK_CLOSE_FRACTION( suffstats[0]["sum_x_sq"], 0, EPSILON );
+    BOOST_REQUIRE(suffstats.size() == 1);
+    BOOST_CHECK_CLOSE_FRACTION(suffstats[0]["n"], 0, EPSILON);
+    BOOST_CHECK_CLOSE_FRACTION(suffstats[0]["sum_x"], 0, EPSILON);
+    BOOST_CHECK_CLOSE_FRACTION(suffstats[0]["sum_x_sq"], 0, EPSILON);
 }
 
 BOOST_AUTO_TEST_CASE(add_should_increment_suffstats){
@@ -106,9 +170,9 @@ BOOST_AUTO_TEST_CASE(add_should_increment_suffstats){
     vector<map<string, double>> suffstats = feature.getModelSuffstats();
 
     BOOST_REQUIRE( suffstats.size() == 1);
-    BOOST_CHECK_CLOSE_FRACTION( suffstats[0]["n"], 6, EPSILON );
-    BOOST_CHECK_CLOSE_FRACTION( suffstats[0]["sum_x"], 15 + 2, EPSILON );
-    BOOST_CHECK_CLOSE_FRACTION( suffstats[0]["sum_x_sq"], 55 + 2*2, EPSILON );
+    BOOST_CHECK_CLOSE_FRACTION(suffstats[0]["n"], 6, EPSILON);
+    BOOST_CHECK_CLOSE_FRACTION(suffstats[0]["sum_x"], 15 + 2, EPSILON);
+    BOOST_CHECK_CLOSE_FRACTION(suffstats[0]["sum_x_sq"], 55 + 2*2, EPSILON);
 
     feature.insertElement(2,0);
 
