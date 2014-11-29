@@ -85,12 +85,22 @@
                 if(X != Y){                                                                 \
                     (os) << "DEBUG: " << __FILE__ << "(" << __LINE__ << ") in ";            \
                     (os) << __PRETTY_FUNCTION__ << #X;                                      \
-                    (os) << "(" << X << ") is not equal to " << #Y ;                        \
+                    (os) << "(" << X << ") should be equal to " << #Y ;                     \
                     (os) << "(" << Y << ")." << std::endl;                                  \
                     throw 0;                                                                \
                 }                                                                           \
             }while(0)
 
+        #define ASSERT_NOT_EQUAL(os, X, Y)                                                  \
+            do{                                                                             \
+                if(X == Y){                                                                 \
+                    (os) << "DEBUG: " << __FILE__ << "(" << __LINE__ << ") in ";            \
+                    (os) << __PRETTY_FUNCTION__ << #X;                                      \
+                    (os) << "(" << X << ") should not be equal to " << #Y ;                 \
+                    (os) << "(" << Y << ")." << std::endl;                                  \
+                    throw 0;                                                                \
+                }                                                                           \
+            }while(0)
 
         #define ASSERT_IS_A_NUMBER(os, number)                                      \
             do{                                                                     \
@@ -113,6 +123,7 @@
         #define ASSERT_GREATER_THAN_ZERO(os, number)
         #define ASSERT_IS_A_NUMBER(os, number)
         #define ASSERT_EQUAL(os, X, Y)
+        #define ASSERT_NOT_EQUAL(os, X, Y)
         #define DEBUG_MESSAGE(os, msg)
     #endif
 
