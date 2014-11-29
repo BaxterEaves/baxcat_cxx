@@ -42,6 +42,8 @@ class DataContainer : __BCDCAllowed__<T>
     std::vector<T> _data;
     std::vector<bool> _is_initalized;
 public:
+    DataContainer(const DataContainer &dc) : _data(dc._data), _is_initalized(dc._is_initalized){};
+
 	DataContainer(){};
 
     DataContainer(size_t N)
