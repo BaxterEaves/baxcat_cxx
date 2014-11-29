@@ -39,6 +39,8 @@ View::View(vector< shared_ptr<BaseFeature> > &feature_vec, PRNG *rng)
         _features.insert(f);
         f.get()->reassign(_row_assignment);
     }
+
+    // ASSERT_EQUAL(std::cout, checkPartitions(), 1);
 }
 
 
@@ -60,6 +62,7 @@ View::View(vector< shared_ptr<BaseFeature> > &feature_vec, PRNG *rng, double crp
     }else if(_row_assignment.empty()){
         _rng->crpGen(_crp_alpha, _num_rows, _row_assignment, _num_clusters, _cluster_counts);
     }else{
+        ASSERT_EQUAL(std::cout, _row_assignment.size(), _num_rows);
         // build partitions
         _num_clusters = utils::vector_max(_row_assignment)+1;
         _cluster_counts.resize(_num_clusters, 0);
@@ -68,9 +71,13 @@ View::View(vector< shared_ptr<BaseFeature> > &feature_vec, PRNG *rng, double crp
     }
 
     // build features tree (insert and reassign)
-    for(auto &f: _features)
-        f.get()->reassign(_row_assignment);
-
+    if(not gibbs_init){
+        for(auto &f: _features){
+            f.get()->reassign(_row_assignment);    
+        }
+    }
+    
+    // ASSERT_EQUAL(std::cout, checkPartitions(), 1);
 }
 
 
@@ -81,14 +88,15 @@ void View::__gibbsInit()
     for(size_t r = 0; r < _num_rows; r++)
         rows[r] = r;
 
+    rows = _rng->shuffle(rows);
+
     for(auto &f: _features){
         f.get()->clear();
         f.get()->insertElementToSingleton(rows[0]);
     }
 
-    rows = _rng->shuffle(rows);
-
-    _row_assignment.assign(_num_rows, 0);
+    _row_assignment.assign(_num_rows,0);
+    // _row_assignment[rows[0]] = 0;
     _cluster_counts = {1};
     _num_clusters = 1;
 
@@ -102,7 +110,7 @@ void View::__gibbsInit()
         
         logps.back() = rowSingletonLogp(row) + log_alpha;
 
-        size_t assignment = _rng->lpflip(logps);
+        auto assignment = _rng->lpflip(logps);
         _row_assignment[row] = assignment;
 
         if(assignment == _num_clusters){
@@ -117,8 +125,7 @@ void View::__gibbsInit()
         }
     }
 
-    // TODO: wrap in debug-only asser
-    checkPartitions();
+    ASSERT_EQUAL(std::cout, checkPartitions(), 1);
 }
 
 
@@ -155,6 +162,8 @@ void View::transitionRows()
 
     for(auto row: rows)
         transitionRow(row);
+
+    ASSERT(std::cout, checkPartitions()==1);
 }
 
 
@@ -213,8 +222,7 @@ void View::transitionRow(size_t row, bool assign_to_max_p_cluster)
         }
     }
 
-    // TODO: wrap in static assert
-    checkPartitions();
+    ASSERT(std::cout, checkPartitions()==1);
 }
 
 
@@ -227,13 +235,12 @@ double View::rowLogp(size_t row, size_t query_cluster, bool is_init)
 
     if(query_cluster == current_cluster and not is_init){
         for(auto &f: _features){
-            BaseFeature *feature = f.get();
-            feature->removeElement(row, query_cluster);
-            lp += feature->elementLogp(row, query_cluster);
-            feature->insertElement(row, query_cluster);
+            f.get()->removeElement(row, query_cluster);
+            lp += f.get()->elementLogp(row, query_cluster);
+            f.get()->insertElement(row, query_cluster);
         }
     }else{
-        for(auto f: _features)
+        for(auto &f: _features)
             lp += f.get()->elementLogp(row, query_cluster);
     }
     return lp;
@@ -243,7 +250,7 @@ double View::rowLogp(size_t row, size_t query_cluster, bool is_init)
 double View::rowSingletonLogp(size_t row)
 {
     double lp = 0;
-    for(auto f: _features)
+    for(auto &f: _features)
         lp += f.get()->singletonLogp(row);
 
     return lp;
@@ -259,7 +266,7 @@ void View::__destroySingletonCluster(size_t row, size_t to_destroy, size_t move_
         if( _row_assignment[i] > to_destroy) // maintain partition order
             _row_assignment[i]--;
 
-    for(auto f: _features)
+    for(auto &f: _features)
         f.get()->destroySingletonCluster(row, to_destroy, move_to);
 
     _cluster_counts[move_to]++;
@@ -273,7 +280,7 @@ void View::__createSingletonCluster(size_t row, size_t current)
     _num_clusters++;
     _cluster_counts[current]--;
     _cluster_counts.push_back(1);
-    for(auto f: _features)
+    for(auto &f: _features)
         f.get()->createSingletonCluster(row, current);
 }
 
@@ -283,7 +290,7 @@ void View::__moveRowToCluster(size_t row, size_t move_from, size_t move_to)
     _row_assignment[row] = move_to;
     _cluster_counts[move_from]--;
     _cluster_counts[move_to]++;
-    for(auto f: _features)
+    for(auto &f: _features)
         f.get()->moveToCluster(row, move_from, move_to);
 }
 
@@ -342,8 +349,8 @@ void View::popRow()
         _row_assignment.pop_back();
     }
 
-    for(auto &feature : _features)
-            feature.get()->popRow(assignment);
+    for(auto &f : _features)
+        f.get()->popRow(assignment);
 
     ASSERT(std::cout, checkPartitions()==1);
 }
@@ -393,6 +400,7 @@ double View::getCRPAlpha() const
 
 std::vector<size_t> View::getRowAssignments() const
 {
+    ASSERT_EQUAL(std::cout, _row_assignment.size(), _num_rows);
     return _row_assignment;
 }
 
@@ -429,15 +437,24 @@ int View::checkPartitions()
     if (_cluster_counts.size() != _num_clusters)
         return -1;
 
-    for(auto f : _features){
-        size_t Nf = 0;
-        vector< map<string, double> > suffstats = f.get()->getModelSuffstats();
-        for(map<string, double> s: suffstats)
-
-            Nf += size_t(round(s["n"]));
-        if(Nf != _num_rows)
-            return 0;
+    for(size_t k = 0; k < _cluster_counts.size(); ++k){
+        size_t sum_k = 0;
+        for(auto z : _row_assignment)
+            sum_k += (z==k) ? 1 : 0;
+        ASSERT_EQUAL(std::cout, sum_k, _cluster_counts[k]);
     }
+
+    // for(auto f : _features){
+    //     size_t Nf = 0;
+    //     vector< map<string, double> > suffstats = f.get()->getModelSuffstats();
+    //     ASSERT_EQUAL(std::cout, _num_clusters, suffstats.size());
+    //     for(auto &s: suffstats)
+    //         Nf += size_t(s["n"]+.5);
+
+    //     ASSERT_EQUAL(std::cout, Nf, _num_rows);
+    //     if(Nf != _num_rows)
+    //         return 0;
+    // }
     return 1;
 }
 
