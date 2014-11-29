@@ -200,6 +200,25 @@ namespace baxcat { namespace utils {
         std::cout << "]" << std::endl;
     }
 
+    // Builds the next partition k, and supplemental counts M. expects k and M to be started at 
+    // {0,..,0}.
+    static bool next_partition(std::vector<size_t> &k, std::vector<size_t> &M)
+    {
+        auto n = k.size();
+        for(size_t i = n-1; i >= 1; --i){
+            if(k[i] <= M[i-1]){
+                ++k[i];
+                M[i] = (M[i] > k[i]) ? M[i] : k[i];
+                for (size_t j = i+1; j <= n-1; ++j){
+                    k[j] = k[0];
+                    M[j] = M[i];
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
 }}
 
 #endif
