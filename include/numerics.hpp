@@ -101,7 +101,7 @@ static double lnchoosek(T1 n, T2 k)
 }
 
 
-static double lcrp(std::vector<size_t> Nk, size_t n, double alpha)
+static double lcrp(const std::vector<size_t> &Nk, size_t n, double alpha)
 {
     ASSERT_GREATER_THAN_ZERO(std::cout, alpha);
     ASSERT_GREATER_THAN_ZERO(std::cout, n);
@@ -137,7 +137,7 @@ static double logsumexp(std::vector<double> P)
 
     double max = *std::max_element(P.begin(), P.end());
     double ret = 0;
-    for(unsigned int i = 0; i < P.size(); i++)
+    for(size_t i = 0; i < P.size(); ++i)
         ret += exp(P[i]-max);
 
     double retval = log(ret)+max;
@@ -158,8 +158,7 @@ template<typename lambda>
 static double __quadrature_recursion(const lambda &f, double a, double b, double eps, double W,
                                      size_t &RECURSION_COUNT, size_t MAX_RECURSIONS)
 {
-    if(W==0)
-        return 0;
+    if(W==0) return 0;
 
     double c = (a+b)/2;
     double L = __simpsons_rule(f, a, c);
@@ -167,8 +166,7 @@ static double __quadrature_recursion(const lambda &f, double a, double b, double
     // double err = fabs( 1-(L+R)/W );
     double err = fabs( (L+R)-W );
 
-    if( err <= eps)
-        return L+R;
+    if( err <= eps) return L+R;
 
     ++RECURSION_COUNT;
 
