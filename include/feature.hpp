@@ -35,6 +35,8 @@ namespace baxcat {
 
 class BaseFeature{
 public:
+    virtual std::shared_ptr<BaseFeature> clone() const = 0;
+
     // insert X[row] into cluster
     virtual void insertElement(size_t row, size_t cluster) = 0;
     virtual void insertElementToSingleton(size_t row) = 0;
@@ -114,6 +116,9 @@ public:
     virtual void __geweke_clear() = 0;
     virtual void __geweke_initHypers() = 0;
 
+protected:
+    size_t _N;
+
 };
 
 
@@ -122,16 +127,19 @@ class Feature : public BaseFeature
 {
 private:
         size_t _index;
-        baxcat::DataContainer<T> _data;
         baxcat::PRNG *_rng;
-        size_t _N;
         std::vector<double> _distargs;
-        std::vector<DataType> _clusters;
         std::vector<double> _hypers;
         std::vector<double> _hyperprior_config;
+        baxcat::DataContainer<T> _data;
+        std::vector<DataType> _clusters;
 
 public:
-    
+        
+    virtual std::shared_ptr<BaseFeature> clone() const {
+        return std::shared_ptr<BaseFeature>(new Feature(static_cast<Feature const &>(*this))); 
+    };
+
     Feature(unsigned int index, baxcat::DataContainer<T> data, std::vector<double> distargs,
         baxcat::PRNG *rng_ptr);
     Feature(unsigned int index, baxcat::DataContainer<T> data, std::vector<double> distargs,

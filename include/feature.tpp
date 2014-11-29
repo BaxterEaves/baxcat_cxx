@@ -23,8 +23,9 @@ using std::map;
 template<class DataType, typename T>
 baxcat::Feature<DataType, T>::Feature(unsigned int idx, baxcat::DataContainer<T> data,
                                       vector<double> args, baxcat::PRNG *rng_ptr)
-    : _index(idx), _data(data), _rng(rng_ptr), _N(data.size())
+    : _index(idx), _data(data), _rng(rng_ptr)
 {
+    _N = data.size();
     _distargs = args;
     _hyperprior_config = DataType::constructHyperpriorConfig(_data.getSetData());
     _hypers = DataType::initHypers(_hyperprior_config , _rng);
@@ -35,8 +36,9 @@ baxcat::Feature<DataType, T>::Feature(unsigned int idx, baxcat::DataContainer<T>
 template<class DataType, typename T>
 baxcat::Feature<DataType, T>::Feature(unsigned int idx, baxcat::DataContainer<T> data,
                                       vector<double> args, vector<size_t> Z, baxcat::PRNG *rngptr)
-    : _index(idx), _data(data), _rng(rngptr), _N(data.size())
+    : _index(idx), _data(data), _rng(rngptr)
 {
+    _N = data.size();
     _distargs = args;
     _hyperprior_config = DataType::constructHyperpriorConfig(_data.getSetData());
     _hypers = DataType::initHypers(_hyperprior_config , _rng);
@@ -60,9 +62,9 @@ template<class DataType, typename T>
 baxcat::Feature<DataType, T>::Feature(unsigned int idx, baxcat::DataContainer<T> data,
                                       vector<double> args, baxcat::PRNG *rng_ptr, 
                                       vector<double> hypers, vector<double> hyperprior_config)
-    : _index(idx), _data(data), _rng(rng_ptr), _N(data.size()),
-      _hyperprior_config(hyperprior_config)
+    : _index(idx), _data(data), _rng(rng_ptr), _hyperprior_config(hyperprior_config)
 {
+    _N = data.size();
     if(hypers.empty()){
         _hypers = DataType::initHypers(_hyperprior_config, _rng);
     }else{
@@ -164,7 +166,6 @@ template<class DataType, typename T>
 double baxcat::Feature<DataType, T>::logp() const
 {
     double logp = 0;
-    // double logp = _clusters[0].hyperpriorLogp(_hyperprior_config);
     for(auto &cluster : _clusters)
         logp += cluster.logp();
 
@@ -213,6 +214,8 @@ void baxcat::Feature<DataType, T>::createSingletonCluster(size_t row, size_t cur
 template<class DataType, typename T>
 void baxcat::Feature<DataType, T>::reassign(std::vector<size_t> assignment)
 {
+    ASSERT_EQUAL(std::cout, _N, assignment.size());
+
     size_t K_old = _clusters.size();
     size_t K_new = utils::vector_max(assignment) + 1;
 
