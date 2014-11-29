@@ -186,7 +186,7 @@ map<string, double> Categorical::getSuffstatsMap() const
 {
     map<string,double> suffstats = {
         {"k", double(_counts.size())},
-        {"n", double(_n)}
+        {"n", _n}
     };
 
     for(size_t i = 0; i < _counts.size(); ++i){
