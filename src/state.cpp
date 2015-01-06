@@ -57,7 +57,7 @@ State::State(vector<vector<double>> X, vector<string> datatypes, vector<vector<d
 State::State(vector<vector<double>> X, vector<string> datatypes, vector<vector<double>> distargs,
              unsigned int rng_seed, vector<size_t> Zv, vector<vector<size_t>> Zrcv,
              vector<map<string, double>> hypers_maps)
-    : _column_assignment(Zv), _rng(shared_ptr<PRNG>(new PRNG(rng_seed))), 
+    : _column_assignment(Zv), _rng(shared_ptr<PRNG>(new PRNG(rng_seed))),
       _crp_alpha_config({1, 1}), _view_alpha_marker(-1)
 {
     _num_columns = X.size();
@@ -92,8 +92,8 @@ State::State(vector<vector<double>> X, vector<string> datatypes, vector<vector<d
 }
 
 // For Geweke testers
-State::State(size_t num_rows, vector<string> datatypes, vector<vector<double>> distargs, 
-             bool fix_hypers, bool fix_row_alpha, bool fix_col_alpha, 
+State::State(size_t num_rows, vector<string> datatypes, vector<vector<double>> distargs,
+             bool fix_hypers, bool fix_row_alpha, bool fix_col_alpha,
              bool fix_row_z, bool fix_col_z)
     : _num_rows(num_rows), _num_columns(datatypes.size()),  _rng(shared_ptr<PRNG>(new PRNG()))
 {
@@ -123,7 +123,7 @@ State::State(size_t num_rows, vector<string> datatypes, vector<vector<double>> d
     }else{
         _rng.get()->crpGen(_crp_alpha, _num_columns, _column_assignment, _num_views, _view_counts);
     }
-    
+
     vector<vector<double>> X;
     vector<double> Y(num_rows, NAN);
     for(size_t col = 0; col < _num_columns; ++col)
@@ -572,8 +572,7 @@ void State::__transitionColumnAssignmentGibbsBootstrap(size_t col, size_t m)
 // ````````````````````````````````````````````````````````````````````````````````````````````````
 void State::__transitionColumnAssignmentEnumeration(size_t col)
 {
-    // double log_crp_denom = log(double(_num_columns-1) + _crp_alpha);
-
+    // NOTE: This kernel is valid only if the row CRP alpha is fixed.
     auto view_index_current = _column_assignment[col];
     bool is_singleton = (_view_counts[view_index_current] == 1);
 
@@ -581,13 +580,11 @@ void State::__transitionColumnAssignmentEnumeration(size_t col)
     vector<double> log_crps(_num_views,0);
     for(size_t v = 0; v < _num_views; v++){
         if(v == view_index_current){
-            log_crps[v] = is_singleton ? log(_crp_alpha) : log(double(_view_counts[v]-1.0));
+            log_crps[v] = is_singleton ? log(_crp_alpha) : log(double(_view_counts[v])-1.0);
         }else{
             log_crps[v] = log(double(_view_counts[v]));
         }
     }
-
-    // if (not is_singleton) log_crps.push_back(log(_crp_alpha));
 
     // TODO: optimization: preallocate
     vector<double> logps;
@@ -603,12 +600,12 @@ void State::__transitionColumnAssignmentEnumeration(size_t col)
     // if this is not already a singleton view, we must propose a singleton
     if(!is_singleton){
         auto n = _num_rows;
-        auto log_crp_posterior = [n](double x, vector<size_t> const &counts){
-            return numerics::lcrp(counts, n, x);// + dist::gamma::logPdf(x, 1, 1);
+        const vector<size_t> bell_nums = {1, 1, 2, 5, 15, 52, 203, 877, 4140, 21147, 115975};
+        // double log_crp_m = log(_crp_alpha) - log(bell_nums[_num_rows]);
+
+        auto log_crp_posterior = [n](vector<size_t> const &counts, double alpha){
+            return numerics::lcrp(counts, n, alpha);
         };
-        // auto log_crp_posterior = [n](double x, size_t k){
-        //     return numerics::lcrpUNormPost(k, n, x) + dist::gamma::logPdf(x, 1, 1);
-        // };
 
         vector<shared_ptr<BaseFeature>> fvec = {feature};
         vector<View> view_holder;
@@ -616,29 +613,29 @@ void State::__transitionColumnAssignmentEnumeration(size_t col)
         vector<size_t> kappa(_num_rows, 0);
         vector<size_t> Z(_num_rows, 0);
 
-        vector<double> proposal_logps;
+        // vector<double> proposal_logps;
         vector<double> singleton_logps;
+
         do{
             View proposal_view(fvec, _rng.get(), _view_alpha_marker, Z, false);
             view_holder.push_back(proposal_view);
             auto counts = proposal_view.getClusterCounts();
             auto view_alpha = proposal_view.getCRPAlpha();
-            auto logp = feature.get()->logp();
-            // proposal_logps.push_back(logp+log_crp_posterior(view_alpha, counts.size()));
-            proposal_logps.push_back(logp+log_crp_posterior(view_alpha, counts));
-            // proposal_logps.push_back(logp);
-            singleton_logps.push_back(logp);
+            auto logp = feature.get()->logp();// + log_crp_m;
+            // logps.push_back(logp+log_crp_posterior(counts, view_alpha));
+            singleton_logps.push_back(logp+log_crp_posterior(counts, view_alpha));
         }while(utils::next_partition(kappa, Z));
 
-        auto proposal_view_index = _rng.get()->lpflip(proposal_logps);
+        logps.push_back(numerics::logsumexp(singleton_logps) + log(_crp_alpha));
 
-        logps.push_back(singleton_logps[proposal_view_index]+log(_crp_alpha));
-        auto proposal_view = view_holder[proposal_view_index];
+        ASSERT_EQUAL(std::cout, singleton_logps.size(), bell_nums[_num_rows]);
 
         auto view_index_new = _rng.get()->lpflip(logps);
 
         if (view_index_new != view_index_current){
             if (view_index_new >= _num_views){
+                // auto proposal_view = view_holder[view_index_new-_num_views];
+                auto proposal_view = view_holder[_rng.get()->lpflip(singleton_logps)];
                 __createSingletonView(col, view_index_current, proposal_view);
             }else{
                 __moveFeatureToView(col, view_index_current, view_index_new);
