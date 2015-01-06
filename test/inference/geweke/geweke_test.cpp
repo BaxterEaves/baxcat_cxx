@@ -21,15 +21,19 @@
 
 #include "boost/program_options.hpp"
 
+// Runs Geweke test
+// Example: Run enumeration kernel on 5-row table, fixing the row CRP alpha
+//     ./build/geweke.inftest -r 5 -k 2 --fix_row_alpha
+
 int main(int argc, char** argv)
 {
     // default values
     size_t iters, chains, rows, seed, lag, m, ct_kernel;
     bool fix_hypers, fix_row_alpha, fix_col_alpha, fix_row_z, fix_col_z;
-    
-    namespace po = boost::program_options; 
-    po::options_description desc("Options"); 
-    desc.add_options() 
+
+    namespace po = boost::program_options;
+    po::options_description desc("Options");
+    desc.add_options()
         ("help", "Print help messages")
         ("fix_hypers,y", po::bool_switch(&fix_hypers)->default_value(false), "fix hyperparamters transition")
         ("fix_row_alpha,a", po::bool_switch(&fix_row_alpha)->default_value(false), "fix row in views CRP alpha transition")
@@ -45,13 +49,13 @@ int main(int argc, char** argv)
         ("lag,l", po::value<size_t>(&lag)->default_value(5), "number of iterations between sample collection");
 
     po::variables_map vm;
-    po::store(po::parse_command_line(argc, argv, desc),  vm); // can throw 
+    po::store(po::parse_command_line(argc, argv, desc),  vm); // can throw
 
-    
-    // if (vm.count("help")){ 
+
+    // if (vm.count("help")){
     //     std::cout << "Basic Command Line Parameter App" << std::endl << desc << std::endl;
-    //     return 0; 
-    // } 
+    //     return 0;
+    // }
 
     po::notify(vm);
 
@@ -69,14 +73,12 @@ int main(int argc, char** argv)
               << "lag: " << lag << std::endl;
     std::cout << "=================================================" << std::endl;
 
-    std::vector<std::string> datatypes = {"categorical", "continuous", "categorical", 
-                                          "continuous", "categorical", "categorical", 
-                                          "continuous", "categorical", "continuous", 
+    std::vector<std::string> datatypes = {"categorical", "continuous", "categorical",
+                                          "continuous", "categorical", "categorical",
+                                          "continuous", "categorical", "continuous",
                                           "categorical"};
 
-    // std::vector<std::string> datatypes = {"continuous"};
-
-	baxcat::GewekeTester gwk(rows, datatypes.size(), datatypes, seed, m, !fix_hypers, !fix_row_alpha, 
+	baxcat::GewekeTester gwk(rows, datatypes.size(), datatypes, seed, m, !fix_hypers, !fix_row_alpha,
                              !fix_col_alpha, !fix_row_z, !fix_col_z, ct_kernel);
 
 	gwk.run(iters, chains, lag);
