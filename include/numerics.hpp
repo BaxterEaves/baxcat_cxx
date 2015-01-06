@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <iostream>
 #include <cfloat>
+#include <vector>
 
 #define TOL 10e-8
 #define ALMOST_ZERO DBL_MIN
@@ -31,7 +32,7 @@
 #define LOG_2 log(2.0)
 #define LOG_PI log(M_PI)
 #define INF std::numeric_limits<double>::infinity()
-#define NAN std::numeric_limits<double>::quiet_NaN()
+// #define NAN std::numeric_limits<double>::quiet_NaN()
 
 namespace baxcat {
 namespace numerics {
@@ -174,7 +175,7 @@ static double __quadrature_recursion(const lambda &f, double a, double b, double
     if(RECURSION_COUNT > MAX_RECURSIONS)
         throw MaxIterationsReached(RECURSION_COUNT);
 
-    return __quadrature_recursion(f, a, c, eps/2, L, RECURSION_COUNT,  MAX_RECURSIONS) + 
+    return __quadrature_recursion(f, a, c, eps/2, L, RECURSION_COUNT,  MAX_RECURSIONS) +
            __quadrature_recursion(f, c, b, eps/2, R, RECURSION_COUNT,  MAX_RECURSIONS);
 }
 
@@ -207,12 +208,12 @@ static double kldivergence(const lambda_a &p, const lambda_b &log_p, lambda_c &l
     return quadrature( kl_integral, a, b, eps);
 }
 
-// Calculates discrete KL-divergence given probability distributions p and q. p and q contain log 
+// Calculates discrete KL-divergence given probability distributions p and q. p and q contain log
 // probabilities over the same varaibles in the same order.
 static double discretekl(std::vector<double> p, std::vector<double> q)
 {
     ASSERT_EQUAL(std::cout, p.size(), q.size());
-    
+
     double kl = 0;
     for(auto &logp_p : p)
         for(auto &logp_q : q)
