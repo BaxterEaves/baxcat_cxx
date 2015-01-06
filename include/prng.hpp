@@ -73,6 +73,7 @@ private:
     std::vector<double> _p;
 };
 
+
 class PRNG{
 
     private:
