@@ -60,7 +60,7 @@ baxcat::Feature<DataType, T>::Feature(unsigned int idx, baxcat::DataContainer<T>
 // for geweke
 template<class DataType, typename T>
 baxcat::Feature<DataType, T>::Feature(unsigned int idx, baxcat::DataContainer<T> data,
-                                      vector<double> args, baxcat::PRNG *rng_ptr, 
+                                      vector<double> args, baxcat::PRNG *rng_ptr,
                                       vector<double> hypers, vector<double> hyperprior_config)
     : _index(idx), _data(data), _rng(rng_ptr), _hyperprior_config(hyperprior_config)
 {
@@ -310,6 +310,13 @@ std::vector<double> baxcat::Feature<DataType, T>::getData() const
     return _data.getSetData();
 }
 
+// TODO: implement so we can use variable return types
+template<class DataType, typename T>
+double baxcat::Feature<DataType, T>::getDataAt(size_t row_index) const
+{
+    return _data.at(row_index);
+}
+
 
 // Setters
 // ````````````````````````````````````````````````````````````````````````````````````````````````
@@ -377,6 +384,23 @@ void baxcat::Feature<DataType, T>::popRow(  size_t cluster_assignment )
     _data.pop_back();
 }
 
+//
+// ````````````````````````````````````````````````````````````````````````````````````````````````
+template<class DataType, typename T>
+void baxcat::Feature<DataType, T>::replaceValue(size_t which_row, size_t which_cluster, double x)
+{
+    // TODO: When component constant-updating functions are implemented as a part of optimization,
+    // we will need to update this code
+
+    // remove data at which_row if it exists
+    if(_data.is_set(which_row)){
+        T x = _data.at(which_row);
+        _clusters[which_cluster].removeElement(x);
+    }
+
+    _data.cast_and_set(which_row, x);
+    _clusters[which_cluster].insertElement(_data.at(which_row));
+}
 
 // Testing
 // ````````````````````````````````````````````````````````````````````````````````````````````````
@@ -392,7 +416,7 @@ void baxcat::Feature<DataType, T>::__geweke_resampleRow(size_t which_row, size_t
         T x = _data.at(which_row);
         _clusters[which_cluster].removeElement(x);
     }
-    
+
     T y = _clusters[which_cluster].draw(rng);
 
     _data.set(which_row, y);

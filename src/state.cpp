@@ -770,6 +770,24 @@ void State::popRow()
 
 // getters
 //`````````````````````````````````````````````````````````````````````````````````````````````````
+vector<vector<double>> State::getDataTable() const
+{
+    vector<vector<double>> data_table;
+    for(size_t row_index = 0; row_index < _num_rows; ++row_index)
+        data_table.push_back(getDataRow(row_index));
+
+    return data_table;
+}
+
+vector<double> State::getDataRow(size_t row_index) const
+{
+    vector<double> data_row;
+    for(auto & f : _features)
+        data_row.push_back(f.get()->getDataAt(row_index));
+
+    return data_row;
+}
+
 vector<size_t> State::getColumnAssignment() const
 {
     return _column_assignment;
@@ -843,6 +861,35 @@ void State::setHypers(size_t column_index, std::map<std::string, double> hypers_
 void State::setHypers(size_t column_index, std::vector<double> hypers_vec)
 {
     _features[column_index].get()->setHypers(hypers_vec);
+}
+
+void State::replaceSliceData(std::vector<size_t> row_range, std::vector<size_t> col_range,
+                             std::vector<std::vector<double>> new_data)
+{
+    ASSERT(std::cout, row_range[1] >= row_range[0]);
+    ASSERT(std::cout, col_range[1] >= col_range[0]);
+
+    for(size_t c = 0; c < col_range[1]-col_range[0]; ++c){
+        size_t column_index = col_range[c];
+        for(size_t r = 0; r < row_range[1]-row_range[0]; ++r){
+            size_t row_index = row_range[r];
+            auto x = new_data[r][c];
+            auto view_index = _column_assignment[column_index];
+            auto cluster_index = _views[view_index].getAssignmentOfRow(row_index);
+            _features[c].get()->replaceValue(row_index, cluster_index, x);
+        }
+    }
+}
+
+void State::replaceRowData(size_t row_index, std::vector<double> new_row_data)
+{
+    size_t column_index = 0;
+    for(auto &f : _features){
+        auto view_index = _column_assignment[column_index];
+        auto cluster_index = _views[view_index].getAssignmentOfRow(row_index);
+        f.get()->replaceValue(row_index, cluster_index, new_row_data[column_index]);
+        ++column_index;
+    }
 }
 
 

@@ -37,6 +37,8 @@ using std::endl;
 using baxcat::State;
 using baxcat::test_utils::areIdentical;
 
+const double EPSILON = 10E-10;
+
 struct Setup
 {
     unsigned int seed = 10;
@@ -285,4 +287,47 @@ BOOST_AUTO_TEST_CASE(categorical_crash_test)
     BOOST_CHECK_EQUAL(areIdentical(row_assignments[1], row_assignments_out[1]), 1);
 
 }
+
+// get data row and table
+//``````````````````````````````````````````````````````````````````````````````````````````````````
+BOOST_AUTO_TEST_CASE(get_row_should_return_data){
+    Setup s;
+    State state(s.data, s.datatypes, s.distargs, s.seed);
+
+    auto row_data = state.getDataRow(0);
+    BOOST_CHECK_EQUAL(row_data.size(), 2);
+    BOOST_CHECK_CLOSE_FRACTION(row_data[0], 0.5377, EPSILON);
+    BOOST_CHECK_CLOSE_FRACTION(row_data[1], -1.3077, EPSILON);
+
+    row_data = state.getDataRow(3);
+    BOOST_CHECK_EQUAL(row_data.size(), 2);
+    BOOST_CHECK_CLOSE_FRACTION(row_data[0], 0.8622, EPSILON);
+    BOOST_CHECK_CLOSE_FRACTION(row_data[1], 3.5784, EPSILON);
+}
+
+BOOST_AUTO_TEST_CASE(get_table_should_return_data){
+    Setup s;
+    State state(s.data, s.datatypes, s.distargs, s.seed);
+
+    auto data = state.getDataTable();
+    BOOST_CHECK_EQUAL(data.size(), 5);
+    BOOST_CHECK_EQUAL(data[0].size(), 2);
+    BOOST_CHECK_CLOSE_FRACTION(data[0][0], 0.5377, EPSILON);
+    BOOST_CHECK_CLOSE_FRACTION(data[0][1], -1.3077, EPSILON);
+    BOOST_CHECK_CLOSE_FRACTION(data[3][0], 0.8622, EPSILON);
+    BOOST_CHECK_CLOSE_FRACTION(data[3][1], 3.5784, EPSILON);
+}
+
+// replace data (slice and row) tests
+//``````````````````````````````````````````````````````````````````````````````````````````````````
+// BOOST_AUTO_TEST_CASE(replace_slice_data_should_update_suffstats){
+//     // Fixme: implement!
+//     BOOST_CHECK(false);
+// }
+// 
+// BOOST_AUTO_TEST_CASE(replace_row_data_should_update_suffstats){
+//     // Fixme: implement!
+//     BOOST_CHECK(false);
+// }
+
 BOOST_AUTO_TEST_SUITE_END ()

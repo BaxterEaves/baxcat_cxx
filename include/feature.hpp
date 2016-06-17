@@ -88,7 +88,8 @@ public:
     virtual std::vector<std::map<std::string, double>> getModelHypers() const = 0;
     virtual std::map<std::string, double> getHypersMap() const = 0;
     // get the set (not missing) data
-    virtual std::vector<double> getData() const = 0;  // implement
+    virtual std::vector<double> getData() const = 0;
+    virtual double getDataAt(size_t row_index) const = 0;
 
     // setters
     // remove all clusters
@@ -109,6 +110,9 @@ public:
     // draw
     // draw from cluster
     virtual double drawFromCluster(size_t cluster_idx, baxcat::PRNG *rng) = 0;
+
+    // replace value in data
+    virtual void replaceValue(size_t which_row, size_t which_cluster, double x) = 0;
 
     // testing
     // resamples the data in the row
@@ -135,9 +139,9 @@ private:
         std::vector<DataType> _clusters;
 
 public:
-        
+
     virtual std::shared_ptr<BaseFeature> clone() const {
-        return std::shared_ptr<BaseFeature>(new Feature(static_cast<Feature const &>(*this))); 
+        return std::shared_ptr<BaseFeature>(new Feature(static_cast<Feature const &>(*this)));
     };
 
     Feature(unsigned int index, baxcat::DataContainer<T> data, std::vector<double> distargs,
@@ -175,6 +179,7 @@ public:
     virtual std::vector<std::map<std::string, double>> getModelHypers() const final;
     virtual std::map<std::string, double> getHypersMap() const final;
     virtual std::vector<double> getData() const final;
+    virtual double getDataAt(size_t row_index) const final;
 
     virtual void clear() final;
     virtual void setHypers(std::map<std::string, double> hypers_map) final;
@@ -182,6 +187,8 @@ public:
     virtual void setHyperConfig(std::vector<double> hyperprior_config) final;
     virtual void appendRow(double datum) final;
     virtual void popRow(size_t cluster_assignment) final;
+
+    virtual void replaceValue(size_t which_row, size_t which_cluster, double x) final;
 
     virtual double drawFromCluster(size_t cluster_idx, baxcat::PRNG *rng) final;
 

@@ -169,7 +169,7 @@ namespace baxcat { namespace utils {
 
 
     template <typename T>
-    static baxcat::enable_if<std::is_arithmetic<T>, T> sum( const std::vector<T> &V)
+    static baxcat::enable_if<std::is_arithmetic<T>, T> sum(const std::vector<T> &V)
     {
         T ret = 0;
         for( T v : V){

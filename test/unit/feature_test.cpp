@@ -122,7 +122,7 @@ BOOST_AUTO_TEST_CASE(basefeature_clone_should_copy_members_for_continuous)
 
     static baxcat::PRNG *rng = new baxcat::PRNG(10);
 
-    std::shared_ptr<baxcat::BaseFeature> feature_ptr(new baxcat::Feature<Continuous, double> 
+    std::shared_ptr<baxcat::BaseFeature> feature_ptr(new baxcat::Feature<Continuous, double>
         (index, data, {}, assignment, rng));
     auto cloned_feature_ptr = feature_ptr.get()->clone();
 
@@ -437,7 +437,7 @@ BOOST_AUTO_TEST_CASE(pop_row_should_remove_element_singleton)
 
     auto data_out = feature.getData();
     auto n_elem = data.size();
-    
+
     size_t K_start = feature.getNumClusters();
 
     // remove element from singleton
@@ -533,6 +533,43 @@ BOOST_AUTO_TEST_CASE(insert_to_singleton_should_work_with_unset_values)
 
     feature.insertElementToSingleton(4);
     BOOST_REQUIRE_EQUAL(feature.getNumClusters(), 5);
+}
+
+// Replace values
+//``````````````````````````````````````````````````````````````````````````````````````````````````
+BOOST_AUTO_TEST_CASE(replace_values_should_change_value_in_container){
+    static baxcat::PRNG *rng = new baxcat::PRNG(10);
+    auto feature_0 = Setup(rng);
+
+    feature_0.replaceValue(1, 0, 1.2);
+
+    BOOST_CHECK_CLOSE_FRACTION(1.2, feature_0.getDataAt(1), 10E-6);
+
+    baxcat::DataContainer<double> data({1,2,3,4,5});
+    vector<size_t> assignment = {0,0,1,1,2};
+
+    baxcat::Feature<Continuous, double> feature_1(0, data, {}, assignment, rng);
+
+    feature_1.replaceValue(2, 1, 1.2);
+    BOOST_CHECK_CLOSE_FRACTION(1.2, feature_1.getDataAt(2), EPSILON);
+
+}
+
+BOOST_AUTO_TEST_CASE(replace_values_should_change_suffstats){
+    static baxcat::PRNG *rng = new baxcat::PRNG(10);
+    auto feature_0 = Setup(rng);
+    auto suffstats = feature_0.getModelSuffstats();
+
+    BOOST_CHECK_CLOSE_FRACTION(suffstats[0]["n"], 5, EPSILON);
+    BOOST_CHECK_CLOSE_FRACTION(suffstats[0]["sum_x"], 15, EPSILON);
+    BOOST_CHECK_CLOSE_FRACTION(suffstats[0]["sum_x_sq"], 55, EPSILON);
+
+    feature_0.replaceValue(1, 0, 1.2);
+    suffstats = feature_0.getModelSuffstats();
+
+    BOOST_CHECK_CLOSE_FRACTION(suffstats[0]["n"], 5, EPSILON);
+    BOOST_CHECK_CLOSE_FRACTION(suffstats[0]["sum_x"], 14.2, EPSILON);
+    BOOST_CHECK_CLOSE_FRACTION(suffstats[0]["sum_x_sq"], 52.44, EPSILON);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

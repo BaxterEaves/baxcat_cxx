@@ -299,4 +299,42 @@ BOOST_AUTO_TEST_CASE(get_set_data_should_only_output_set_values){
     BOOST_REQUIRE_EQUAL( set_data[2], 4.0);
 }
 
+// cast and insert
+//`````````````````````````````````````````````````````````````````````````````````````````````````
+BOOST_AUTO_TEST_CASE(cast_and_insert_should_work_same_type){
+    std::vector<double> X = {1.5, 2.5, 3.5, 4.5, 5.5};
+    baxcat::DataContainer<double> A(X);
+
+    BOOST_CHECK_EQUAL(2.5, A.at(1));
+    double x = 1.1;
+    A.cast_and_set(1, x);
+    BOOST_CHECK_EQUAL(1.1, A.at(1));
+
+    std::vector<double> Y = {1, 2, 3, 4, 5};
+    baxcat::DataContainer<size_t> B(Y);
+
+    BOOST_CHECK_EQUAL(2, B.at(1));
+    size_t y = 14;
+    B.cast_and_set(1, y);
+    BOOST_CHECK_EQUAL(14, B.at(1));
+}
+
+BOOST_AUTO_TEST_CASE(cast_and_insert_should_work_different_types){
+    std::vector<double> X = {1.5, 2.5, 3.5, 4.5, 5.5};
+    baxcat::DataContainer<double> A(X);
+
+    BOOST_CHECK_EQUAL(2.5, A.at(1));
+    size_t x = 1;
+    A.cast_and_set(1, x);
+    BOOST_CHECK_EQUAL(1, A.at(1));
+
+    std::vector<double> Y = {1, 2, 3, 4, 5};
+    baxcat::DataContainer<size_t> B(Y);
+
+    BOOST_CHECK_EQUAL(2, B.at(1));
+    double y = 14.0;
+    B.cast_and_set(1, y);
+    BOOST_CHECK_EQUAL(14, B.at(1));
+}
+
 BOOST_AUTO_TEST_SUITE_END()

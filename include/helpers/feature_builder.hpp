@@ -2,15 +2,18 @@
 // BaxCat: an extensible cross-catigorization engine.
 // Copyright (C) 2014 Baxter Eaves
 //
-// This program is free software: you can redistribute it and/or modify it under the terms of the
-// GNU General Public License as published by the Free Software Foundation, version 3.
+// This program is free software: you can redistribute it and/or modify it
+// under the terms of the GNU General Public License as published by the Free
+// Software Foundation, version 3.
 //
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
-// even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+// more details.
 //
-// You should have received a copy of the GNU General Public License (LICENSE.txt) along with this
-// program. If not, see <http://www.gnu.org/licenses/>.
+// You should have received a copy of the GNU General Public License
+// (LICENSE.txt) along with this program. If not, see 
+// <http://www.gnu.org/licenses/>.
 //
 // You may contact the mantainers of this software via github
 // <https://github.com/BaxterEaves/baxcat_cxx>.
@@ -42,11 +45,13 @@ namespace baxcat{
 namespace helpers{
 
 
-// TODO: OPTIMIZATION: construct and store similar data type features in vectors
+// TODO: OPTIMIZATION: construct and store similar data type features in
+// vectors
 static std::vector<std::shared_ptr<BaseFeature>> genFeatures(
-    std::vector<std::vector<double>> data_in, std::vector<std::string> datatypes,
-    std::vector<std::vector<double>> distargs, baxcat::PRNG *rng, bool geweke_mode=false, 
-    bool fix_hypers=false)
+    std::vector<std::vector<double>> data_in,
+    std::vector<std::string> datatypes,
+    std::vector<std::vector<double>> distargs, baxcat::PRNG *rng,
+    bool geweke_mode=false, bool fix_hypers=false)
 {
 
     ASSERT_EQUAL(std::cout, data_in.size(), datatypes.size());
@@ -66,16 +71,19 @@ static std::vector<std::shared_ptr<BaseFeature>> genFeatures(
                 if(fix_hypers)
                     hypers = baxcat::geweke_default_hypers[datatypes[i]];
 
-                std::shared_ptr<BaseFeature> ptr(new Feature<Continuous, double>(i, data, {0}, rng,
-                    hypers, hyperprior_config));
+                std::shared_ptr<BaseFeature> ptr(
+                    new Feature<Continuous, double>(
+                        i, data, {0}, rng, hypers, hyperprior_config));
                 features_out.push_back(ptr);
             }else{
-                std::shared_ptr<BaseFeature> ptr(new Feature<Continuous, double>(i, data, {0}, rng));
+                std::shared_ptr<BaseFeature> ptr(
+                    new Feature<Continuous, double>(i, data, {0}, rng));
                 features_out.push_back(ptr);
             }
 
         }else if(converted_datatypes[i] == categorical){
-            // TODO: choose container var type based on counts to reduce RAM requirements
+            // TODO: choose container var type based on counts to reduce RAM
+            // requirements
             baxcat::DataContainer<size_t> data(data_in[i]);
             if(geweke_mode){
                 auto hyperprior_config = baxcat::geweke_default_hyperprior_config[datatypes[i]];
@@ -84,11 +92,14 @@ static std::vector<std::shared_ptr<BaseFeature>> genFeatures(
                 if(fix_hypers)
                     hypers = baxcat::geweke_default_hypers[datatypes[i]];
 
-                std::shared_ptr<BaseFeature> ptr(new Feature<Categorical, size_t>(i, data, distargs[i], rng,
-                    hypers, hyperprior_config));
+                std::shared_ptr<BaseFeature> ptr(
+                    new Feature<Categorical, size_t>(
+                        i, data, distargs[i], rng, hypers, hyperprior_config));
                 features_out.push_back(ptr);
             }else{
-                std::shared_ptr<BaseFeature> ptr(new Feature<Categorical, size_t>(i, data, distargs[i], rng));
+                std::shared_ptr<BaseFeature> ptr(
+                    new Feature<Categorical, size_t>(i, data, distargs[i],
+                                                     rng));
                 features_out.push_back(ptr);
             }
 
