@@ -7,14 +7,16 @@ import numpy as np
 
 cmdclass = dict()
 cmdclass['build_ext'] = build_ext
+boost_dir = '/usr/local/Cellar/boost/1.56.0'
 
 extensions = [Extension('baxcat.state',
-                        sources=['baxcat/interface/state.pyx',
-                                 'src/state.cpp', 'src/view.cpp', 'src/categorical.cpp',
+                        sources=['baxcat/interface/state.pyx', 'src/state.cpp',
+                                 'src/view.cpp', 'src/categorical.cpp',
                                  'src/continuous.cpp', 'src/feature_tree.cpp'],
-                        extra_compile_args=['-std=c++14'],
+                        extra_compile_args=['-std=c++11'],
                         extra_link_args=['-lstdc++', '-fopenmp'],
-                        include_dirs=['src', 'include', np.get_include()],
+                        include_dirs=['src', 'include', np.get_include(),
+                                      boost_dir],
                         language="c++")
              ]
 
