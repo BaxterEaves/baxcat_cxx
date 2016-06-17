@@ -41,7 +41,7 @@ public:
     View(baxcat::PRNG &rng);
     View(std::vector< std::shared_ptr<BaseFeature> > &features, baxcat::PRNG *rng);
     View(std::vector< std::shared_ptr<BaseFeature> > &features, baxcat::PRNG *rng, double alpha,
-         std::vector<size_t> row_assignment={}, bool gibbs_init=false);
+         std::vector<size_t> row_assignment=std::vector<size_t>(), bool gibbs_init=false);
 
     // Transitions
     // reassign all rows to categories

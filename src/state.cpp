@@ -108,7 +108,7 @@ State::State(size_t num_rows, vector<string> datatypes, vector<vector<double>> d
     }
 
     // should fix column Z if row Z is fixed
-    vector<size_t> row_assignment = {};
+    vector<size_t> row_assignment = vector<size_t>();
     if(fix_row_z){
         fix_col_z = true;
         row_assignment.assign(_num_rows, 0);
@@ -478,7 +478,7 @@ void State::__transitionColumnAssignmentGibbs(size_t col, size_t m)
         vector<View> view_holder;
         double log_crp_m = log(_crp_alpha)-log(static_cast<double>(m));
         for(size_t i = 0; i < m; ++i){
-            View proposal_view(fvec, _rng.get(), _view_alpha_marker, {}, false);
+            View proposal_view(fvec, _rng.get(), _view_alpha_marker, vector<size_t>(), false);
             view_holder.push_back(proposal_view);
             double logp = feature.get()->logp()+log_crp_m;
             logps.push_back(logp);
@@ -540,7 +540,7 @@ void State::__transitionColumnAssignmentGibbsBootstrap(size_t col, size_t m)
     if(!is_singleton){
         // TODO: optimization: do this (cache) for each column in parallel
         vector<shared_ptr<BaseFeature>> fvec = {feature};
-        View proposal_view(fvec, _rng.get(), _view_alpha_marker, {}, true);
+        View proposal_view(fvec, _rng.get(), _view_alpha_marker, vector<size_t>(), true);
         for(size_t i = 0; i < m; ++i){
             proposal_view.transitionRows();
             if(_view_alpha_marker <= 0) proposal_view.transitionCRPAlpha();
