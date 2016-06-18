@@ -2,7 +2,7 @@ import pytest
 import pandas as pd
 import numpy as np
 
-from baxcat.utils import data as du
+from baxcat.utils import data_utils as du
 
 
 @pytest.fixture()
