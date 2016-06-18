@@ -110,9 +110,9 @@ cdef class BCState:
     cdef vector[string] datatypes
 
     def __cinit__(self, X, datatypes_list=None, distargs=None, hyper_maps=None,
-                  Zv=None, Zrcv=None, n_grid=31, seed=-1):
+                  Zv=None, Zrcv=None, n_grid=31, seed=None):
         self.n_cols, self.n_rows = X.shape
-        if seed < 0:
+        if seed is None or seed < 0:
             seed = int(time.time())
         if datatypes_list is None:
             datatypes_list = ['continuous']*self.n_cols
@@ -130,8 +130,10 @@ cdef class BCState:
 
         if hyper_maps is None:
             self.statePtr = new State(X, dtl, distargs, seed)
+        else:
+            # FIXME: Implement fully-specified state init
+            raise NotImplementedError()
 
-        # FIXME: Implement fully-specified state init
 
     def __dealloc__(self):
         del self.statePtr
