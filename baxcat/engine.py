@@ -205,4 +205,4 @@ class Engine(object):
         else:
             raise ValueError("%s is an invalid function." % (func,))
 
-        sns.heatmap(df, **plot_kwargs)
+        sns.clustermap(df, **plot_kwargs)
