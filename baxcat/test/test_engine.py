@@ -97,22 +97,3 @@ def test_pairwise_dependence_probability():
     assert depprob.ix[0, 1] == depprob.ix[1, 0]
     assert depprob.ix[0, 2] == depprob.ix[2, 0]
     assert depprob.ix[1, 2] == depprob.ix[2, 1]
-
-
-# FIXME: Add this to its own test_plotting.py
-# # heatmap
-# # `````````````````````````````````````````````````````````````````````````````
-# def test_heatmap_dependence_probability():
-#     x = np.random.randn(30)
-#     s1 = pd.Series(x)
-#     s2 = pd.Series(x + 1.0)
-
-#     df = pd.concat([s1, s2]+[pd.Series(np.random.rand(30)) for _ in range(10)],
-#                    axis=1)
-#     df.columns = ['c_%d' % i for i in range(12)]
-
-#     engine = Engine(df, n_models=10)
-#     engine.run(50)
-
-#     engine.heatmap('dependence_probability')
-#     plt.show()
