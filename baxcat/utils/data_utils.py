@@ -34,8 +34,8 @@ def process_dataframe(df, metadata=None, n_unique_cutoff=20):
     dtypes = guess_dtypes(df, n_unique_cutoff=n_unique_cutoff)
 
     if metadata is not None:
-        for c in metadata.keys():
-            dtypes[col2idx[c]] = c['dtype']
+        for c, v in metadata.items():
+            dtypes[col2idx[c]] = v['dtype']
     else:
         metadata = dict()
 
