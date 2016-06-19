@@ -28,12 +28,12 @@ valid_transitions = [
 cdef extern from "state.hpp" namespace "baxcat":
     cdef cppclass State:
         State(vector[vector[double]] X,
-              vector[string] datatypes_list,
+              vector[string] dtypes,
               vector[vector[double]] distargs,
               size_t rng_seed) except +
 
         State(vector[vector[double]] X,
-              vector[string] datatypes_list,
+              vector[string] dtypes,
               vector[vector[double]] distargs,
               size_t rng_seed,
               vector[size_t] Zv,
@@ -109,23 +109,24 @@ cdef class BCState:
     cdef size_t n_cols
     cdef vector[string] datatypes
 
-    def __cinit__(self, X, datatypes_list=None, distargs=None, hyper_maps=None,
+    def __cinit__(self, X, dtypes=None, distargs=None, hyper_maps=None,
                   Zv=None, Zrcv=None, n_grid=31, seed=None):
+        # data is column major (the rows in X become the crosscat columns)
         self.n_cols, self.n_rows = X.shape
         if seed is None or seed < 0:
             seed = int(time.time())
-        if datatypes_list is None:
-            datatypes_list = ['continuous']*self.n_cols
+        if dtypes is None:
+            dtypes = ['continuous']*self.n_cols
         if distargs is None:
             # 'empty'
             distargs = np.zeros((self.n_cols, 1))
        
-        if len(datatypes_list) != self.n_cols:
-            raise ValueError
+        if len(dtypes) != self.n_cols:
+            raise ValueError("Should be a dtype for each column.")
         if len(distargs) != self.n_cols:
-            raise ValueError
+            raise ValueError("Should be a distarg for each column.")
 
-        dtl = [bytes(st, 'ascii') for st in datatypes_list]
+        dtl = [bytes(st, 'ascii') for st in dtypes]
         self.datatypes = dtl 
 
         if hyper_maps is None:
