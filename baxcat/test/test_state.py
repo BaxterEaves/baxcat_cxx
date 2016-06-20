@@ -230,8 +230,8 @@ def test_get_metadata_valid_output(blank):
     assert isinstance(md['view_alphas'], list)
     assert isinstance(md['view_alphas'][0], float)
 
-    assert isinstance(md['column_assignment'], list)
-    assert isinstance(md['column_assignment'][0], int)
+    assert isinstance(md['col_assignment'], list)
+    assert isinstance(md['col_assignment'][0], int)
 
     assert isinstance(md['row_assignments'], list)
     for va in md['row_assignments']:
@@ -242,8 +242,8 @@ def test_get_metadata_valid_output(blank):
     for hp in md['hyperpriors']:
         assert isinstance(hp, dict)
 
-    assert isinstance(md['column_suffstats'], list)
-    for col_sf in md['column_suffstats']:
+    assert isinstance(md['col_suffstats'], list)
+    for col_sf in md['col_suffstats']:
         assert isinstance(col_sf, list)
         for sf in col_sf:
             assert isinstance(sf, dict)

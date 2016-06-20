@@ -1,6 +1,7 @@
 
 from baxcat.state import BCState
 from baxcat.utils import data_utils as du
+from baxcat.utils import model_utils as mu
 
 from multiprocessing.pool import Pool
 
@@ -99,7 +100,7 @@ class Engine(object):
             sd = np.random.randint(2**31-1)
             init_kwarg = {'dtypes': self._dtypes,
                           'distargs': self._distargs,
-                          'Zv': model['column_assignment'],
+                          'Zv': model['col_assignment'],
                           'Zrcv': model['row_assignments'],
                           'seed': sd}
             args.append((self._data, n_iter, n_sec, init_kwarg, trans_kwargs,))
@@ -115,8 +116,8 @@ class Engine(object):
         idx_a = self._converters['col2idx'][col_a]
         idx_b = self._converters['col2idx'][col_b]
         for model in self._models:
-            asgn_a = model['column_assignment'][idx_a]
-            asgn_b = model['column_assignment'][idx_b]
+            asgn_a = model['col_assignment'][idx_a]
+            asgn_b = model['col_assignment'][idx_b]
             if asgn_a == asgn_b:
                 depprob += 1.
         depprob /= self._n_models
@@ -126,15 +127,28 @@ class Engine(object):
     def mutual_information(self, col_a, col_b, normed=True):
         raise NotImplementedError
 
-    def entropy(self, col):
-        # type = self._dtypes[col]
-        # if gu.is_continuous_type(type):
-        #     # Use simulation to estimate
-        #     pass
-        # else:
-        #     # Enumerate
-        #     pass
+    def entropy(self, col, n_samples=500):
         raise NotImplementedError
+
+        col_idx = self._converters['col2idx'][col]
+        dtype = self._dtypes[col_idx]
+
+        # Unless x in enumerable (is categorical), we approximate h(x) using
+        # an importance sampling extimate of h(x) using p(x) as the importance
+        # function.
+        if not du.is_categorical_type(dtype):
+            k = self._distargs[col_idx]
+            for i, x in enumerate(range(k)):
+                logps = mu.probability(self._models, x, (col_idx,))
+
+            h = np.sum(logps) / n_samples
+        else:
+            x = mu.sample(self._models, (col_idx,))
+            logps = mu.probability(self._models, x, (col_idx,))
+
+            h = np.sum(np.exp(logps)*logps)
+
+        return h
 
     def joint_entropy(self, cols):
         # if any(gu.is_continuous_type(type) for type in self._dtypes):

@@ -206,15 +206,16 @@ cdef class BCState:
     def get_metadata(self):
         metadata = dict()
 
-        metadata['data_types'] = self.datatypes
-        metadata['column_assignment'] = self.statePtr.getColumnAssignment()
+        metadata['dtypes'] = self.datatypes
+        metadata['col_assignment'] = self.statePtr.getColumnAssignment()
         metadata['row_assignments'] = self.statePtr.getRowAssignments()
         # metadata['hyperprior_configs'] = []  # what is this for? 
         metadata['hyperpriors'] = self.statePtr.getColumnHypers() 
         metadata['state_alpha'] = self.statePtr.getStateCRPAlpha()
         metadata['view_alphas'] = self.statePtr.getViewCRPAlphas()
-        metadata['column_suffstats'] = self.statePtr.getSuffstats() 
+        metadata['col_suffstats'] = self.statePtr.getSuffstats() 
 
+        # FIXME: add view_counts field
         return metadata
 
     def conditioned_row_resample(self, row_index, logcf, num_samples=10):
