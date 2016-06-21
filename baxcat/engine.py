@@ -5,37 +5,34 @@ from baxcat.utils import model_utils as mu
 
 from multiprocessing.pool import Pool
 
+import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import numpy as np
 import random
-import time
 import copy
 
 
 def _initialize(args):
     data = args[0]
     kwargs = args[1]
+
     state = BCState(data.T, **kwargs)  # transpose data to col-major
-    return state.get_metadata()
+
+    md = state.get_metadata()
+    return md
 
 
 def _run(args):
     data = args[0]
-    n_iter = args[1]
-    n_sec = args[2]
-    init_kwargs = args[3]
-    trans_kwargs = args[4]
+    init_kwargs = args[1]
+    trans_kwargs = args[2]
 
     state = BCState(data.T, **init_kwargs)  # transpose dat to col-major
-    t_start = time.time()
-    for _ in range(n_iter):
-        state.transition(**trans_kwargs)
-        t_elapsed = time.time() - t_start
-        if t_elapsed > n_sec:
-            break
+    state.transition(**trans_kwargs)
 
-    return state.get_metadata()
+    md = state.get_metadata()
+    return md
 
 
 class Engine(object):
@@ -77,6 +74,20 @@ class Engine(object):
         """ Import metadata from a zipped pickle file (pkl.zip) """
         raise NotImplementedError
 
+    @ property
+    def column_info(self):
+        s_dtypes = pd.Series(self._dtypes, index=self._col_names)
+        s_distargs = pd.Series([a[0] for a in self._distargs],
+                               index=self._col_names)
+
+        cols = ['dtype', 'cardinality']
+
+        df = pd.concat([s_dtypes, s_distargs], axis=1)
+        df.columns = cols
+
+        df['cardinality'][df['dtype'] != 'categorical'] = None
+        return df
+
     @property
     def metadata(self):
         return copy.deepcopy(self._models)
@@ -85,12 +96,13 @@ class Engine(object):
         """ Export data from a zipped pickle file (.pkl.zip). """
         raise NotImplementedError
 
-    def run(self, n_iter=1, n_sec=float('Inf'), model_idxs=None,
-            trans_kwargs=None):
+    def run(self, n_iter=1, model_idxs=None, trans_kwargs=None):
         """ Run the sampler """
 
         if trans_kwargs is None:
             trans_kwargs = dict()
+
+        trans_kwargs['N'] = n_iter
 
         if model_idxs is None:
             model_idxs = [i for i in range(self._n_models)]
@@ -103,9 +115,8 @@ class Engine(object):
                           'Zv': model['col_assignment'],
                           'Zrcv': model['row_assignments'],
                           'seed': sd}
-            args.append((self._data, n_iter, n_sec, init_kwarg, trans_kwargs,))
+            args.append((self._data, init_kwarg, trans_kwargs,))
 
-        self._pool = Pool()
         ud_models = self._pool.map(_run, args)
         for idx, model in zip(model_idxs, ud_models):
             self._models[idx] = model
@@ -133,10 +144,10 @@ class Engine(object):
         col_idx = self._converters['col2idx'][col]
         dtype = self._dtypes[col_idx]
 
-        # Unless x in enumerable (is categorical), we approximate h(x) using
+        # Unless x is enumerable (is categorical), we approximate h(x) using
         # an importance sampling extimate of h(x) using p(x) as the importance
         # function.
-        if not du.is_categorical_type(dtype):
+        if dtype == 'categorical':
             k = self._distargs[col_idx]
             for i, x in enumerate(range(k)):
                 logps = mu.probability(self._models, x, (col_idx,))
@@ -219,4 +230,6 @@ class Engine(object):
         else:
             raise ValueError("%s is an invalid function." % (func,))
 
-        sns.clustermap(df, **plot_kwargs)
+        g = sns.clustermap(df, **plot_kwargs)
+        plt.setp(g.ax_heatmap.get_yticklabels(), rotation=0)
+        plt.setp(g.ax_heatmap.get_xticklabels(), rotation=90)
