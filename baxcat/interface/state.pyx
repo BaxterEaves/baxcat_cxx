@@ -56,6 +56,7 @@ cdef extern from "state.hpp" namespace "baxcat":
         double getStateCRPAlpha()
         size_t getNumViews()
         vector[vector[cmap[string, double]]] getSuffstats()
+        double logScore();
 
         # setters
         void setHyperConfig(size_t column_index,
@@ -138,6 +139,11 @@ cdef class BCState:
 
     def __dealloc__(self):
         del self.statePtr
+
+    def log_score(self):
+        """ Returns the log score of the state. Runs in O(rows*cols). """
+        return self.statePtr.logScore()
+
 
     def transition(self, transition_list=(), which_rows=(), which_cols=(),
                    which_kernel=0, N=1, m=1):

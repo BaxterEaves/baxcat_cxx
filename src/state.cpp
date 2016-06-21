@@ -36,7 +36,7 @@ State::State(vector<vector<double>> X, vector<string> datatypes, vector<vector<d
     _features = helpers::genFeatures(X, datatypes, distargs, _rng.get());
 
     // generate alpha
-    _crp_alpha = _rng->gamrand(_crp_alpha_config[0], _crp_alpha_config[1]);
+    _crp_alpha = _rng->invgamrand(_crp_alpha_config[0], _crp_alpha_config[1]);
 
     // generate partitions;
     _rng.get()->crpGen(_crp_alpha, _num_columns, _column_assignment, _num_views, _view_counts);
@@ -66,7 +66,7 @@ State::State(vector<vector<double>> X, vector<string> datatypes, vector<vector<d
     _feature_types = helpers::getDatatypes(datatypes);
     _features = helpers::genFeatures(X, datatypes, distargs, _rng.get());
 
-    _crp_alpha = _rng->gamrand(_crp_alpha_config[0], _crp_alpha_config[1]);
+    _crp_alpha = _rng->invgamrand(_crp_alpha_config[0], _crp_alpha_config[1]);
 
     _num_views = utils::vector_max(_column_assignment)+1;
     _view_counts.resize(_num_views,0);
@@ -104,7 +104,7 @@ State::State(size_t num_rows, vector<string> datatypes, vector<vector<double>> d
     if(fix_col_alpha){
         _crp_alpha = baxcat::geweke_default_alpha;
     }else{
-        _crp_alpha = _rng->gamrand(_crp_alpha_config[0], _crp_alpha_config[1]);
+        _crp_alpha = _rng->invgamrand(_crp_alpha_config[0], _crp_alpha_config[1]);
     }
 
     // should fix column Z if row Z is fixed
@@ -361,7 +361,7 @@ void State::__transitionStateCRPAlpha()
     auto counts = _view_counts;
 
     auto log_crp_posterior = [alpha_shape, alpha_scale, counts, n](double x){
-        return numerics::lcrp(counts, n, x) + dist::gamma::logPdf(x, alpha_shape, alpha_scale);
+        return numerics::lcrp(counts, n, x) + dist::inverse_gamma::logPdf(x, alpha_shape, alpha_scale);
     };
 
     double slice_width = alpha_shape*alpha_scale*alpha_scale/2;  // this is a guess
@@ -838,9 +838,27 @@ double State::getStateCRPAlpha() const
     return _crp_alpha;
 }
 
+
 size_t State::getNumViews() const
 {
     return _num_views;
+}
+
+
+double State::logScore()
+{
+    double alpha_shape = _crp_alpha_config[0];
+    double alpha_scale = _crp_alpha_config[1];
+
+    double log_score = 0; 
+
+    log_score += numerics::lcrp(_view_counts, _num_columns, _crp_alpha);
+    log_score += dist::inverse_gamma::logPdf(_crp_alpha, alpha_shape, alpha_scale);
+
+    for(auto &view : _views)
+        log_score += view.logScore();
+
+    return log_score;
 }
 
 

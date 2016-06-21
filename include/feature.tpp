@@ -173,6 +173,14 @@ double baxcat::Feature<DataType, T>::logp() const
 }
 
 
+template<class DataType, typename T>
+double baxcat::Feature<DataType, T>::logScore() const
+{
+    double log_score = _clusters[0].hyperpriorLogp(_hyperprior_config) + this->logp();
+    return log_score;
+}
+
+
 // Draw
 // ````````````````````````````````````````````````````````````````````````````````````````````````
 template<class DataType, typename T>
@@ -301,6 +309,8 @@ vector<map<string, double>> baxcat::Feature<DataType, T>::getModelSuffstats() co
 
     return ret;
 }
+
+
 
 
 // TODO: implement so we can use variable return types

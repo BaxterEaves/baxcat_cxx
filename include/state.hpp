@@ -34,6 +34,7 @@
 #include "helpers/feature_builder.hpp"
 #include "helpers/state_helper.hpp"
 #include "distributions/gamma.hpp"
+#include "distributions/inverse_gamma.hpp"
 #include "helpers/constants.hpp"
 #include "samplers/slice.hpp"
 
@@ -92,6 +93,7 @@ public:
     double getStateCRPAlpha() const;
     size_t getNumViews() const;
     std::vector<std::vector<std::map<std::string, double>>> getSuffstats() const;
+    double logScore();
 
     // setters
     void setHyperConfig(size_t column_index, std::vector<double>
@@ -203,6 +205,9 @@ private:
     // data table size
     size_t _num_rows;
     size_t _num_columns;
+
+    // log score of the model
+    double _log_score;
 
     // CRP parameter
     double _crp_alpha;

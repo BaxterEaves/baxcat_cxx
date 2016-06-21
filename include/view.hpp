@@ -29,6 +29,7 @@
 #include "numerics.hpp"
 #include "samplers/slice.hpp"
 #include "distributions/gamma.hpp"
+#include "distributions/inverse_gamma.hpp"
 #include "helpers/feature_tree.hpp"
 #include "prng.hpp"
 
@@ -56,6 +57,8 @@ public:
     double rowLogp(size_t row, size_t cluster, bool is_init=false);
     // the likelihood of the data in row belonging to a singleton
     double rowSingletonLogp(size_t row);
+    // score of the entire view
+    double logScore();
 
     // adding and removing dims
     // add feature to the view (reassign data, add to lookup)
@@ -108,6 +111,8 @@ private:
     baxcat::helpers::FeatureTree _features;
     // _row_assignment[i] is the category [0,K-1] to which row i belongs
     std::vector<size_t> _row_assignment;
+    // the score of the view
+    double _log_score;
 };
 
 } // end namespace baxcat

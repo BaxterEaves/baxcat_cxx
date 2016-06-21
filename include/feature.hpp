@@ -60,6 +60,8 @@ public:
     virtual double clusterLogp(size_t cluster) const = 0;
     // the product of cluster_logp's
     virtual double logp() const = 0;
+    // get the feature score
+    virtual double logScore() const = 0;
 
     // move X[row] from cluster[move_from] to cluster[move_to]
     virtual void moveToCluster(size_t row, size_t move_from, size_t move_to) = 0;
@@ -165,6 +167,7 @@ public:
     virtual double singletonValueLogp(double value) const final;
     virtual double clusterLogp(size_t cluster) const final;
     virtual double logp() const final;
+    virtual double logScore() const final;
 
     virtual void moveToCluster(size_t row, size_t move_from, size_t move_to) final;
     virtual void destroySingletonCluster(size_t row, size_t to_destroy, size_t move_to) final;
