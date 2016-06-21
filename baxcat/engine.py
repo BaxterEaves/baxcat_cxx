@@ -10,6 +10,7 @@ import seaborn as sns
 import pandas as pd
 import numpy as np
 import random
+import time
 import copy
 
 
@@ -17,22 +18,45 @@ def _initialize(args):
     data = args[0]
     kwargs = args[1]
 
+    t_start = time.time()
     state = BCState(data.T, **kwargs)  # transpose data to col-major
 
     md = state.get_metadata()
-    return md
+    diagnostics = {
+        'log_score': state.log_score(),
+        'iters': 0,
+        'time': time.time() - t_start}
+
+    return md, pd.DataFrame([diagnostics])
 
 
 def _run(args):
     data = args[0]
-    init_kwargs = args[1]
-    trans_kwargs = args[2]
+    checkpoint = args[1]
+    init_kwargs = args[2]
+    trans_kwargs = args[3]
 
+    n_iter = trans_kwargs['N']
+    if checkpoint is None:
+        checkpoint = n_iter
+    else:
+        trans_kwargs['N'] = checkpoint
+
+    diagnostics = []
     state = BCState(data.T, **init_kwargs)  # transpose dat to col-major
-    state.transition(**trans_kwargs)
+    for i in range(int(n_iter/checkpoint)):
+        t_start = time.time()
+        state.transition(**trans_kwargs)
+        t_iter = time.time() - t_start
+
+        diagnostic = {
+            'log_score': state.log_score(),
+            'iters': checkpoint,
+            'time': t_iter}
+        diagnostics.append(diagnostic)
 
     md = state.get_metadata()
-    return md
+    return md, pd.DataFrame(diagnostics)
 
 
 class Engine(object):
@@ -67,7 +91,14 @@ class Engine(object):
             args.append((self._data, kwarg,))
 
         self._pool = Pool()
-        self._models = self._pool.map(_initialize, args)
+
+        self._models = []
+        self._diagnostic_tables = []
+
+        res = self._pool.map(_initialize, args)
+        for model, diagnostics in res:
+            self._models.append(model)
+            self._diagnostic_tables.append(diagnostics)
 
     @classmethod
     def load(cls, filename):
@@ -96,7 +127,8 @@ class Engine(object):
         """ Export data from a zipped pickle file (.pkl.zip). """
         raise NotImplementedError
 
-    def run(self, n_iter=1, model_idxs=None, trans_kwargs=None):
+    def run(self, n_iter=1, checkpoint=None, model_idxs=None,
+            trans_kwargs=None):
         """ Run the sampler """
 
         if trans_kwargs is None:
@@ -115,11 +147,13 @@ class Engine(object):
                           'Zv': model['col_assignment'],
                           'Zrcv': model['row_assignments'],
                           'seed': sd}
-            args.append((self._data, init_kwarg, trans_kwargs,))
+            args.append((self._data, checkpoint, init_kwarg, trans_kwargs,))
 
-        ud_models = self._pool.map(_run, args)
-        for idx, model in zip(model_idxs, ud_models):
+        res = self._pool.map(_run, args)
+        for idx, (model, diagnostics) in zip(model_idxs, res):
             self._models[idx] = model
+            diag_i = self._diagnostic_tables[idx]
+            self._diagnostic_tables[idx] = diag_i.append(diagnostics)
 
     def dependence_probability(self, col_a, col_b):
         """ The probabiilty that a dependence exists between a and b. """
@@ -233,3 +267,15 @@ class Engine(object):
         g = sns.clustermap(df, **plot_kwargs)
         plt.setp(g.ax_heatmap.get_yticklabels(), rotation=0)
         plt.setp(g.ax_heatmap.get_xticklabels(), rotation=90)
+
+    def convergence_plot(self, ax=None):
+        if ax is None:
+            ax = plt.gca()
+
+        for table in self._diagnostic_tables:
+            x = np.cumsum(table['time'].values)
+            y = table['log_score'].values
+
+            ax.plot(x, y)
+        ax.set_xlabel('time (sec)')
+        ax.set_ylabel('log score')
