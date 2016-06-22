@@ -13,7 +13,7 @@ def pflip(p, normed=False, n=1):
     rs = np.random.rand(n)
 
     if n == 1:
-        draws = np.digitize([rs], cs)[0]
+        draws = np.digitize(rs, cs)[0]
     else:
         draws = np.digitize(rs, cs)
 
