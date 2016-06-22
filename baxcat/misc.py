@@ -10,11 +10,15 @@ def pflip(p, normed=False, n=1):
     else:
         cs = np.cumsum(np.copy(p)/np.sum(p))
 
-    rs = np.random.rand(n)
+    draws = np.zeros(n, dtype=int)
+    for i in range(n):
+        r = np.random.rand()
+        for idx, w in enumerate(cs):
+            if w > r:
+                draws[i] = idx
+                break
 
     if n == 1:
-        draws = np.digitize(rs, cs)[0]
+        return draws[0]
     else:
-        draws = np.digitize(rs, cs)
-
-    return draws
+        return draws
