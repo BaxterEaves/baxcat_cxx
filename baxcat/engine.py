@@ -65,6 +65,7 @@ class Engine(object):
         """ Initialize """
 
         guess_n_unique_cutoff = kwargs.get('guess_n_unique_cutoff', 20)
+        use_mp = kwargs.get('use_mp', True)
 
         output = du.process_dataframe(df, metadata, guess_n_unique_cutoff)
         self._data, self._dtypes, self._distargs, self._converters = output
@@ -90,12 +91,16 @@ class Engine(object):
                      'seed': sd}
             args.append((self._data, kwarg,))
 
-        self._pool = Pool()
+        if use_mp:
+            self._pool = Pool()
+            self._mapper = self._pool.map
+        else:
+            self._mapper = lambda func, args: [func(arg) for arg in args]
 
         self._models = []
         self._diagnostic_tables = []
 
-        res = self._pool.map(_initialize, args)
+        res = self._mapper(_initialize, args)
         for model, diagnostics in res:
             self._models.append(model)
             self._diagnostic_tables.append(diagnostics)
@@ -146,11 +151,11 @@ class Engine(object):
                           'distargs': self._distargs,
                           'Zv': model['col_assignment'],
                           'Zrcv': model['row_assignments'],
-                          'hyper_maps': model['hyper_maps'],
+                          'col_hypers': model['col_hypers'],
                           'seed': sd}
             args.append((self._data, checkpoint, init_kwarg, trans_kwargs,))
 
-        res = self._pool.map(_run, args)
+        res = self._mapper(_run, args)
         for idx, (model, diagnostics) in zip(model_idxs, res):
             self._models[idx] = model
             diag_i = self._diagnostic_tables[idx]
@@ -258,9 +263,10 @@ class Engine(object):
 
         return h_ab - h_b
 
-    def probability(self, x, y=None):
+    def probability(self, x, cols, y=None):
         """ Predictive probability of x_1, ..., x_n given y_1, ..., y_n """
-        raise NotImplementedError
+        col_idxs = [self._converters['col2idx'][col] for col in cols]
+        return mu.probability(x, self._models, col_idxs)
 
     def row_similarity(self, row_a, row_b):
         raise NotImplementedError

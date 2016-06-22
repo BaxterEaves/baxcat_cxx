@@ -55,6 +55,7 @@ cdef extern from "state.hpp" namespace "baxcat":
         vector[double] getViewCRPAlphas()
         double getStateCRPAlpha()
         size_t getNumViews()
+        vector[vector[size_t]] getViewCounts()
         vector[vector[cmap[string, double]]] getSuffstats()
         double logScore();
 
@@ -104,13 +105,20 @@ cdef emptyvec(intype):
         raise ValueError
 
 
+def dictstr_dec(d):
+    return dict([(k.decode('utf-8'), v) for k, v in d.items()])
+
+def dictstr_enc(d):
+    return dict([(k.encode(), v) for k, v in d.items()])
+
+
 cdef class BCState:
     cdef State *statePtr
     cdef size_t n_rows
     cdef size_t n_cols
     cdef vector[string] datatypes
 
-    def __cinit__(self, X, dtypes=None, distargs=None, hyper_maps=None,
+    def __cinit__(self, X, dtypes=None, distargs=None, col_hypers=None,
                   Zv=None, Zrcv=None, n_grid=31, seed=None):
         # data is column major (the rows in X become the crosscat columns)
         self.n_cols, self.n_rows = X.shape
@@ -130,11 +138,16 @@ cdef class BCState:
         dtl = [bytes(st, 'ascii') for st in dtypes]
         self.datatypes = dtl 
 
-        if hyper_maps is None:
+        if all(m == None for m in[col_hypers, Zv, Zrcv]):
             self.statePtr = new State(X, dtl, distargs, seed)
+        elif not any(m == None for m in [col_hypers, Zv, Zrcv]):
+            col_hypers = [dictstr_enc(hyper) for hyper in col_hypers]
+            self.statePtr = new State(X, dtl, distargs, seed, Zv, Zrcv,
+                                      col_hypers)
         else:
-            # FIXME: Implement fully-specified state init
-            raise NotImplementedError()
+            raise ValueError('You have specified some, but not all of, Zv, '
+                             'Zrcv, and col_hypers. There is currently no '
+                             'initializer to handle this.')
 
 
     def __dealloc__(self):
@@ -216,10 +229,16 @@ cdef class BCState:
         metadata['col_assignment'] = self.statePtr.getColumnAssignment()
         metadata['row_assignments'] = self.statePtr.getRowAssignments()
         # metadata['hyperprior_configs'] = []  # what is this for? 
-        metadata['hyperpriors'] = self.statePtr.getColumnHypers() 
+        hypers = self.statePtr.getColumnHypers()
+        metadata['col_hypers'] = [dictstr_dec(hp) for hp in hypers]
         metadata['state_alpha'] = self.statePtr.getStateCRPAlpha()
         metadata['view_alphas'] = self.statePtr.getViewCRPAlphas()
-        metadata['col_suffstats'] = self.statePtr.getSuffstats() 
+        suffstats = self.statePtr.getSuffstats()
+        sfsts = []
+        for col_sfst in suffstats:
+            sfsts.append([dictstr_dec(sfst) for sfst in col_sfst])
+        metadata['col_suffstats'] = sfsts
+        metadata['view_counts'] = self.statePtr.getViewCounts() 
 
         # FIXME: add view_counts field
         return metadata

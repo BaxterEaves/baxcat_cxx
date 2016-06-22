@@ -9,11 +9,11 @@ cdef extern from "models/nng.hpp" namespace "baxcat::models":
                                         double s, double nu)
 
 
-def _unwrap_suffstats(n=0., sum_x=0., sum_x_sq=0.):
+def _unwrap_suffstats(n=None, sum_x=None, sum_x_sq=None):
     return n, sum_x, sum_x_sq
 
 
-def _unwrap_hypers(m=0., r=1., s=1., nu=1.):
+def _unwrap_hypers(m=None, r=None, s=None, nu=None):
     return m, r, s, nu
 
 
@@ -21,20 +21,14 @@ def sample(suffstats, hypers):
     n, sum_x, sum_x_sq = _unwrap_suffstats(**suffstats)
     m, r, s, nu = _unwrap_hypers(**hypers)
 
-    if n > 0:
-        rn = r + n
-        nun = nu + n
-        mn = (r*m + sum_x)/(rn)
-        sn = s + sum_x_sq + r*(m*m) - rn*(mn*mn)
-    else:
-        rn = r
-        nun = nu
-        mn = m
-        sn = s
+    rn = r + n
+    nun = nu + n
+    mn = (r*m + sum_x)/(rn)
+    sn = s + sum_x_sq + r*(m*m) - rn*(mn*mn)
 
-    scale = sn*(rn+1)/(nun*rn)
+    scale = (sn*(rn+1)/(nun*rn))**.5
 
-    return t.rvs(nun)*scale + mn
+    return t.rvs(df=nun)*scale + mn
     
 
 def probability(x, suffstats, hypers, seed=None):

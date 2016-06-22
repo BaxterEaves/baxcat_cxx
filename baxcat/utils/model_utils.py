@@ -9,17 +9,17 @@ from math import log
 
 
 def _get_view_weights(model, col_idx):
-    with np.errstate(all='raise'):
-        view_idx = int(model['col_assignment'][col_idx])
-        alpha = model['view_alphas'][view_idx]
-        weights = np.array(model['view_counts'][view_idx] + [alpha])
+    view_idx = int(model['col_assignment'][col_idx])
+    alpha = model['view_alphas'][view_idx]
+    weights = np.array(model['view_counts'][view_idx] + [alpha])
+
     return weights/np.sum(weights)
 
 
 # private sample utils
 # `````````````````````````````````````````````````````````````````````````````
 def _sample_component_continuous(model, col_idx, component_idx):
-    hypers = model['hyperpriors'][col_idx]
+    hypers = model['col_hypers'][col_idx]
     if component_idx < len(model['col_suffstats'][col_idx]):
         suffstats = model['col_suffstats'][col_idx][component_idx]
     else:
@@ -29,7 +29,7 @@ def _sample_component_continuous(model, col_idx, component_idx):
 
 
 def _sample_component_categorical(model, col_idx, component_idx):
-    hypers = model['hyperpriors'][col_idx]
+    hypers = model['col_hypers'][col_idx]
     if component_idx < len(model['col_suffstats'][col_idx]):
         suffstats = model['col_suffstats'][col_idx][component_idx]
     else:
@@ -59,7 +59,6 @@ def _sample_multi_col(model, col_idxs, n=1):
     assert n_cols > 1
 
     view_idxs = [model['col_assignment'][col_idx] for col_idx in col_idxs]
-    view_idxs = list(tuple(view_idxs))
 
     col2pos = dict((col_idx, i) for i, col_idx in enumerate(col_idxs))
 
@@ -87,7 +86,7 @@ def _sample_multi_col(model, col_idxs, n=1):
 # private probability utils
 # `````````````````````````````````````````````````````````````````````````````
 def _probability_component_continuous(x, model, col_idx, component_idx):
-    hypers = model['hyperpriors'][col_idx]
+    hypers = model['col_hypers'][col_idx]
     if component_idx < len(model['col_suffstats'][col_idx]):
         suffstats = model['col_suffstats'][col_idx][component_idx]
     else:
@@ -97,7 +96,7 @@ def _probability_component_continuous(x, model, col_idx, component_idx):
 
 
 def _probability_component_categorical(x, model, col_idx, component_idx):
-    hypers = model['hyperpriors'][col_idx]
+    hypers = model['col_hypers'][col_idx]
     if component_idx < len(model['col_suffstats'][col_idx]):
         suffstats = model['col_suffstats'][col_idx][component_idx]
     else:
