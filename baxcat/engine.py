@@ -146,6 +146,7 @@ class Engine(object):
                           'distargs': self._distargs,
                           'Zv': model['col_assignment'],
                           'Zrcv': model['row_assignments'],
+                          'hyper_maps': model['hyper_maps'],
                           'seed': sd}
             args.append((self._data, checkpoint, init_kwarg, trans_kwargs,))
 
@@ -169,11 +170,64 @@ class Engine(object):
 
         return depprob
 
-    def mutual_information(self, col_a, col_b, normed=True):
-        raise NotImplementedError
+    def mutual_information(self, col_a, col_b, normed=True, n_samples=1000):
+        """ The mutual information, I(A, B), between two columns.
+
+        Parameters
+        ----------
+        col_a : indexer
+            The name of the first column
+        col_b : indexer
+            The name of the second column
+        normed : bool
+            If True, the mutual information, I, is normed according to the
+            symmertic uncertainty, U = 2*I(A, B)/(H(A) + H(B)).
+        n_samples : int
+            The number of samples to use for the Monte Carlo approximation
+            (if nored if `col` is categorical).
+
+        Returns
+        -------
+        The mutual information between `col_a` and `col_b`.
+        """
+
+        idx_a = self._converters['col2idx'][col_a]
+        idx_b = self._converters['col2idx'][col_b]
+
+        models = []
+        for model in self._models:
+            if model['col_assignment'][idx_a] == model['col_assignment'][idx_b]:
+                models.append(model)
+
+        if len(models) == 0:
+            return 0.0
+        else:
+            h_a = self.entropy(col_a, n_samples=n_samples)
+            h_b = self.entropy(col_b, n_samples=n_samples)
+            h_ab = mu.joint_entropy(models, [idx_a, idx_b], n_samples)
+            mi = h_a + h_b - h_ab
+            if normed:
+                # normalize using symmetric uncertainty
+                mi = 2.*mi/(h_a + h_b)
+
+            return mi
 
     def entropy(self, col, n_samples=500):
-        raise NotImplementedError
+        """ The entropy of a column.
+
+        Parameters
+        ----------
+        col : indexer
+            The name of the column
+        n_samples : int
+            The number of samples to use for the Monte Carlo approximation
+            (if nored if `col` is categorical).
+
+        Returns
+        -------
+        h : float
+            The entropy of `col`.
+        """
 
         col_idx = self._converters['col2idx'][col]
         dtype = self._dtypes[col_idx]
@@ -184,29 +238,22 @@ class Engine(object):
         if dtype == 'categorical':
             k = self._distargs[col_idx]
             for i, x in enumerate(range(k)):
-                logps = mu.probability(self._models, x, (col_idx,))
+                logps = mu.probability(x, self._models, (col_idx,))
 
-            h = np.sum(logps) / n_samples
+            h = -np.sum(logps) / n_samples
         else:
             x = mu.sample(self._models, (col_idx,))
-            logps = mu.probability(self._models, x, (col_idx,))
+            logps = mu.probability(x, self._models, (col_idx,))
 
-            h = np.sum(np.exp(logps)*logps)
+            h = -np.sum(np.exp(logps)*logps)
 
         return h
 
-    def joint_entropy(self, cols):
-        # if any(gu.is_continuous_type(type) for type in self._dtypes):
-        #     # Use simulation to estimate
-        #     pass
-        # else:
-        #     # Enumerate
-        #     pass
-        raise NotImplementedError
-
-    def conditional_entropy(self, col_a, col_b, n_samples=100):
+    def conditional_entropy(self, col_a, col_b, n_samples=1000):
         """ Conditional entropy, H(A|B), of a given b """
-        h_ab = self.joint_entropy([col_a, col_b], n_samples)
+        col_idxs = [self._converters['col2idx'][col_a],
+                    self._converters['col2idx'][col_b]]
+        h_ab = mu.joint_entropy(self._models, col_idxs, n_samples)
         h_b = self.entropy(col_b, n_samples)
 
         return h_ab - h_b
@@ -218,8 +265,9 @@ class Engine(object):
     def row_similarity(self, row_a, row_b):
         raise NotImplementedError
 
-    def sample(self, x, y=None, n=1):
-        raise NotImplementedError
+    def sample(self, cols, n=1):
+        col_idxs = [self._converters['col2idx'][col] for col in cols]
+        return mu.sample(self._models, col_idxs, n=n)
 
     def impute(self, row, col):
         raise NotImplementedError
