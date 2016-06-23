@@ -93,6 +93,7 @@ public:
     double getStateCRPAlpha() const;
     size_t getNumViews() const;
     std::vector<std::vector<std::map<std::string, double>>> getSuffstats() const;
+    std::vector<std::vector<size_t>> getViewCounts() const;
     double logScore();
 
     // setters
