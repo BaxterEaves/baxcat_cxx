@@ -159,7 +159,7 @@ vector<double> Continuous::initHypers( const vector<double> &hyperprior_config, 
 vector<double> Continuous::constructHyperpriorConfig(const vector<double> &X)
 {
     double mean_x = baxcat::utils::vector_mean(X);
-    double std_x = sqrt( baxcat::utils::sum_of_squares(X)/static_cast<double>(X.size()) );
+    double std_x =  sqrt(baxcat::utils::sum_of_squares(X)/static_cast<double>(X.size()));
 
     ASSERT_GREATER_THAN_ZERO(cout, std_x);
 
