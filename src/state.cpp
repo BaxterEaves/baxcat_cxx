@@ -97,7 +97,7 @@ State::State(size_t num_rows, vector<string> datatypes, vector<vector<double>> d
              bool fix_row_z, bool fix_col_z)
     : _num_rows(num_rows), _num_columns(datatypes.size()),  _rng(shared_ptr<PRNG>(new PRNG()))
 {
-    _crp_alpha_config = {5, .2};
+    _crp_alpha_config = {1, 1};
 
     _view_alpha_marker = fix_row_alpha ? baxcat::geweke_default_alpha : -1;
 
