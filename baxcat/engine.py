@@ -59,6 +59,7 @@ def _run(args):
     return md, diagnostics
 
 
+# -----------------------------------------------------------------------------
 class Engine(object):
     """ WRITEME """
     def __init__(self, df, n_models=1, metadata=None, **kwargs):
@@ -218,7 +219,7 @@ class Engine(object):
                 # normalize using symmetric uncertainty
                 mi = 2.*mi/(h_a + h_b)
 
-            return mi
+            return max(0, mi)
 
     def entropy(self, col, n_samples=500):
         """ The entropy of a column.
@@ -244,16 +245,16 @@ class Engine(object):
         # an importance sampling extimate of h(x) using p(x) as the importance
         # function.
         if dtype == 'categorical':
-            k = self._distargs[col_idx]
-            for i, x in enumerate(range(k)):
-                logps = mu.probability(x, self._models, (col_idx,))
-
-            h = -np.sum(logps) / n_samples
+            k = self._distargs[col_idx][0]
+            x = np.array([[i] for i in range(k)])
+            logps = mu.probability(x, self._models, (col_idx,))
+            assert len(logps) == k
+            h = -np.sum(np.exp(logps)*logps)
         else:
-            x = mu.sample(self._models, (col_idx,))
+            x = mu.sample(self._models, (col_idx,), n=n_samples)
             logps = mu.probability(x, self._models, (col_idx,))
 
-            h = -np.sum(np.exp(logps)*logps)
+            h = -np.sum(logps) / n_samples
 
         return h
 
@@ -287,9 +288,9 @@ class Engine(object):
     def convergence_plots(self, model_idxs=None):
         raise NotImplementedError
 
-    def pairwise_func(self, func):
+    def pairwise_func(self, func, n_samples=500):
+        mat = np.eye(self._n_cols)
         if func == 'dependence_probability':
-            mat = np.eye(self._n_cols)
             for i in range(self._n_cols):
                 for j in range(i+1, self._n_cols):
                     col_a = self._converters['idx2col'][i]
@@ -297,25 +298,49 @@ class Engine(object):
                     depprob = self.dependence_probability(col_a, col_b)
                     mat[i, j] = depprob
                     mat[j, i] = depprob
-            df = pd.DataFrame(mat, index=self._df.columns,
-                              columns=self._df.columns)
         elif func == 'mutual_information':
-            raise NotImplementedError
+            for i in range(self._n_cols):
+                for j in range(i+1, self._n_cols):
+                    col_a = self._converters['idx2col'][i]
+                    col_b = self._converters['idx2col'][j]
+                    print('([%d]%s, [%d]%s)' % (i, col_a, j, col_b,))
+                    if i == j:
+                        # mi = self.entropy(col_a, n_samples)
+                        mi = 1.
+                    else:
+                        mi = self.mutual_information(col_a, col_b, n_samples=n_samples)
+                    mat[i, j] = mi
+                    mat[j, i] = mi
         elif func == 'conditional_entropy':
-            raise NotImplementedError
+            mat = np.eye(self._n_cols)
+            for i in range(self._n_cols):
+                for j in range(self._n_cols):
+                    col_a = self._converters['idx2col'][i]
+                    col_b = self._converters['idx2col'][j]
+                    if i == j:
+                        h = self.entropopy(col_a, n_samples)
+                    else:
+                        h = self.conditional_entropy(col_a, col_b, n_samples)
+
+                    mat[i, j] = h
         else:
             raise ValueError("%s is an invalid function." % (func,))
+        df = pd.DataFrame(mat, index=self._df.columns, columns=self._df.columns)
 
         return df
 
-    def heatmap(self, func, **plot_kwargs):
+    def heatmap(self, func, n_samples=100, plot_kwargs=None):
+        if plot_kwargs is None:
+            plot_kwargs = {}
+
         if func == 'dependence_probability':
             df = self.pairwise_func('dependence_probability')
             plot_kwargs['vmin'] = plot_kwargs.get('vmin', 0.)
             plot_kwargs['vmax'] = plot_kwargs.get('vmax', 1.)
             plot_kwargs['cmap'] = plot_kwargs.get('cmap', 'gray_r')
         elif func == 'mutual_information':
-            raise NotImplementedError
+            df = self.pairwise_func('mutual_information', n_samples=n_samples)
+            plot_kwargs['cmap'] = plot_kwargs.get('cmap', 'gray_r')
         elif func == 'conditional_entropy':
             raise NotImplementedError
         else:
@@ -325,7 +350,7 @@ class Engine(object):
         plt.setp(g.ax_heatmap.get_yticklabels(), rotation=0)
         plt.setp(g.ax_heatmap.get_xticklabels(), rotation=90)
 
-    def convergence_plot(self, ax=None):
+    def convergence_plot(self, ax=None, log_x_axis=True):
         if ax is None:
             ax = plt.gca()
 
@@ -336,3 +361,6 @@ class Engine(object):
             ax.plot(x, y)
         ax.set_xlabel('time (sec)')
         ax.set_ylabel('log score')
+
+        if log_x_axis:
+            ax.set_xscale('log')

@@ -33,15 +33,15 @@ def _sample_component_categorical(model, col_idx, component_idx):
     if component_idx < len(model['col_suffstats'][col_idx]):
         suffstats = model['col_suffstats'][col_idx][component_idx]
     else:
-        k = len(model['col_suffstats'][0]['counts'])
-        suffstats = {'n': 0., 'counts': [0.]*k}
+        k = int(model['col_suffstats'][0][0]['k'])
+        suffstats = {'n': 0., 'k': k}
 
     return csd.sample(suffstats, hypers)
 
 
 DRAWFUNC = {
     b'continuous': _sample_component_continuous,
-    b'categorical': _sample_component_continuous}
+    b'categorical': _sample_component_categorical}
 
 
 def _sample_single_col(model, col_idx, n=1):
@@ -100,15 +100,15 @@ def _probability_component_categorical(x, model, col_idx, component_idx):
     if component_idx < len(model['col_suffstats'][col_idx]):
         suffstats = model['col_suffstats'][col_idx][component_idx]
     else:
-        k = len(model['col_suffstats'][0]['counts'])
-        suffstats = {'n': 0., 'counts': [0.]*k}
+        k = int(model['col_suffstats'][0][0]['k'])
+        suffstats = {'n': 0., 'k': k}
 
     return csd.probability(x, suffstats, hypers)
 
 
 PROBFUNC = {
     b'continuous': _probability_component_continuous,
-    b'categorical': _probability_component_continuous}
+    b'categorical': _probability_component_categorical}
 
 
 def _probability_single_col(x, model, col_idx):
@@ -216,16 +216,24 @@ def probability(x, models, col_idxs):
     """
 
     assert isinstance(col_idxs, (list, tuple,))
+
     # FIXME: docstring
     n_cols = len(col_idxs)
     n_models = len(models)
 
-    logps = np.zeros(max(x.shape))
-    for i, x_i in enumerate(x):
+    if len(x.shape) == 2:
+        n = x.shape[0]
+    else:
+        n = 1
+
+    logps = np.zeros(n)
+
+    for i in range(n):
+        x_i = x[i, :]
         logps_m = np.zeros(n_models)
         for j, model in enumerate(models):
             if n_cols == 1:
-                lp = _probability_single_col(x_i, model, col_idxs[0])
+                lp = _probability_single_col(x_i[0], model, col_idxs[0])
             else:
                 lp = _probability_multi_col(x_i, model, col_idxs)
 
@@ -233,7 +241,10 @@ def probability(x, models, col_idxs):
 
         logps[i] = logsumexp(logps_m) - log(n_models)
 
-    return np.sum(logps)
+    if n == 1:
+        return logps[0]
+    else:
+        return logps
 
 
 def joint_entropy(models, col_idxs, n_samples=1000):
@@ -257,9 +268,9 @@ def joint_entropy(models, col_idxs, n_samples=1000):
 
     # predetermine from which models to sample
     midxs = np.random.randint(n_models, size=n_samples)
-    ps = np.zeros(n_samples)
+    logps = np.zeros(n_samples)
     for i, midx in enumerate(midxs):
-        x = sample([models[midx]], col_idxs, n=n_samples)
-        ps[i] = probability(x, [models[midx]], col_idxs)
+        x = sample([models[midx]], col_idxs, n=1)
+        logps[i] = probability(x, [models[midx]], col_idxs)
 
-    return -np.sum(ps) / n_samples
+    return -np.sum(logps) / n_samples
