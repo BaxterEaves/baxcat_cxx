@@ -227,17 +227,11 @@ void baxcat::Feature<DataType, T>::reassign(std::vector<size_t> assignment)
     size_t K_old = _clusters.size();
     size_t K_new = utils::vector_max(assignment) + 1;
 
-    if(K_new < K_old){
-        _clusters.resize(K_new, DataType(_distargs));
-        for(size_t k = 0; k < K_new; k++)
-            _clusters[k].setHypers(_hypers);
-    }else{
-        _clusters.resize(K_new, DataType(_distargs));
-        for(size_t k = 0; k < K_old; k++)
-            _clusters[k].clear(_distargs);
-
-        for(size_t k = K_old; k < K_new; k++)
-            _clusters[k].setHypers(_hypers);
+    _clusters.resize(K_new, DataType(_distargs));
+    for(size_t k = 0; k < K_new; k++){
+        _clusters[k].setHypers(_hypers);
+        _clusters[k].clear(_distargs);
+        ASSERT_EQUAL(std::cout, _clusters[k].getSuffstatsMap()["n"], 0);
     }
 
     ASSERT_EQUAL(std::cout, _clusters.size(), K_new);

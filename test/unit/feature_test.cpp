@@ -261,13 +261,33 @@ BOOST_AUTO_TEST_CASE(reassign_set_cluster_suffstats_2){
 
     vector<map<string, double>> suffstats = feature.getModelSuffstats();
 
-    BOOST_REQUIRE( suffstats.size() == 2);
+    BOOST_REQUIRE(suffstats.size() == 2);
 
-    BOOST_CHECK_CLOSE_FRACTION( suffstats[0]["sum_x"], 1+2+3, EPSILON);
-    BOOST_CHECK_CLOSE_FRACTION( suffstats[0]["sum_x_sq"], 1+4+9, EPSILON);
+    BOOST_CHECK_CLOSE_FRACTION(suffstats[0]["sum_x"], 1+2+3, EPSILON);
+    BOOST_CHECK_CLOSE_FRACTION(suffstats[0]["sum_x_sq"], 1+4+9, EPSILON);
 
-    BOOST_CHECK_CLOSE_FRACTION( suffstats[1]["sum_x"], 4+5, EPSILON);
-    BOOST_CHECK_CLOSE_FRACTION( suffstats[1]["sum_x_sq"], 16+25, EPSILON);
+    BOOST_CHECK_CLOSE_FRACTION(suffstats[1]["sum_x"], 4+5, EPSILON);
+    BOOST_CHECK_CLOSE_FRACTION(suffstats[1]["sum_x_sq"], 16+25, EPSILON);
+}
+
+BOOST_AUTO_TEST_CASE(repeatedly_adding_and_removing_clusters_should_be_ok){
+    static baxcat::PRNG *rng = new baxcat::PRNG(10);
+    auto feature = Setup(rng);
+
+    vector<size_t> assignment = {0,0,0,1,1};
+
+    feature.reassign({0,0,0,1,1});
+    feature.reassign({0,2,0,1,1});
+    feature.reassign({0,0,1,0,0});
+    feature.reassign({0,0,0,0,0});
+
+    vector<map<string, double>> suffstats = feature.getModelSuffstats();
+
+    BOOST_CHECK_EQUAL(suffstats.size(), 1);
+
+    BOOST_CHECK_EQUAL(suffstats[0]["n"], 5);
+    BOOST_CHECK_EQUAL(suffstats[0]["sum_x"], 1+2+3+4+5);
+    BOOST_CHECK_EQUAL(suffstats[0]["sum_x_sq"], 1+4+9+16+25);
 }
 
 //  Cleanup and element-move methods
@@ -291,8 +311,8 @@ BOOST_AUTO_TEST_CASE(create_singleton_cluster_should_update_suffstats_and_hypers
 
     vector<map<string, double>> suffstats = feature.getModelSuffstats();
     BOOST_REQUIRE(suffstats.size() == 1);
-    BOOST_CHECK_CLOSE_FRACTION( suffstats[0]["sum_x"], 15, EPSILON);
-    BOOST_CHECK_CLOSE_FRACTION( suffstats[0]["sum_x_sq"], 55, EPSILON);
+    BOOST_CHECK_CLOSE_FRACTION(suffstats[0]["sum_x"], 15, EPSILON);
+    BOOST_CHECK_CLOSE_FRACTION(suffstats[0]["sum_x_sq"], 55, EPSILON);
 
     feature.createSingletonCluster( 1, 0 );
 
@@ -612,7 +632,14 @@ BOOST_AUTO_TEST_CASE(logp_value_test_after_reassign){
     BOOST_CHECK_CLOSE_FRACTION(logp_f, logp_m_1+logp_m_2, TOL);
 
     f.reassign({0, 0, 0, 0, 0});
-    double logp_f = f.logp();
+    auto suffstats = f.getModelSuffstats();
+
+    BOOST_CHECK_EQUAL(suffstats.size(), 1);
+    BOOST_CHECK_EQUAL(suffstats[0]["n"], 5);
+    BOOST_CHECK_EQUAL(suffstats[0]["sum_x"], 15);
+    BOOST_CHECK_EQUAL(suffstats[0]["sum_x_sq"], 55);
+
+    logp_f = f.logp();
     double logp_m = NormalNormalGamma::logMarginalLikelihood(5, 15, 55, 0, 1, 1, 1);
 
     BOOST_CHECK_CLOSE_FRACTION(logp_f, logp_m, TOL);
