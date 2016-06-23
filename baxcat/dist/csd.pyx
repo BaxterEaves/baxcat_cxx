@@ -14,13 +14,14 @@ cdef extern from "models/msd.hpp" namespace "baxcat::models":
 
 
 def _get_counts_from_suffstats(suffstats):
-    return [suffstats.get(str(j), 0) for j in range(suffstats['k'])]
+    k = int(suffstats['k'])
+    return [suffstats.get(str(j), 0) for j in range(k)]
 
 
 # don't use cpp sampler, because it requires an rng
 def sample(suffstats, hypers, n=1):
     counts = _get_counts_from_suffstats(suffstats)
-    alpha = hypers['alpha']
+    alpha = hypers['dirichlet_alpha']
 
     ps = np.array(counts, dtype=float) + alpha
     ps /= np.sum(ps)
@@ -33,7 +34,7 @@ def sample(suffstats, hypers, n=1):
 
 def probability(x, suffstats, hypers):
     cdef vector[size_t] counts = _get_counts_from_suffstats(suffstats)
-    cdef double alpha = hypers['alpha']
+    cdef double alpha = hypers['dirichlet_alpha']
 
     cdef MultinomialDirichlet[size_t] csd
 
