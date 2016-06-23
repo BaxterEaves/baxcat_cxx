@@ -368,7 +368,7 @@ void State::__transitionStateCRPAlpha()
     size_t burn = 50;
 
     // slice sample
-    _crp_alpha = samplers::sliceSample(_crp_alpha, log_crp_posterior, {ALMOST_ZERO, INF},
+    _crp_alpha = samplers::mhSample(_crp_alpha, log_crp_posterior, {ALMOST_ZERO, INF},
                                        slice_width, burn, _rng.get());
 }
 
@@ -658,16 +658,25 @@ void State::__transitionColumnAssignmentEnumeration(size_t col)
 //`````````````````````````````````````````````````````````````````````````````````````````````````
 void State::__destroySingletonView(size_t feat_idx, size_t to_destroy, size_t move_to)
 {
+    ASSERT(std::cout, to_destroy < _num_views);
+    ASSERT(std::cout, move_to < _num_views);
+
     _column_assignment[feat_idx] = move_to;
     _views[to_destroy].releaseFeature(feat_idx);
+
     for(size_t i = 0; i < _num_columns; ++i)
         _column_assignment[i] -= (_column_assignment[i] > to_destroy) ? 1 : 0;
 
     _views[move_to].assimilateFeature(_features[feat_idx]);
+
     ++_view_counts[move_to];
+
     _view_counts.erase(_view_counts.begin()+to_destroy);
     _views.erase(_views.begin()+to_destroy);
+
     --_num_views;
+
+    ASSERT_EQUAL(std::cout, _views.size(), _num_views);
 }
 
 
@@ -680,23 +689,41 @@ void State::__swapSingletonViews(size_t feat_idx, size_t view_index, View &propo
 
 void State::__createSingletonView(size_t feat_idx, size_t current_view_index, View &proposal_view)
 {
+    ASSERT(std::cout, current_view_index < _num_views);
+
     _column_assignment[feat_idx] = _num_views;
     _features[feat_idx].get()->reassign(proposal_view.getRowAssignments());
     _views[current_view_index].releaseFeature(feat_idx);
+
     --_view_counts[current_view_index];
+
     _view_counts.push_back(1);
     _views.push_back(proposal_view);
+
     ++_num_views;
+
+    ASSERT_EQUAL(std::cout, _views.size(), _num_views);
+    ASSERT_EQUAL(std::cout, _view_counts.back(), 1);
+    ASSERT_EQUAL(std::cout, proposal_view.getNumFeatures(), 1);
 }
 
 
 void State::__moveFeatureToView(size_t feat_idx, size_t move_from, size_t move_to)
 {
+    ASSERT(std::cout, move_from < _num_views);
+    ASSERT(std::cout, move_to < _num_views);
+
     _column_assignment[feat_idx] = move_to;
     _views[move_from].releaseFeature(feat_idx);
+
     --_view_counts[move_from];
+
     _views[move_to].assimilateFeature(_features[feat_idx]);
+
     ++_view_counts[move_to];
+
+    ASSERT_EQUAL(std::cout, _views[move_from].getNumFeatures(), _view_counts[move_from]);
+    ASSERT_EQUAL(std::cout, _views[move_to].getNumFeatures(), _view_counts[move_to]);
 }
 
 
@@ -844,6 +871,15 @@ size_t State::getNumViews() const
     return _num_views;
 }
 
+
+vector<vector<size_t>> State::getViewCounts() const
+{
+    vector<vector<size_t>> counts;
+    for(auto &view : _views)
+        counts.push_back(view.getClusterCounts());
+
+    return counts;
+}
 
 double State::logScore()
 {
