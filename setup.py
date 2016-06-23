@@ -14,7 +14,7 @@ extensions = [
               sources=['baxcat/interface/state.pyx', 'src/state.cpp',
                        'src/view.cpp', 'src/categorical.cpp',
                        'src/continuous.cpp', 'src/feature_tree.cpp'],
-              extra_compile_args=['-std=c++11'],
+              extra_compile_args=['-std=c++11', '-Wno-comment'],
               extra_link_args=['-lstdc++', '-fopenmp'],
               include_dirs=['src', 'include', np.get_include(), boost_dir],
               language="c++"),
