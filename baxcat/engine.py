@@ -27,7 +27,7 @@ def _initialize(args):
         'iters': 0,
         'time': time.time() - t_start}
 
-    return md, pd.DataFrame([diagnostics])
+    return md, [diagnostics]
 
 
 def _run(args):
@@ -56,7 +56,7 @@ def _run(args):
         diagnostics.append(diagnostic)
 
     md = state.get_metadata()
-    return md, pd.DataFrame(diagnostics)
+    return md, diagnostics
 
 
 class Engine(object):
@@ -110,8 +110,12 @@ class Engine(object):
         """ Import metadata from a zipped pickle file (pkl.zip) """
         raise NotImplementedError
 
-    @ property
-    def column_info(self):
+    def diagnostics(self, model_idxs=None):
+        if model_idxs is None:
+            model_idxs = [i for i in range(self._n_models)]
+        return [pd.DataFrame(self._diagnostic_tables[m]) for m in model_idxs]
+
+    def col_info(self):
         s_dtypes = pd.Series(self._dtypes, index=self._col_names)
         s_distargs = pd.Series([a[0] for a in self._distargs],
                                index=self._col_names)
@@ -158,8 +162,7 @@ class Engine(object):
         res = self._mapper(_run, args)
         for idx, (model, diagnostics) in zip(model_idxs, res):
             self._models[idx] = model
-            diag_i = self._diagnostic_tables[idx]
-            self._diagnostic_tables[idx] = diag_i.append(diagnostics)
+            self._diagnostic_tables[idx].extend(diagnostics)
 
     def dependence_probability(self, col_a, col_b):
         """ The probabiilty that a dependence exists between a and b. """
@@ -326,7 +329,7 @@ class Engine(object):
         if ax is None:
             ax = plt.gca()
 
-        for table in self._diagnostic_tables:
+        for table in self.diagnostics():
             x = np.cumsum(table['time'].values)
             y = table['log_score'].values
 
