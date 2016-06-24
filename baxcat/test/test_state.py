@@ -238,11 +238,11 @@ def test_get_metadata_valid_output(blank):
         assert isinstance(va, list)
         assert isinstance(va[0], int)
 
-    assert isinstance(md['hyperpriors'], list)
-    for hp in md['hyperpriors']:
+    assert isinstance(md['col_hypers'], list)
+    for hp in md['col_hypers']:
         assert isinstance(hp, dict)
 
-    assert isinstance(md['col_suffstats'], list)
+    assert isinstance(md['col_hypers'], list)
     for col_sf in md['col_suffstats']:
         assert isinstance(col_sf, list)
         for sf in col_sf:

@@ -33,7 +33,8 @@ def test_heatmap_dependence_probability():
                    axis=1)
     df.columns = ['c_%d' % i for i in range(12)]
 
-    engine = Engine(df, n_models=10)
+    engine = Engine(df)
+    engine.init_models(10)
     engine.run(20)
 
     engine.heatmap('dependence_probability')

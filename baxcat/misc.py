@@ -22,3 +22,13 @@ def pflip(p, normed=False, n=1):
         return draws[0]
     else:
         return draws
+
+
+def zpsave(data, filename):
+    """ Save data as zipped pickle file. """
+    raise NotImplementedError()
+
+
+def zpload(filename):
+    """ Load data from a zipped pickle file. """
+    raise NotImplementedError()

@@ -11,7 +11,7 @@ def assert_close(a, b):
 
 
 def test_probability_values():
-    hypers = {'alpha': 1.0}
+    hypers = {'dirichlet_alpha': 1.0}
     suffstats = {'n': 10, 'k': 3, '0': 1, '1': 4, '2': 5}
 
     msd_value = csd.probability(0, suffstats, hypers)
@@ -20,11 +20,11 @@ def test_probability_values():
     msd_value = csd.probability(1, suffstats, hypers)
     assert_close(-0.95551144502744, msd_value)
 
-    hypers['alpha'] = 2.5
+    hypers['dirichlet_alpha'] = 2.5
     msd_value = csd.probability(0, suffstats, hypers)
     assert_close(-1.6094379124341, msd_value)
 
-    hypers['alpha'] = .25
+    hypers['dirichlet_alpha'] = .25
     suffstats['0'] = 2
     suffstats['1'] = 7
     suffstats['2'] = 13
@@ -35,9 +35,9 @@ def test_probability_values():
 
 # TODO: Coarse sample tests. In the future we should use Chi-square test.
 def test_sample_proportions():
-    n_samples = 10000.
+    n_samples = 10000
 
-    hypers = {'alpha': 1.}
+    hypers = {'dirichlet_alpha': 1.}
     suffstats = {'n': 2, 'k': 2, '0': 1, '1': 1}
 
     samples = csd.sample(suffstats, hypers, n=n_samples)

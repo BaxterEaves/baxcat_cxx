@@ -13,6 +13,12 @@ import random
 import time
 import copy
 
+# cpickle is faster, but not everybody has it.
+try:
+    import cpickle as pkl
+except ImportError:
+    import pickle as pkl
+
 
 def _initialize(args):
     data = args[0]
@@ -62,8 +68,13 @@ def _run(args):
 # -----------------------------------------------------------------------------
 class Engine(object):
     """ WRITEME """
-    def __init__(self, df, n_models=1, metadata=None, **kwargs):
+    def __init__(self, df=None, metadata=None, **kwargs):
         """ Initialize """
+
+        if df is None:
+            raise ValueError('Give me some data (;-_-)')
+
+        self._init_args = {'df': df, 'metadata': metadata, 'kwargs': kwargs}
 
         guess_n_unique_cutoff = kwargs.get('guess_n_unique_cutoff', 20)
         use_mp = kwargs.get('use_mp', True)
@@ -73,24 +84,16 @@ class Engine(object):
 
         self._df = df
         self._n_rows, self._n_cols = self._df.shape
+        self._metadata = metadata
 
         self._row_names = df.index
         self._col_names = df.columns
 
         self._seed = kwargs.get('seed', None)
-        self._n_models = n_models
 
         if self._seed is not None:
             np.random.seed(self._seed)
             random.seed(self._seed)
-
-        args = []
-        for _ in range(self._n_models):
-            sd = np.random.randint(2**31-1)
-            kwarg = {'dtypes': self._dtypes,
-                     'distargs': self._distargs,
-                     'seed': sd}
-            args.append((self._data, kwarg,))
 
         if use_mp:
             self._pool = Pool()
@@ -101,15 +104,76 @@ class Engine(object):
         self._models = []
         self._diagnostic_tables = []
 
+    def init_models(self, n_models):
+        """ Intialize a number of cross-categorization models.
+
+        Parameters
+        ----------
+        n_models : int
+            The number of models to initialize.
+        """
+        if len(self._models) != 0:
+            raise NotImplementedError('Cannot add more models.')
+
+        self._n_models = n_models
+        args = []
+        for _ in range(self._n_models):
+            sd = np.random.randint(2**31-1)
+            kwarg = {'dtypes': self._dtypes,
+                     'distargs': self._distargs,
+                     'seed': sd}
+            args.append((self._data, kwarg,))
+
         res = self._mapper(_initialize, args)
         for model, diagnostics in res:
             self._models.append(model)
             self._diagnostic_tables.append(diagnostics)
 
+    @property
+    def models(self):
+        return copy.deepcopy(self._models)
+
     @classmethod
     def load(cls, filename):
-        """ Import metadata from a zipped pickle file (pkl.zip) """
-        raise NotImplementedError
+        """ Create an engine given metadata from a pickle file.
+
+        Parameters
+        ----------
+        filename : str
+        """
+        with open(filename, 'rb') as f:
+            dat = pkl.load(f)
+            self = cls(**dat['init_args'])
+            for key, val in dat['cls_attrs'].items():
+                setattr(self, '_' + key, val)
+
+            random.setstate(dat['rng_state']['py'])
+            np.random.set_state(dat['rng_state']['np'])
+
+        return self
+
+    def save(self, filename):
+        """ Save to a zipped pickle file.
+
+        The resulting file can be used to initialize Engine object using
+        `Engine.load(filename)`.
+
+        Parameters
+        ----------
+        filename : str
+        """
+        dat = {
+            'init_args': self._init_args,
+            'rng_state': {
+                'np': np.random.get_state(),
+                'py': random.getstate()},
+            'cls_attrs': {
+                'models': self._models,
+                'n_models': self._n_models,
+                'diagnostic_tables': self._diagnostic_tables}}
+
+        with open(filename, 'wb') as f:
+            pkl.dump(dat, f)
 
     def diagnostics(self, model_idxs=None):
         if model_idxs is None:
@@ -129,17 +193,22 @@ class Engine(object):
         df['cardinality'][df['dtype'] != 'categorical'] = None
         return df
 
-    @property
-    def metadata(self):
-        return copy.deepcopy(self._models)
-
-    def save(self, filename):
-        """ Export data from a zipped pickle file (.pkl.zip). """
-        raise NotImplementedError
-
     def run(self, n_iter=1, checkpoint=None, model_idxs=None,
             trans_kwargs=None):
-        """ Run the sampler """
+        """ Run the sampler.
+
+        Parameters
+        ----------
+        n_iter : int
+            The number of iterations to run the sampler.
+        checkpoint : int
+            Collect diagnostic data every `checkpoint` iterations. By default,
+            collects only at the end of the run.
+        model_idxs : list(int)
+            The indices of the models to run, if not all models.
+        trans_kwargs : dict
+            Keyword arguments sent to `BCState.transition`
+        """
 
         if trans_kwargs is None:
             trans_kwargs = dict()
@@ -197,7 +266,8 @@ class Engine(object):
 
         Returns
         -------
-        The mutual information between `col_a` and `col_b`.
+        mi : float
+            The mutual information between `col_a` and `col_b`.
         """
 
         idx_a = self._converters['col2idx'][col_a]
@@ -224,13 +294,17 @@ class Engine(object):
     def entropy(self, col, n_samples=500):
         """ The entropy of a column.
 
+        Notes
+        -----
+        Returns differential entropy for continuous feature (obviously).
+
         Parameters
         ----------
         col : indexer
             The name of the column
         n_samples : int
             The number of samples to use for the Monte Carlo approximation
-            (if nored if `col` is categorical).
+            (if `col` is categorical).
 
         Returns
         -------
@@ -259,13 +333,30 @@ class Engine(object):
         return h
 
     def conditional_entropy(self, col_a, col_b, n_samples=1000):
-        """ Conditional entropy, H(A|B), of a given b """
+        """ Conditional entropy, H(A|B), of a given b
+
+        Parameters
+        ----------
+        col_a : indexer
+            The name of the first column
+        col_b : indexer
+            The name of the second column
+        n_samples : int
+            The number of samples to use for the Monte Carlo approximation
+            (if nored if `col` is categorical).
+
+        Returns
+        -------
+        h_c : float
+            The conditional entropy of `col_a` given `col_b`.
+        """
         col_idxs = [self._converters['col2idx'][col_a],
                     self._converters['col2idx'][col_b]]
         h_ab = mu.joint_entropy(self._models, col_idxs, n_samples)
         h_b = self.entropy(col_b, n_samples)
+        h_c = h_ab - h_b
 
-        return h_ab - h_b
+        return h_c
 
     def probability(self, x, cols, y=None):
         """ Predictive probability of x_1, ..., x_n given y_1, ..., y_n """
@@ -276,6 +367,7 @@ class Engine(object):
         raise NotImplementedError
 
     def sample(self, cols, n=1):
+        """ Draw samples from cols """
         col_idxs = [self._converters['col2idx'][col] for col in cols]
         return mu.sample(self._models, col_idxs, n=n)
 
@@ -289,6 +381,7 @@ class Engine(object):
         raise NotImplementedError
 
     def pairwise_func(self, func, n_samples=500):
+        """ Do a function over all paris of columns/rows """
         mat = np.eye(self._n_cols)
         if func == 'dependence_probability':
             for i in range(self._n_cols):
@@ -330,6 +423,7 @@ class Engine(object):
         return df
 
     def heatmap(self, func, n_samples=100, plot_kwargs=None):
+        """ Heatmap of a pairwise function """
         if plot_kwargs is None:
             plot_kwargs = {}
 
@@ -351,6 +445,7 @@ class Engine(object):
         plt.setp(g.ax_heatmap.get_xticklabels(), rotation=90)
 
     def convergence_plot(self, ax=None, log_x_axis=True):
+        """ Plot the log score of each model as a function of time. """
         if ax is None:
             ax = plt.gca()
 

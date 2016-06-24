@@ -1,5 +1,6 @@
 import pytest
 
+import tempfile
 import pandas as pd
 import numpy as np
 
@@ -21,8 +22,11 @@ def smalldf():
 # `````````````````````````````````````````````````````````````````````````````
 def test_engine_init_smoke_default(smalldf):
     df = pd.DataFrame(np.random.rand(30, 5))
-    Engine(df)
-    Engine(smalldf)
+    engine = Engine(df)
+    engine.init_models(1)
+
+    engine = Engine(smalldf)
+    engine.init_models(1)
 
 
 def test_engine_init_smoke_metadata(smalldf):
@@ -34,24 +38,98 @@ def test_engine_init_smoke_metadata(smalldf):
         'dtype': 'categorical',
         'values': ['zero', 'one', 'two', 'three', 'four']}
 
-    Engine(smalldf, metadata=metadata)
-    Engine(smalldf, n_models=3, metadata=metadata)
+    engine = Engine(smalldf, metadata=metadata)
+    engine.init_models(1)
+    engine = Engine(smalldf,  metadata=metadata)
+    engine.init_models(1)
 
 
 # test run
 # `````````````````````````````````````````````````````````````````````````````
 def test_engine_run_smoke_default(smalldf):
     engine = Engine(smalldf)
+    engine.init_models(1)
     engine.run()
     engine.run(10)
-    assert len(engine.metadata) == 1
+    assert len(engine.models) == 1
 
 
 def test_engine_run_smoke_multiple(smalldf):
-    engine = Engine(smalldf, n_models=10)
+    engine = Engine(smalldf)
+    engine.init_models(10)
     engine.run()
     engine.run(10)
-    assert len(engine.metadata) == 10
+    assert len(engine.models) == 10
+
+
+def test_run_with_checkpoint_valid_diagnostic_output(smalldf):
+    engine = Engine(smalldf)
+    engine.init_models(5)
+    engine.run(10, checkpoint=5)
+
+    tables = engine._diagnostic_tables
+
+    assert len(tables) == 5
+
+    for table in tables:
+        assert len(table) == 3
+        for entry in table:
+            assert 'log_score' in entry
+            assert 'iters' in entry
+            assert 'time' in entry
+
+
+def test_run_on_model_subset_should_only_run_those_models(smalldf):
+    engine = Engine(smalldf)
+    engine.init_models(5)
+    engine.run(10, checkpoint=5)
+    engine.run(10, checkpoint=5, model_idxs=[1, 2])
+
+    tables = engine._diagnostic_tables
+
+    assert len(tables) == 5
+
+    assert len(tables[0]) == 3
+    assert len(tables[1]) == 5
+    assert len(tables[2]) == 5
+    assert len(tables[3]) == 3
+    assert len(tables[4]) == 3
+
+
+# save and load
+# `````````````````````````````````````````````````````````````````````````````
+def test_save_smoke(smalldf):
+    engine = Engine(smalldf)
+    engine.init_models(5)
+
+    with tempfile.NamedTemporaryFile('wb') as tf:
+        engine.save(tf.name)
+
+
+def test_load_smoke(smalldf):
+    engine = Engine(smalldf)
+    engine.init_models(5)
+
+    with tempfile.NamedTemporaryFile('wb') as tf:
+        engine.save(tf.name)
+        Engine.load(tf.name)
+
+
+def test_save_and_load_equivalence(smalldf):
+    engine = Engine(smalldf)
+    engine.init_models(5)
+
+    with tempfile.NamedTemporaryFile('wb') as tf:
+        engine.save(tf.name)
+        new_engine = Engine.load(tf.name)
+
+        assert engine._models == new_engine._models
+        assert engine._dtypes == new_engine._dtypes
+        assert engine._metadata == new_engine._metadata
+        assert engine._converters == new_engine._converters
+        assert engine._diagnostic_tables == new_engine._diagnostic_tables
+        assert all(engine._row_names == new_engine._row_names)
+        assert all(engine._col_names == new_engine._col_names)
 
 
 # dependence probability
@@ -66,7 +144,8 @@ def test_dependence_probability():
     df = pd.concat([s1, s2, s3], axis=1)
     df.columns = ['c0', 'c1', 'c2']
 
-    engine = Engine(df, n_models=20)
+    engine = Engine(df)
+    engine.init_models(20)
     engine.run(50)
     depprob_01 = engine.dependence_probability('c0', 'c1')
     depprob_02 = engine.dependence_probability('c0', 'c2')
@@ -86,7 +165,8 @@ def test_pairwise_dependence_probability():
     df = pd.concat([s1, s2, s3], axis=1)
     df.columns = ['c0', 'c1', 'c2']
 
-    engine = Engine(df, n_models=10)
+    engine = Engine(df)
+    engine.init_models(10)
     engine.run(5)
 
     depprob = engine.pairwise_func('dependence_probability')
