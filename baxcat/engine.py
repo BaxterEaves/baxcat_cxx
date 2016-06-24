@@ -358,26 +358,41 @@ class Engine(object):
 
         return h_c
 
-    def probability(self, x, cols, y=None):
-        """ Predictive probability of x_1, ..., x_n given y_1, ..., y_n """
+    def probability(self, x, cols, given=None):
+        """ Predictive probability of x_1, ..., x_n given y_1, ..., y_n
+
+        Parameters
+        ----------
+        x : numpy.ndarray(2,)
+            2-D numpy array where each row is a set of observations and each
+            column corresponds to a feature.
+        cols : list
+            The names of each column/feature of `x`.
+        given : list(tuple)
+            List of (name, value,) conditional contraints for the probability
+
+        Returns
+        -------
+        logps : numpy.ndarray
+        """
+        if given is not None:
+            raise NotImplementedError
+
         col_idxs = [self._converters['col2idx'][col] for col in cols]
         return mu.probability(x, self._models, col_idxs)
 
     def row_similarity(self, row_a, row_b):
         raise NotImplementedError
 
-    def sample(self, cols, n=1):
+    def sample(self, cols, given=None, n=1):
         """ Draw samples from cols """
+        if given is not None:
+            raise NotImplementedError
+
         col_idxs = [self._converters['col2idx'][col] for col in cols]
         return mu.sample(self._models, col_idxs, n=n)
 
-    def impute(self, row, col):
-        raise NotImplementedError
-
-    def get_pandas_df(self):
-        raise NotImplementedError
-
-    def convergence_plots(self, model_idxs=None):
+    def impute(self, row, col, min_conf=0.):
         raise NotImplementedError
 
     def pairwise_func(self, func, n_samples=500):
