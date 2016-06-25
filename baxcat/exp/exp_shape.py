@@ -86,7 +86,8 @@ if __name__ == "__main__":
     n = 1000
     funcs = [gen_ring, gen_diamond, gen_u, gen_wave, gen_dots]
     n_funcs = len(funcs)
-    plt.figure(tight_layout=True)
+    f, axes = plt.subplots(3, n_funcs)
+    f.tight_layout()
 
     dfs = []
     for i, func in enumerate(funcs):
@@ -98,32 +99,26 @@ if __name__ == "__main__":
         df.columns = ['func', 'x', 'y']
         dfs.append(df)
 
-        ax = plt.subplot(2, n_funcs, i+1)
+        ax = axes[0, i]
         ax.scatter(xo, yo, color='crimson', alpha=.3)
 
-        plt.subplot(2, n_funcs, i+n_funcs+1)
-        plt.scatter(xe, ye, color='black', alpha=.3)
-        plt.xlim(ax.get_xlim())
-        plt.ylim(ax.get_ylim())
-
-    plt.show()
+        ax = axes[1, i]
+        ax.scatter(xe, ye, color='gray', alpha=.3)
+        ax.set_xlim(axes[0, i].get_xlim())
+        ax.set_ylim(axes[0, i].get_ylim())
 
     df = pd.concat(dfs, ignore_index=True)
     engine = Engine(df)
     engine.init_models(8)
-    engine.run(2000, checkpoint=20)
-
-    engine.convergence_plot()
-    plt.show()
-
-    plt.figure(tight_layout=True)
+    engine.run(1000, checkpoint=20)
 
     dfs = []
     for i, func in enumerate(funcs):
         func_name = func.__name__
         x = engine.sample(['x', 'y'], given=[('func', func_name)], n=n)
 
-        ax = plt.subplot(1, n_funcs, i+1)
-        plt.title(func.__name__)
-        ax.scatter(x[:, 0], x[:, 1], color='black', alpha=.3)
+        ax = axes[2, i]
+        ax.scatter(x[:, 0], x[:, 1], color='navy', alpha=.3)
+        ax.set_xlim(axes[0, i].get_xlim())
+        ax.set_ylim(axes[0, i].get_ylim())
     plt.show()
