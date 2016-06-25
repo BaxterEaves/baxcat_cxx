@@ -15,14 +15,25 @@ def smalldf():
     s3 = pd.Series(['one', 'two', 'three']*10)
     s4 = pd.Series(np.random.rand(30))
 
-    return pd.concat([s1, s2, s3, s4], axis=1)
+    df = pd.concat([s1, s2, s3, s4], axis=1)
+    df.columns = ['x_1', 'x_2', 'x_3', 'x_4']
+    return df
+
+
+@pytest.fixture()
+def smallengine(smalldf):
+    engine = Engine(smalldf, no_mp=True)
+    engine.init_models(2)
+    engine.run(10)
+    # print(engine.col_info())
+    return engine
 
 
 # test init
 # `````````````````````````````````````````````````````````````````````````````
 def test_engine_init_smoke_default(smalldf):
     df = pd.DataFrame(np.random.rand(30, 5))
-    engine = Engine(df)
+    engine = Engine(df, no_mp=True)
     engine.init_models(1)
 
     engine = Engine(smalldf)
@@ -31,10 +42,10 @@ def test_engine_init_smoke_default(smalldf):
 
 def test_engine_init_smoke_metadata(smalldf):
     metadata = dict()
-    metadata[1] = {
+    metadata['x_2'] = {
         'dtype': 'categorical',
         'values': [-1, 0, 1, 99]}
-    metadata[2] = {
+    metadata['x_3'] = {
         'dtype': 'categorical',
         'values': ['zero', 'one', 'two', 'three', 'four']}
 
@@ -144,9 +155,9 @@ def test_dependence_probability():
     df = pd.concat([s1, s2, s3], axis=1)
     df.columns = ['c0', 'c1', 'c2']
 
-    engine = Engine(df)
+    engine = Engine(df, no_mp=True)
     engine.init_models(20)
-    engine.run(50)
+    engine.run(10)
     depprob_01 = engine.dependence_probability('c0', 'c1')
     depprob_02 = engine.dependence_probability('c0', 'c2')
     depprob_12 = engine.dependence_probability('c1', 'c2')
@@ -165,7 +176,7 @@ def test_pairwise_dependence_probability():
     df = pd.concat([s1, s2, s3], axis=1)
     df.columns = ['c0', 'c1', 'c2']
 
-    engine = Engine(df)
+    engine = Engine(df, no_mp=True)
     engine.init_models(10)
     engine.run(5)
 
@@ -177,3 +188,77 @@ def test_pairwise_dependence_probability():
     assert depprob.ix[0, 1] == depprob.ix[1, 0]
     assert depprob.ix[0, 2] == depprob.ix[2, 0]
     assert depprob.ix[1, 2] == depprob.ix[2, 1]
+
+
+# probability
+# `````````````````````````````````````````````````````````````````````````````
+def test_probability_single_col_single_datum(smallengine):
+    data = 1.2
+    col = 'x_1'
+    p = smallengine.probability(data, [col])
+
+    assert isinstance(p, (float, np.float64,))
+
+
+def test_probability_multi_col_single_datum(smallengine):
+    data = [1.2, 2.3]
+    cols = ['x_1', 'x_4']
+    p = smallengine.probability(data, cols)
+
+    assert isinstance(p, (float, np.float64,))
+
+
+def test_probability_single_col_multi_datum(smallengine):
+    data = [[1.2], [0.2]]
+    col = 'x_1'
+    p = smallengine.probability(data, [col])
+
+    assert isinstance(p, np.ndarray)
+    assert p.shape == (2,)
+
+
+def test_probability_multi_col_multi_datum(smallengine):
+    data = [[1.2, 'two'], [0.2, 'one']]
+    cols = ['x_1', 'x_3']
+    given = [('x_2', 0,), ('x_4', 0,)]
+    p = smallengine.probability(data, cols, given=given)
+
+    assert isinstance(p, np.ndarray)
+    assert p.shape == (2,)
+
+
+def test_probability_single_col_single_datum_given(smallengine):
+    data = 1.2
+    col = 'x_1'
+    given = [('x_2', 0,), ('x_4', 0,)]
+    p = smallengine.probability(data, [col], given=given)
+
+    assert isinstance(p, (float, np.float64,))
+
+
+def test_probability_multi_col_single_datum_given(smallengine):
+    data = [1.2, 2.3]
+    cols = ['x_1', 'x_4']
+    given = [('x_2', 0,), ('x_4', 0,)]
+    p = smallengine.probability(data, cols, given=given)
+
+    assert isinstance(p, (float, np.float64,))
+
+
+def test_probability_single_col_multi_datum_given(smallengine):
+    data = [[1.2], [0.2]]
+    col = 'x_1'
+    p = smallengine.probability(data, [col])
+
+    assert isinstance(p, np.ndarray)
+    assert p.shape == (2,)
+
+
+def test_probability_multi_col_multi_datum_given(smallengine):
+    data = [[1.2, 'two'], [0.2, 'one']]
+    cols = ['x_1', 'x_3']
+    given = [('x_2', 0,), ('x_4', 0,)]
+    p = smallengine.probability(data, cols, given=given)
+
+    assert isinstance(p, np.ndarray)
+    assert p.shape == (2,)

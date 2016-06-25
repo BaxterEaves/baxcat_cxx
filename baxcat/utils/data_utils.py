@@ -51,7 +51,7 @@ def convert_data(data, cols, dtypes, converters, to_val=False):
             x = data[:, i]
             xj = np.array([valmap(col, xi) for xi in x])
         else:
-            xj = data[:, i]
+            xj = np.array(data[:, i], dtype=np.float64)
         data_out[:, i] = xj
 
     return data_out
@@ -160,3 +160,26 @@ def guess_dtypes(df, n_unique_cutoff=20):
         dtypes.append(dtype)
 
     return dtypes
+
+
+def format_query_data(data):
+    """ converts query data to 2D numpy array ready for use with queries. """
+
+    if not isinstance(data, (list, np.ndarray,)):
+        data_out = np.array([[data]], dtype=object)
+    elif isinstance(data, list):
+        if isinstance(data[0], (list, np.ndarray,)):
+            data_out = np.array(data, dtype=object)
+        else:
+            data_out = np.array([data], dtype=object)
+    elif isinstance(data, np.ndarray):
+        if len(data.shape) == 1:
+            data_out = np.array([data], dtype=object)
+        else:
+            data_out = data
+    else:
+        raise TypeError("I do not know how to handle a %s." % type(data))
+
+    assert len(data_out.shape) == 2
+
+    return data_out

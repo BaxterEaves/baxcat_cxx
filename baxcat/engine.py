@@ -130,10 +130,6 @@ class Engine(object):
             self._models.append(model)
             self._diagnostic_tables.append(diagnostics)
 
-    @property
-    def models(self):
-        return copy.deepcopy(self._models)
-
     @classmethod
     def load(cls, filename):
         """ Create an engine given metadata from a pickle file.
@@ -175,6 +171,10 @@ class Engine(object):
 
         with open(filename, 'wb') as f:
             pkl.dump(dat, f)
+
+    @property
+    def models(self):
+        return copy.deepcopy(self._models)
 
     def diagnostics(self, model_idxs=None):
         if model_idxs is None:
@@ -235,6 +235,48 @@ class Engine(object):
             self._models[idx] = model
             self._diagnostic_tables[idx].extend(diagnostics)
 
+    def sample(self, cols, given=None, n=1):
+        """ Draw samples from cols """
+        # TODO: make sure that given goes not caontain columns rom cols
+        if given is not None:
+            given = du.convert_given(given, self._dtypes, self._converters)
+
+        col_idxs = [self._converters['col2idx'][col] for col in cols]
+
+        data_out = mu.sample(self._models, col_idxs, given=given, n=n)
+
+        x = du.convert_data(data_out, cols, self._dtypes, self._converters,
+                            to_val=True)
+
+        return x
+
+    def probability(self, x, cols, given=None):
+        """ Predictive probability of x_1, ..., x_n given y_1, ..., y_n
+
+        Parameters
+        ----------
+        x : numpy.ndarray(2,)
+            2-D numpy array where each row is a set of observations and each
+            column corresponds to a feature.
+        cols : list
+            The names of each column/feature of `x`.
+        given : list(tuple)
+            List of (name, value,) conditional contraints for the probability
+
+        Returns
+        -------
+        logps : numpy.ndarray
+        """
+        # TODO: make sure that given goes not caontain columns rom cols
+        x = du.format_query_data(x)
+        col_idxs = [self._converters['col2idx'][col] for col in cols]
+        x_cnv = du.convert_data(x, cols, self._dtypes, self._converters)
+
+        if given is not None:
+            given = du.convert_given(given, self._dtypes, self._converters)
+
+        return mu.probability(x_cnv, self._models, col_idxs)
+
     def dependence_probability(self, col_a, col_b):
         """ The probabiilty that a dependence exists between a and b. """
         depprob = 0.
@@ -248,6 +290,54 @@ class Engine(object):
         depprob /= self._n_models
 
         return depprob
+
+    def row_similarity(self, row_a, row_b):
+        raise NotImplementedError
+
+    def impute(self, row, col, min_conf=0.):
+        raise NotImplementedError
+
+    # TODO: allow multiple columns for joint entropy
+    def entropy(self, col, n_samples=500):
+        """ The entropy of a column.
+
+        Notes
+        -----
+        Returns differential entropy for continuous feature (obviously).
+
+        Parameters
+        ----------
+        col : indexer
+            The name of the column
+        n_samples : int
+            The number of samples to use for the Monte Carlo approximation
+            (if `col` is categorical).
+
+        Returns
+        -------
+        h : float
+            The entropy of `col`.
+        """
+
+        col_idx = self._converters['col2idx'][col]
+        dtype = self._dtypes[col_idx]
+
+        # Unless x is enumerable (is categorical), we approximate h(x) using
+        # an importance sampling extimate of h(x) using p(x) as the importance
+        # function.
+        if dtype == 'categorical':
+            k = self._distargs[col_idx][0]
+            x = np.array([[i] for i in range(k)])
+            logps = mu.probability(x, self._models, (col_idx,))
+            assert len(logps) == k
+            h = -np.sum(np.exp(logps)*logps)
+        else:
+            x = mu.sample(self._models, (col_idx,), n=n_samples)
+            logps = mu.probability(x, self._models, (col_idx,))
+
+            h = -np.sum(logps) / n_samples
+
+        return h
 
     def mutual_information(self, col_a, col_b, normed=True, n_samples=1000):
         """ The mutual information, I(A, B), between two columns.
@@ -292,47 +382,6 @@ class Engine(object):
 
             return max(0, mi)
 
-    def entropy(self, col, n_samples=500):
-        """ The entropy of a column.
-
-        Notes
-        -----
-        Returns differential entropy for continuous feature (obviously).
-
-        Parameters
-        ----------
-        col : indexer
-            The name of the column
-        n_samples : int
-            The number of samples to use for the Monte Carlo approximation
-            (if `col` is categorical).
-
-        Returns
-        -------
-        h : float
-            The entropy of `col`.
-        """
-
-        col_idx = self._converters['col2idx'][col]
-        dtype = self._dtypes[col_idx]
-
-        # Unless x is enumerable (is categorical), we approximate h(x) using
-        # an importance sampling extimate of h(x) using p(x) as the importance
-        # function.
-        if dtype == 'categorical':
-            k = self._distargs[col_idx][0]
-            x = np.array([[i] for i in range(k)])
-            logps = mu.probability(x, self._models, (col_idx,))
-            assert len(logps) == k
-            h = -np.sum(np.exp(logps)*logps)
-        else:
-            x = mu.sample(self._models, (col_idx,), n=n_samples)
-            logps = mu.probability(x, self._models, (col_idx,))
-
-            h = -np.sum(logps) / n_samples
-
-        return h
-
     def conditional_entropy(self, col_a, col_b, n_samples=1000):
         """ Conditional entropy, H(A|B), of a given b
 
@@ -359,51 +408,7 @@ class Engine(object):
 
         return h_c
 
-    def probability(self, x, cols, given=None):
-        """ Predictive probability of x_1, ..., x_n given y_1, ..., y_n
-
-        Parameters
-        ----------
-        x : numpy.ndarray(2,)
-            2-D numpy array where each row is a set of observations and each
-            column corresponds to a feature.
-        cols : list
-            The names of each column/feature of `x`.
-        given : list(tuple)
-            List of (name, value,) conditional contraints for the probability
-
-        Returns
-        -------
-        logps : numpy.ndarray
-        """
-        col_idxs = [self._converters['col2idx'][col] for col in cols]
-        x_cnv = du.convert_data(x, cols, self._dtypes, self._converters)
-
-        if given is not None:
-            given = du.convert_given(given, self._dtypes, self._converters)
-
-        return mu.probability(x_cnv, self._models, col_idxs)
-
-    def row_similarity(self, row_a, row_b):
-        raise NotImplementedError
-
-    def sample(self, cols, given=None, n=1):
-        """ Draw samples from cols """
-        if given is not None:
-            given = du.convert_given(given, self._dtypes, self._converters)
-
-        col_idxs = [self._converters['col2idx'][col] for col in cols]
-
-        data_out = mu.sample(self._models, col_idxs, given=given, n=n)
-
-        x = du.convert_data(data_out, cols, self._dtypes, self._converters,
-                            to_val=True)
-
-        return x
-
-    def impute(self, row, col, min_conf=0.):
-        raise NotImplementedError
-
+    # TODO: offloat to external fuction that can be parallelized
     def pairwise_func(self, func, n_samples=500):
         """ Do a function over all paris of columns/rows """
         mat = np.eye(self._n_cols)
@@ -483,3 +488,6 @@ class Engine(object):
 
         if log_x_axis:
             ax.set_xscale('log')
+
+    def plot_state(self, state_idx):
+        raise NotImplementedError()

@@ -453,3 +453,46 @@ def test_convert_categorical_data_single_column():
     n_rows, n_cols = data_in.shape
     for i, j in it.product(range(n_rows), range(n_cols)):
         assert data_in[i, j] == data_in_2[i, j]
+
+
+# `````````````````````````````````````````````````````````````````````````````
+def test_format_query_data_should_always_return_2d_numpy_array():
+    # single float data
+    x = du.format_query_data(1.2)
+    assert isinstance(x, np.ndarray)
+    assert x.shape == (1, 1,)
+
+    # single string data
+    x = du.format_query_data('string')
+    assert isinstance(x, np.ndarray)
+    assert x.shape == (1, 1,)
+
+    # single list
+    x = du.format_query_data([1.2, 'string'])
+    assert isinstance(x, np.ndarray)
+    assert x.shape == (1, 2,)
+
+    # single float64 array
+    x = du.format_query_data(np.array([1.2, 2.1]))
+    assert isinstance(x, np.ndarray)
+    assert x.shape == (1, 2,)
+
+    # single object array
+    x = du.format_query_data(np.array([.2, 'string']))
+    assert isinstance(x, np.ndarray)
+    assert x.shape == (1, 2,)
+
+    # list of lists
+    x = du.format_query_data([[.2, 'string'], [.1, 'x']])
+    assert isinstance(x, np.ndarray)
+    assert x.shape == (2, 2,)
+
+    # list of arrays
+    x = du.format_query_data([np.array([.2, 'string']), np.array([.1, 'x'])])
+    assert isinstance(x, np.ndarray)
+    assert x.shape == (2, 2,)
+
+    # 2d array
+    x = du.format_query_data(np.eye(2))
+    assert isinstance(x, np.ndarray)
+    assert x.shape == (2, 2,)
