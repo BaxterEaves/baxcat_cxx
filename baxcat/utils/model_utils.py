@@ -26,7 +26,7 @@ def _probability_component_categorical(x, model, col_idx, component_idx):
     if component_idx < len(model['col_suffstats'][col_idx]):
         suffstats = model['col_suffstats'][col_idx][component_idx]
     else:
-        k = int(model['col_suffstats'][0][0]['k'])
+        k = int(model['col_suffstats'][col_idx][0]['k'])
         suffstats = {'n': 0., 'k': k}
 
     return csd.probability(x, suffstats, hypers)
@@ -52,7 +52,7 @@ def _sample_component_categorical(model, col_idx, component_idx):
     if component_idx < len(model['col_suffstats'][col_idx]):
         suffstats = model['col_suffstats'][col_idx][component_idx]
     else:
-        k = int(model['col_suffstats'][0][0]['k'])
+        k = int(model['col_suffstats'][col_idx][0]['k'])
         suffstats = {'n': 0., 'k': k}
 
     return csd.sample(suffstats, hypers)
