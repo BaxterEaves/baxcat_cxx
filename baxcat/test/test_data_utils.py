@@ -1,6 +1,7 @@
 import pytest
 import pandas as pd
 import numpy as np
+import itertools as it
 
 from baxcat.utils import data_utils as du
 
@@ -283,3 +284,172 @@ def test_process_dataframe_output_default(smalldf):
     assert len(converters['row2idx']) == smalldf.shape[0]
     assert len(converters['idx2row']) == smalldf.shape[0]
     assert len(converters['valmaps']) == 2  # number of categorical cols
+
+
+# converters
+# `````````````````````````````````````````````````````````````````````````````
+def test_convert_continuous_given_should_change_cols_not_vals():
+    given_in = [('x', 1.2,), ('y', 3.4,), ('y', 2,)]
+    dtypes = ['continuous']*2
+    converters = {
+        'col2idx': {'x': 0, 'y': 1},
+        'valmaps': {}}
+
+    given_out = du.convert_given(given_in, dtypes, converters)
+
+    for (k1, v1), (k2, v2) in zip(given_in, given_out):
+        assert k1 != k2
+        assert v1 == v2
+        assert isinstance(k1, str)
+        assert isinstance(k2, int)
+
+    assert given_out[0] == (0, 1.2,)
+    assert given_out[1] == (1, 3.4,)
+    assert given_out[2] == (1, 2,)
+
+
+def test_convert_categorical_given_should_change_cols_and_vals():
+    given_in = [('x', 'a',), ('y', 'bb',), ('y', 'cc',)]
+    dtypes = ['categorical']*2
+    converters = {
+        'col2idx':
+            {'x': 0, 'y': 1},
+        'valmaps': {
+            'x': {
+                'val2idx': {'a': 0, 'b': 1, 'c': 2}},
+            'y': {
+                'val2idx': {'aa': 0, 'bb': 1, 'cc': 2}}}}
+
+    given_out = du.convert_given(given_in, dtypes, converters)
+
+    assert given_out[0] == (0, 0,)
+    assert given_out[1] == (1, 1,)
+    assert given_out[2] == (1, 2,)
+
+
+def test_convert_mixed_given_output():
+    given_in = [('x', 1.2,), ('y', 'bb',), ('y', 'cc',)]
+    dtypes = ['continuous', 'categorical']
+    converters = {
+        'col2idx':
+            {'x': 0, 'y': 1},
+        'valmaps': {
+            'y': {
+                'val2idx': {'aa': 0, 'bb': 1, 'cc': 2}}}}
+
+    given_out = du.convert_given(given_in, dtypes, converters)
+
+    assert given_out[0] == (0, 1.2,)
+    assert given_out[1] == (1, 1,)
+    assert given_out[2] == (1, 2,)
+
+
+def test_convert_continuous_data_should_do_nothing():
+    data_in = np.random.rand(10, 2)
+    dtypes = ['continuous']*2
+    converters = {
+        'col2idx': {'x': 0, 'y': 1},
+        'valmaps': {}}
+
+    data_out = du.convert_data(data_in, ['x', 'y'], dtypes, converters)
+
+    assert data_in.shape == data_out.shape
+
+    n_rows, n_cols = data_in.shape
+    for i, j in it.product(range(n_rows), range(n_cols)):
+        assert data_in[i, j] == data_out[i, j]
+
+    data_out = du.convert_data(data_in, ['x', 'y'], dtypes, converters,
+                               to_val=True)
+
+    assert data_in.shape == data_out.shape
+
+    for i, j in it.product(range(n_rows), range(n_cols)):
+        assert data_in[i, j] == data_out[i, j]
+
+
+def test_convert_categorical_data_should_change_everything():
+    data_in = np.array([
+        ['a', 3],
+        ['b', 2],
+        ['c', 2],
+        ['a', 1],
+        ['b', 1]], dtype=object)
+    dtypes = ['categorical']*2
+    converters = {
+        'col2idx':
+            {'x': 0, 'y': 1},
+        'valmaps': {
+            'x': {
+                'val2idx': {'a': 0, 'b': 1, 'c': 2},
+                'idx2val': {0: 'a', 1: 'b', 2: 'c'}},
+            'y': {
+                'val2idx': {1: 0, 2: 1, 3: 2},
+                'idx2val': {0: 1, 1: 2, 2: 3}}}}
+
+    data_out = du.convert_data(data_in, ['x', 'y'], dtypes, converters)
+
+    assert data_out.shape == data_in.shape
+
+    assert data_out[0, 0] == 0
+    assert data_out[1, 0] == 1
+    assert data_out[2, 0] == 2
+    assert data_out[3, 0] == 0
+    assert data_out[4, 0] == 1
+
+    assert data_out[0, 1] == 2
+    assert data_out[1, 1] == 1
+    assert data_out[2, 1] == 1
+    assert data_out[3, 1] == 0
+    assert data_out[4, 1] == 0
+
+    data_in_2 = du.convert_data(data_out, ['x', 'y'], dtypes, converters,
+                                to_val=True)
+
+    assert data_in_2.shape == data_in.shape
+
+    n_rows, n_cols = data_in.shape
+    for i, j in it.product(range(n_rows), range(n_cols)):
+        assert data_in[i, j] == data_in_2[i, j]
+
+
+def test_convert_categorical_data_single_column():
+    data_in = np.array([
+        ['a', 3],
+        ['b', 2],
+        ['c', 2],
+        ['a', 1],
+        ['b', 1]], dtype=object)
+    dtypes = ['categorical', 'continuous']
+    converters = {
+        'col2idx':
+            {'x': 0, 'y': 1},
+        'valmaps': {
+            'x': {
+                'val2idx': {'a': 0, 'b': 1, 'c': 2},
+                'idx2val': {0: 'a', 1: 'b', 2: 'c'}}}}
+
+    data_out = du.convert_data(data_in, ['x', 'y'], dtypes, converters)
+
+    assert data_out.shape == data_in.shape
+
+    assert data_out[0, 0] == 0
+    assert data_out[1, 0] == 1
+    assert data_out[2, 0] == 2
+    assert data_out[3, 0] == 0
+    assert data_out[4, 0] == 1
+
+    assert data_out[0, 1] == 3
+    assert data_out[1, 1] == 2
+    assert data_out[2, 1] == 2
+    assert data_out[3, 1] == 1
+    assert data_out[4, 1] == 1
+
+    data_in_2 = du.convert_data(data_out, ['x', 'y'], dtypes, converters,
+                                to_val=True)
+
+    assert data_in_2.shape == data_in.shape
+
+    n_rows, n_cols = data_in.shape
+    for i, j in it.product(range(n_rows), range(n_cols)):
+        assert data_in[i, j] == data_in_2[i, j]

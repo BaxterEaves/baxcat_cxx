@@ -99,6 +99,7 @@ class Engine(object):
             self._pool = Pool()
             self._mapper = self._pool.map
         else:
+            self._pool = None
             self._mapper = lambda func, args: [func(arg) for arg in args]
 
         self._models = []
@@ -375,11 +376,13 @@ class Engine(object):
         -------
         logps : numpy.ndarray
         """
-        if given is not None:
-            raise NotImplementedError
-
         col_idxs = [self._converters['col2idx'][col] for col in cols]
-        return mu.probability(x, self._models, col_idxs)
+        x_cnv = du.convert_data(x, cols, self._dtypes, self._converters)
+
+        if given is not None:
+            given = du.convert_given(given, self._dtypes, self._converters)
+
+        return mu.probability(x_cnv, self._models, col_idxs)
 
     def row_similarity(self, row_a, row_b):
         raise NotImplementedError
@@ -387,10 +390,16 @@ class Engine(object):
     def sample(self, cols, given=None, n=1):
         """ Draw samples from cols """
         if given is not None:
-            raise NotImplementedError
+            given = du.convert_given(given, self._dtypes, self._converters)
 
         col_idxs = [self._converters['col2idx'][col] for col in cols]
-        return mu.sample(self._models, col_idxs, n=n)
+
+        data_out = mu.sample(self._models, col_idxs, given=given, n=n)
+
+        x = du.convert_data(data_out, cols, self._dtypes, self._converters,
+                            to_val=True)
+
+        return x
 
     def impute(self, row, col, min_conf=0.):
         raise NotImplementedError

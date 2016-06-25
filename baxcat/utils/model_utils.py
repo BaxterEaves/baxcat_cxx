@@ -8,83 +8,8 @@ from scipy.misc import logsumexp
 from math import log
 
 
-def _get_view_weights(model, col_idx):
-    view_idx = int(model['col_assignment'][col_idx])
-    alpha = model['view_alphas'][view_idx]
-    weights = np.array(model['view_counts'][view_idx] + [alpha])
-
-    return weights/np.sum(weights)
-
-
-# private sample utils
-# `````````````````````````````````````````````````````````````````````````````
-def _sample_component_continuous(model, col_idx, component_idx):
-    hypers = model['col_hypers'][col_idx]
-    if component_idx < len(model['col_suffstats'][col_idx]):
-        suffstats = model['col_suffstats'][col_idx][component_idx]
-    else:
-        suffstats = {'n': 0., 'sum_x': 0., 'sum_x_sq': 0.}
-
-    return nng.sample(suffstats, hypers)
-
-
-def _sample_component_categorical(model, col_idx, component_idx):
-    hypers = model['col_hypers'][col_idx]
-    if component_idx < len(model['col_suffstats'][col_idx]):
-        suffstats = model['col_suffstats'][col_idx][component_idx]
-    else:
-        k = int(model['col_suffstats'][0][0]['k'])
-        suffstats = {'n': 0., 'k': k}
-
-    return csd.sample(suffstats, hypers)
-
-
-DRAWFUNC = {
-    b'continuous': _sample_component_continuous,
-    b'categorical': _sample_component_categorical}
-
-
-def _sample_single_col(model, col_idx, n=1):
-    """ Samples data from the column at col_idx """
-    weights = _get_view_weights(model, col_idx)
-    component_idx = pflip(weights)
-    f = DRAWFUNC[model['dtypes'][col_idx]]
-    x = f(model, col_idx, component_idx)
-
-    return x
-
-
-def _sample_multi_col(model, col_idxs, n=1):
-    n_cols = len(col_idxs)
-    assert n_cols > 1
-
-    view_idxs = [model['col_assignment'][col_idx] for col_idx in col_idxs]
-
-    col2pos = dict((col_idx, i) for i, col_idx in enumerate(col_idxs))
-
-    view2col = dict()
-    for col_idx, view_idx in zip(col_idxs, view_idxs):
-        view2col[view_idx] = view2col.get(view_idx, []) + [col_idx]
-
-    samples = np.zeros((n, n_cols,))
-    for i in range(n):
-        for view, cols in view2col.items():
-            weights = _get_view_weights(model, cols[0])
-            component_idx = pflip(weights)
-            for col_idx in cols:
-                f = DRAWFUNC[model['dtypes'][col_idx]]
-                x = f(model, col_idx, component_idx)
-                samples[i, col2pos[col_idx]] = x
-
-    # import pdb; pdb.set_trace()
-    if n > 1:
-        return samples
-    else:
-        return samples[0, :]
-
-
-# private probability utils
-# `````````````````````````````````````````````````````````````````````````````
+# TODO: make these non-private function that we can unit test
+# TODO: make a get_suffstats utility to avoid repeating code
 def _probability_component_continuous(x, model, col_idx, component_idx):
     hypers = model['col_hypers'][col_idx]
     if component_idx < len(model['col_suffstats'][col_idx]):
@@ -111,9 +36,117 @@ PROBFUNC = {
     b'categorical': _probability_component_categorical}
 
 
-def _probability_single_col(x, model, col_idx):
+def _sample_component_continuous(model, col_idx, component_idx):
+    hypers = model['col_hypers'][col_idx]
+    if component_idx < len(model['col_suffstats'][col_idx]):
+        suffstats = model['col_suffstats'][col_idx][component_idx]
+    else:
+        suffstats = {'n': 0., 'sum_x': 0., 'sum_x_sq': 0.}
+
+    return nng.sample(suffstats, hypers)
+
+
+def _sample_component_categorical(model, col_idx, component_idx):
+    hypers = model['col_hypers'][col_idx]
+    if component_idx < len(model['col_suffstats'][col_idx]):
+        suffstats = model['col_suffstats'][col_idx][component_idx]
+    else:
+        k = int(model['col_suffstats'][0][0]['k'])
+        suffstats = {'n': 0., 'k': k}
+
+    return csd.sample(suffstats, hypers)
+
+
+DRAWFUNC = {
+    b'continuous': _sample_component_continuous,
+    b'categorical': _sample_component_categorical}
+
+
+def _get_view_weights(model, col_idx):
+    view_idx = int(model['col_assignment'][col_idx])
+    alpha = model['view_alphas'][view_idx]
+    weights = np.array(model['view_counts'][view_idx] + [alpha])
+
+    return weights/np.sum(weights)
+
+
+def _get_given_view_weights(model, col_idx, given, return_log=False):
+    # XXX: if return_log is True, this is the same as the probability of the
+    # givens in same view of col_idx under the model.
+    vidx = model['col_assignment'][col_idx]
+    vgiven = [(c, x) for c, x in given if model['col_assignment'][c] == vidx]
+
+    if len(vgiven) == 0:
+        weights = np.log(_get_view_weights(model, col_idx))
+    else:
+        weights = np.log(_get_view_weights(model, col_idx))
+        for k, (c, x) in enumerate(vgiven):
+            f = PROBFUNC[model['dtypes'][c]]
+            weights[k] += f(x, model, c, k)
+
+    # import pdb; pdb.set_trace()
+    if return_log:
+        return weights
+    else:
+        return np.exp(weights-logsumexp(weights))
+
+
+# private sample utils
+# `````````````````````````````````````````````````````````````````````````````
+def _sample_single_col(model, col_idx, given=None, n=1):
+    """ Samples data from the column at col_idx """
+    if given is None:
+        weights = _get_view_weights(model, col_idx)
+    else:
+        weights = _get_given_view_weights(model, col_idx, given)
+    component_idx = pflip(weights)
+    f = DRAWFUNC[model['dtypes'][col_idx]]
+    x = f(model, col_idx, component_idx)
+
+    return x
+
+
+def _sample_multi_col(model, col_idxs, given=None, n=1):
+    n_cols = len(col_idxs)
+    assert n_cols > 1
+
+    view_idxs = [model['col_assignment'][col_idx] for col_idx in col_idxs]
+
+    col2pos = dict((col_idx, i) for i, col_idx in enumerate(col_idxs))
+
+    view2col = dict()
+    for col_idx, view_idx in zip(col_idxs, view_idxs):
+        view2col[view_idx] = view2col.get(view_idx, []) + [col_idx]
+
+    samples = np.zeros((n, n_cols,))
+    for i in range(n):
+        for view, cols in view2col.items():
+            if given is None:
+                weights = _get_view_weights(model, cols[0])
+            else:
+                weights = _get_given_view_weights(model, cols[0], given)
+            component_idx = pflip(weights)
+            for col_idx in cols:
+                f = DRAWFUNC[model['dtypes'][col_idx]]
+                x = f(model, col_idx, component_idx)
+                samples[i, col2pos[col_idx]] = x
+
+    # import pdb; pdb.set_trace()
+    if n > 1:
+        return samples
+    else:
+        return samples[0, :]
+
+
+# private probability utils
+# `````````````````````````````````````````````````````````````````````````````
+def _probability_single_col(x, model, col_idx, given=None):
     """ probability of x from col_idx under model  """
-    log_weights = np.log(_get_view_weights(model, col_idx))
+    if given is None:
+        log_weights = np.log(_get_view_weights(model, col_idx))
+    else:
+        log_weights = _get_given_view_weights(model, col_idx, given, True)
+
     logps = np.zeros(len(log_weights))
     for component_idx, log_weight in enumerate(log_weights):
         f = PROBFUNC[model['dtypes'][col_idx]]
@@ -122,7 +155,7 @@ def _probability_single_col(x, model, col_idx):
     return logsumexp(logps)
 
 
-def _probability_multi_col(x, model, col_idxs):
+def _probability_multi_col(x, model, col_idxs, given=None):
     view_idxs = [model['col_assignment'][col_idx] for col_idx in col_idxs]
 
     col2pos = dict((col_idx, i) for i, col_idx in enumerate(col_idxs))
@@ -140,7 +173,10 @@ def _probability_multi_col(x, model, col_idxs):
     logp = 0.
     for v, view_idx in enumerate(view_idxs):
         cols = view2col[view_idx]
-        log_weights = np.log(_get_view_weights(model, cols[0]))
+        if given is None:
+            log_weights = np.log(_get_view_weights(model, cols[0]))
+        else:
+            log_weights = _get_given_view_weights(model, cols[0], given, True)
         lp_view = np.copy(log_weights)
         for col_idx in cols:
             y = x[col2pos[col_idx]]
@@ -154,7 +190,7 @@ def _probability_multi_col(x, model, col_idxs):
 
 # Main interface
 # `````````````````````````````````````````````````````````````````````````````
-def sample(models, col_idxs, n=1):
+def sample(models, col_idxs, given=None, n=1):
     """ Sample from the model(s) likelihood.
 
     Parameters
@@ -181,16 +217,16 @@ def sample(models, col_idxs, n=1):
     samples = np.zeros((n, n_cols,))
     for i, midx in enumerate(midxs):
         if n_cols == 1:
-            x = _sample_single_col(models[midx], col_idxs[0])
+            x = _sample_single_col(models[midx], col_idxs[0], given=given)
             samples[i] = x
         else:
-            x = _sample_multi_col(models[midx], col_idxs)
+            x = _sample_multi_col(models[midx], col_idxs, given=given)
             samples[i, :] = x
 
     return samples
 
 
-def probability(x, models, col_idxs):
+def probability(x, models, col_idxs, given=None):
     """ The average probability of x under the models
 
     Parameters
@@ -233,9 +269,10 @@ def probability(x, models, col_idxs):
         logps_m = np.zeros(n_models)
         for j, model in enumerate(models):
             if n_cols == 1:
-                lp = _probability_single_col(x_i[0], model, col_idxs[0])
+                lp = _probability_single_col(x_i[0], model, col_idxs[0],
+                                             given=given)
             else:
-                lp = _probability_multi_col(x_i, model, col_idxs)
+                lp = _probability_multi_col(x_i, model, col_idxs, given=given)
 
             logps_m[j] = lp
 

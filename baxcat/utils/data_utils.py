@@ -22,6 +22,41 @@ Example
 """
 
 
+def convert_given(given, dtypes, converters):
+    g_out = []
+    for col, val in given:
+        col_idx = converters['col2idx'][col]
+        if dtypes[col_idx] == 'categorical':
+            val = converters['valmaps'][col]['val2idx'][val]
+        g_out.append((col_idx, val,))
+
+    return g_out
+
+
+def convert_data(data, cols, dtypes, converters, to_val=False):
+    assert data.shape[1] == len(cols)
+    assert len(cols) <= len(dtypes)
+
+    if to_val:
+        valmap = lambda col, idx: converters['valmaps'][col]['idx2val'][idx]
+    else:
+        valmap = lambda col, val: converters['valmaps'][col]['val2idx'][val]
+
+    # XXX: dtype of data out array should be object because it might have
+    # strings in it if to_idx is True.
+    data_out = np.zeros(data.shape, dtype=object)
+    for i, col in enumerate(cols):
+        col_idx = converters['col2idx'][col]
+        if dtypes[col_idx] == 'categorical':
+            x = data[:, i]
+            xj = np.array([valmap(col, xi) for xi in x])
+        else:
+            xj = data[:, i]
+        data_out[:, i] = xj
+
+    return data_out
+
+
 def process_dataframe(df, metadata=None, n_unique_cutoff=20):
     """ Process data and generate metadata for use with c++ backend """
 

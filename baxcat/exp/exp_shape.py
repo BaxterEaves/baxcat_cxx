@@ -71,10 +71,8 @@ def onerun(shapefunc, n=250, n_iter=100, n_models=8):
     df = pd.concat([s1, s2], axis=1)
     df.columns = ['x', 'y']
 
-    # t_list = [b"row_assignment", b"row_alpha", b"column_hypers",
-    #           b"column_assignment"]
-    engine = Engine(df, n_models=n_models, use_mp=True)
-    # engine.run(n_iter, trans_kwargs={'transition_list': t_list})
+    engine = Engine(df, use_mp=True)
+    engine.init_models(n_models)
     engine.run(n_iter)
 
     xy = engine.sample(['x', 'y'], n=n)
@@ -89,14 +87,43 @@ if __name__ == "__main__":
     funcs = [gen_ring, gen_diamond, gen_u, gen_wave, gen_dots]
     n_funcs = len(funcs)
     plt.figure(tight_layout=True)
+
+    dfs = []
     for i, func in enumerate(funcs):
         xo, yo, xe, ye = onerun(func, n=n, n_iter=200, n_models=8)
+
+        fname = func.__name__
+        s = pd.Series([fname]*n)
+        df = pd.concat([s, pd.Series(xo), pd.Series(yo)], axis=1)
+        df.columns = ['func', 'x', 'y']
+        dfs.append(df)
+
         ax = plt.subplot(2, n_funcs, i+1)
         ax.scatter(xo, yo, color='crimson', alpha=.3)
 
         plt.subplot(2, n_funcs, i+n_funcs+1)
-        plt.scatter(xe, ye, color='#333333', alpha=.3)
+        plt.scatter(xe, ye, color='black', alpha=.3)
         plt.xlim(ax.get_xlim())
         plt.ylim(ax.get_ylim())
 
+    plt.show()
+
+    df = pd.concat(dfs, ignore_index=True)
+    engine = Engine(df)
+    engine.init_models(8)
+    engine.run(2000, checkpoint=20)
+
+    engine.convergence_plot()
+    plt.show()
+
+    plt.figure(tight_layout=True)
+
+    dfs = []
+    for i, func in enumerate(funcs):
+        func_name = func.__name__
+        x = engine.sample(['x', 'y'], given=[('func', func_name)], n=n)
+
+        ax = plt.subplot(1, n_funcs, i+1)
+        plt.title(func.__name__)
+        ax.scatter(x[:, 0], x[:, 1], color='black', alpha=.3)
     plt.show()
