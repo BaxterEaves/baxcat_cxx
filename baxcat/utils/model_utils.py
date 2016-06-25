@@ -1,4 +1,5 @@
 import numpy as np
+import itertools as it
 
 from baxcat.dist import nng
 from baxcat.dist import csd
@@ -80,7 +81,7 @@ def _get_given_view_weights(model, col_idx, given, return_log=False):
         weights = np.log(_get_view_weights(model, col_idx))
     else:
         weights = np.log(_get_view_weights(model, col_idx))
-        for k, (c, x) in enumerate(vgiven):
+        for k, (c, x) in it.product(range(len(weights)), vgiven):
             f = PROBFUNC[model['dtypes'][c]]
             weights[k] += f(x, model, c, k)
 
