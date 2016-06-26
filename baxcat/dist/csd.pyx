@@ -3,22 +3,15 @@ from libcpp.vector cimport vector
 from baxcat.misc import pflip
 
 import numpy as np
+from math import log
 
 
-# FIXME: msd should be changed to csd when we get around to fixing the
-# multinomial -> categorical bug.
-cdef extern from "models/msd.hpp" namespace "baxcat::models":
-    cdef cppclass MultinomialDirichlet[T]:  
-        double logPredictiveProbability(T x, vector[T] counts,
-                                        double alpha, double logZ)
+cdef _get_counts_from_suffstats(suffstats):
+    cdef int k = int(suffstats['k'])
+    cdef vector[size_t] counts = [suffstats.get(str(j), 0) for j in range(k)]
+    return counts
 
 
-def _get_counts_from_suffstats(suffstats):
-    k = int(suffstats['k'])
-    return [suffstats.get(str(j), 0) for j in range(k)]
-
-
-# don't use cpp sampler, because it requires an rng
 def sample(suffstats, hypers, n=1):
     counts = _get_counts_from_suffstats(suffstats)
     alpha = hypers['dirichlet_alpha']
@@ -33,10 +26,12 @@ def sample(suffstats, hypers, n=1):
 
 
 def probability(x, suffstats, hypers):
-    cdef vector[size_t] counts = _get_counts_from_suffstats(suffstats)
-    cdef double alpha = hypers['dirichlet_alpha']
+    alpha = hypers['dirichlet_alpha']
 
-    cdef MultinomialDirichlet[size_t] csd
-
-    # XXX: logZ is a placeholder argument. Just give it wahetever.
-    return csd.logPredictiveProbability(x, counts, alpha, 0)
+    n = suffstats['n']
+    k = suffstats['k']
+    if suffstats['n'] == 0:
+        return log(alpha) - log(alpha*suffstats['k'])
+    else:
+        ct = suffstats.get(str(int(x+.5)), 0.)
+        return log(alpha+ct) - log(n+alpha*k)
