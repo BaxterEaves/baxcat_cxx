@@ -262,3 +262,44 @@ def test_probability_multi_col_multi_datum_given(smallengine):
 
     assert isinstance(p, np.ndarray)
     assert p.shape == (2,)
+
+
+# sample
+# ````````````````````````````````````````````````````````````````````````````
+def test_sample_single_col_single_float(smallengine):
+    cols = ['x_1']
+    x = smallengine.sample(cols, n=1)
+
+    assert isinstance(x, (float, np.float64,))
+
+
+def test_sample_single_col_single_str(smallengine):
+    cols = ['x_3']
+    x = smallengine.sample(cols, n=1)
+
+    assert isinstance(x, str)
+
+
+def test_sample_multi_col_single_mixed(smallengine):
+    cols = ['x_1', 'x_3']
+    x = smallengine.sample(cols, n=1)
+
+    assert isinstance(x, np.ndarray)
+    assert x.shape == (2,)
+    assert isinstance(x[0], (float, np.float64,))
+    assert isinstance(x[1], str)
+
+
+def test_sample_multi_col_multi_mixed(smallengine):
+    cols = ['x_1', 'x_3']
+    x = smallengine.sample(cols, n=3)
+
+    assert isinstance(x, np.ndarray)
+    assert x.shape == (3, 2,)
+    assert isinstance(x[0, 0], (float, np.float64,))
+    assert isinstance(x[1, 0], (float, np.float64,))
+    assert isinstance(x[2, 0], (float, np.float64,))
+
+    assert isinstance(x[0, 1], str)
+    assert isinstance(x[1, 1], str)
+    assert isinstance(x[2, 1], str)
