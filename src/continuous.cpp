@@ -23,6 +23,7 @@ using std::vector;
 using std::string;
 using std::function;
 using baxcat::samplers::sliceSample;
+using baxcat::samplers::mhSample;
 using baxcat::datatypes::Continuous;
 
 
@@ -158,7 +159,7 @@ vector<double> Continuous::initHypers( const vector<double> &hyperprior_config, 
 vector<double> Continuous::constructHyperpriorConfig(const vector<double> &X)
 {
     double mean_x = baxcat::utils::vector_mean(X);
-    double std_x = sqrt( baxcat::utils::sum_of_squares(X)/static_cast<double>(X.size()) );
+    double std_x =  sqrt(baxcat::utils::sum_of_squares(X)/static_cast<double>(X.size()));
 
     ASSERT_GREATER_THAN_ZERO(cout, std_x);
 
@@ -206,7 +207,7 @@ vector<double> Continuous::resampleHypers(vector<Continuous> &models,
     // resample m
     w = hyperprior_config[M_STD]/2.0;
     x_0 = hyperprior_config[M_MEAN] + U*w;
-    hypers[HYPER_M] = sliceSample(x_0, m_unscaled_posterior, {-INF, INF}, w, burn, rng);
+    hypers[HYPER_M] = mhSample(x_0, m_unscaled_posterior, {-INF, INF}, w, burn, rng);
 
     // Note: setHypers updates log_Z0 and log_ZN
     for(auto &model : models)
@@ -215,7 +216,7 @@ vector<double> Continuous::resampleHypers(vector<Continuous> &models,
     w = hyperprior_config[R_SHAPE]*hyperprior_config[R_SCALE]*hyperprior_config[R_SCALE]/2;
     U = rng->urand(-1,1);
     x_0 = fabs(hyperprior_config[R_SCALE] + U*w);
-    hypers[HYPER_R] = sliceSample(x_0, r_unscaled_posterior, {ALMOST_ZERO, INF}, w, burn, rng);
+    hypers[HYPER_R] = mhSample(x_0, r_unscaled_posterior, {ALMOST_ZERO, INF}, w, burn, rng);
 
     for(auto &model : models)
         model.setHypers(hypers);
@@ -223,7 +224,7 @@ vector<double> Continuous::resampleHypers(vector<Continuous> &models,
     w = hyperprior_config[S_SHAPE]*hyperprior_config[S_SCALE]*hyperprior_config[S_SCALE]/2;
     U = rng->urand(-1,1);
     x_0 = fabs(hyperprior_config[S_SCALE] + U*w);
-    hypers[HYPER_S] = sliceSample(x_0, s_unscaled_posterior, {ALMOST_ZERO, INF}, w, burn, rng);
+    hypers[HYPER_S] = mhSample(x_0, s_unscaled_posterior, {ALMOST_ZERO, INF}, w, burn, rng);
 
     for(auto &model : models)
         model.setHypers(hypers);
@@ -231,7 +232,7 @@ vector<double> Continuous::resampleHypers(vector<Continuous> &models,
     w = hyperprior_config[NU_SHAPE]*hyperprior_config[NU_SCALE]*hyperprior_config[NU_SCALE]/2;
     U = rng->urand(-1,1);
     x_0 = fabs(hypers[HYPER_NU] + U*w);
-    hypers[HYPER_NU] = sliceSample(x_0, nu_unscaled_posterior, {ALMOST_ZERO, INF}, w, burn, rng);
+    hypers[HYPER_NU] = mhSample(x_0, nu_unscaled_posterior, {ALMOST_ZERO, INF}, w, burn, rng);
 
     for(auto &model : models)
         model.setHypers(hypers);

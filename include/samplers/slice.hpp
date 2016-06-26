@@ -39,9 +39,33 @@ namespace baxcat{
             lower = *range.begin();
             upper = *(range.end()-1);
         }
+
+        bool contains(double x){
+            return x > lower and x < upper;
+        }
     };
 
 namespace samplers{
+
+    template <typename lambda>
+    double mhSample(double x_0, lambda &log_pdf, baxcat::Domain D, double w, size_t burn,
+        baxcat::PRNG *rng)
+    {
+        double qstd = 0.2*w;
+        double lp = log_pdf(x_0);
+
+        for (size_t i=0; i < burn; ++i){
+            double x_p = rng->normrand(x_0, w);
+            if (D.contains(x_p)){
+                double lp_prime = log_pdf(x_p);
+                if (log(rng->rand()) < lp_prime-lp){
+                    lp = lp_prime;
+                    x_0 = x_p;
+                }
+            }
+        }
+        return x_0;
+    };
 
     template <typename lambda>
     void __stepout(double x_0, double y, double w, double m, lambda f, baxcat::Domain D,

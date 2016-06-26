@@ -23,6 +23,7 @@ using std::vector;
 using std::string;
 using std::function;
 using baxcat::samplers::sliceSample;
+using baxcat::samplers::mhSample;
 using baxcat::datatypes::Categorical;
 
 // cleanup
@@ -137,7 +138,8 @@ vector<double> Categorical::resampleHypers(vector<Categorical> &models,
     // resample m
     w = hyperprior_config[DIRICHLET_ALPHA_SCALE]/2.0;
     x_0 = hyperprior_config[DIRICHLET_ALPHA_SCALE] + U*w;
-    hypers[HYPER_DIRICHLET_ALPHA] = sliceSample(x_0, alpha_unscaled_post, {0, INF}, w, burn, rng);
+    // hypers[HYPER_DIRICHLET_ALPHA] = sliceSample(x_0, alpha_unscaled_post, {0, INF}, w, burn, rng);
+    hypers[HYPER_DIRICHLET_ALPHA] = mhSample(x_0, alpha_unscaled_post, {0, INF}, w, burn, rng);
 
     // Note: setHypers updates log_Z0 and log_ZN
     for(auto &model : models)

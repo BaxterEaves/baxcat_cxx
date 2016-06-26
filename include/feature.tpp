@@ -60,7 +60,7 @@ baxcat::Feature<DataType, T>::Feature(unsigned int idx, baxcat::DataContainer<T>
 // for geweke
 template<class DataType, typename T>
 baxcat::Feature<DataType, T>::Feature(unsigned int idx, baxcat::DataContainer<T> data,
-                                      vector<double> args, baxcat::PRNG *rng_ptr, 
+                                      vector<double> args, baxcat::PRNG *rng_ptr,
                                       vector<double> hypers, vector<double> hyperprior_config)
     : _index(idx), _data(data), _rng(rng_ptr), _hyperprior_config(hyperprior_config)
 {
@@ -173,6 +173,14 @@ double baxcat::Feature<DataType, T>::logp() const
 }
 
 
+template<class DataType, typename T>
+double baxcat::Feature<DataType, T>::logScore() const
+{
+    double log_score = _clusters[0].hyperpriorLogp(_hyperprior_config) + this->logp();
+    return log_score;
+}
+
+
 // Draw
 // ````````````````````````````````````````````````````````````````````````````````````````````````
 template<class DataType, typename T>
@@ -219,17 +227,11 @@ void baxcat::Feature<DataType, T>::reassign(std::vector<size_t> assignment)
     size_t K_old = _clusters.size();
     size_t K_new = utils::vector_max(assignment) + 1;
 
-    if(K_new < K_old){
-        _clusters.resize(K_new, DataType(_distargs));
-        for(size_t k = 0; k < K_new; k++)
-            _clusters[k].setHypers(_hypers);
-    }else{
-        _clusters.resize(K_new, DataType(_distargs));
-        for(size_t k = 0; k < K_old; k++)
-            _clusters[k].clear(_distargs);
-
-        for(size_t k = K_old; k < K_new; k++)
-            _clusters[k].setHypers(_hypers);
+    _clusters.resize(K_new, DataType(_distargs));
+    for(size_t k = 0; k < K_new; k++){
+        _clusters[k].setHypers(_hypers);
+        _clusters[k].clear(_distargs);
+        ASSERT_EQUAL(std::cout, _clusters[k].getSuffstatsMap()["n"], 0);
     }
 
     ASSERT_EQUAL(std::cout, _clusters.size(), K_new);
@@ -303,11 +305,20 @@ vector<map<string, double>> baxcat::Feature<DataType, T>::getModelSuffstats() co
 }
 
 
+
+
 // TODO: implement so we can use variable return types
 template<class DataType, typename T>
 std::vector<double> baxcat::Feature<DataType, T>::getData() const
 {
     return _data.getSetData();
+}
+
+// TODO: implement so we can use variable return types
+template<class DataType, typename T>
+double baxcat::Feature<DataType, T>::getDataAt(size_t row_index) const
+{
+    return _data.at(row_index);
 }
 
 
@@ -377,6 +388,23 @@ void baxcat::Feature<DataType, T>::popRow(  size_t cluster_assignment )
     _data.pop_back();
 }
 
+//
+// ````````````````````````````````````````````````````````````````````````````````````````````````
+template<class DataType, typename T>
+void baxcat::Feature<DataType, T>::replaceValue(size_t which_row, size_t which_cluster, double x)
+{
+    // TODO: When component constant-updating functions are implemented as a part of optimization,
+    // we will need to update this code
+
+    // remove data at which_row if it exists
+    if(_data.is_set(which_row)){
+        T x = _data.at(which_row);
+        _clusters[which_cluster].removeElement(x);
+    }
+
+    _data.cast_and_set(which_row, x);
+    _clusters[which_cluster].insertElement(_data.at(which_row));
+}
 
 // Testing
 // ````````````````````````````````````````````````````````````````````````````````````````````````
@@ -392,7 +420,7 @@ void baxcat::Feature<DataType, T>::__geweke_resampleRow(size_t which_row, size_t
         T x = _data.at(which_row);
         _clusters[which_cluster].removeElement(x);
     }
-    
+
     T y = _clusters[which_cluster].draw(rng);
 
     _data.set(which_row, y);

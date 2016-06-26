@@ -1,4 +1,4 @@
-# 
+#
 # BaxCat: an extensible cross-catigorization engine.
 # Copyright (C) 2014 Baxter Eaves
 #
@@ -73,7 +73,7 @@ sdg.o : $(HELPERS)/constants.hpp $(HELPERS)/state_helper.hpp $(DIST)/gaussian.hp
 	$(CXX) -c $(SRC)/synthetic_data_generator.cpp -o sdg.o $(OPTS)
 
 runtests:
-	./main.test --log_level=test_suite
+	./main.test #--log_level=test_suite
 
 runjenkins:
 	./main.test --log_format=XML --log_sink=results.xml --log_level=all --report_level=no

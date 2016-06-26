@@ -71,6 +71,12 @@ public:
         _is_initalized[index] = true;
     }
 
+    void cast_and_set(size_t index, double value)
+    {
+        _data[index] = static_cast<T>(value + .5);
+        _is_initalized[index] = true;
+    }
+
     void append(T value)
     {
         _data.push_back( value );
@@ -192,6 +198,12 @@ inline std::vector<double> DataContainer<double>::getSetData() const
     return set_data;
 };
 
+template<>
+inline void DataContainer<double>::cast_and_set(size_t index, double value)
+{
+    _data[index] = static_cast<double>(value);
+    _is_initalized[index] = true;
+};
 
 // partial specialization for bools
 //`````````````````````````````````````````````````````````````````````````````````````````````````

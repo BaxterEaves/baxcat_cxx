@@ -95,7 +95,7 @@ public:
         baxcat::PRNG *rng );
 
     static std::vector<double> resampleHypers( std::vector<Continuous> &models,
-        const std::vector<double> &hyperprior_config, baxcat::PRNG *rng, size_t burn=25);
+        const std::vector<double> &hyperprior_config, baxcat::PRNG *rng, size_t burn=50);
 
     // construct hyper-parameter conditionals
     static std::function<double(double)> constructMConditional(

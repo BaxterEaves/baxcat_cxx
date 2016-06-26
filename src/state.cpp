@@ -36,7 +36,7 @@ State::State(vector<vector<double>> X, vector<string> datatypes, vector<vector<d
     _features = helpers::genFeatures(X, datatypes, distargs, _rng.get());
 
     // generate alpha
-    _crp_alpha = _rng->gamrand(_crp_alpha_config[0], _crp_alpha_config[1]);
+    _crp_alpha = _rng->invgamrand(_crp_alpha_config[0], _crp_alpha_config[1]);
 
     // generate partitions;
     _rng.get()->crpGen(_crp_alpha, _num_columns, _column_assignment, _num_views, _view_counts);
@@ -66,7 +66,7 @@ State::State(vector<vector<double>> X, vector<string> datatypes, vector<vector<d
     _feature_types = helpers::getDatatypes(datatypes);
     _features = helpers::genFeatures(X, datatypes, distargs, _rng.get());
 
-    _crp_alpha = _rng->gamrand(_crp_alpha_config[0], _crp_alpha_config[1]);
+    _crp_alpha = _rng->invgamrand(_crp_alpha_config[0], _crp_alpha_config[1]);
 
     _num_views = utils::vector_max(_column_assignment)+1;
     _view_counts.resize(_num_views,0);
@@ -97,18 +97,18 @@ State::State(size_t num_rows, vector<string> datatypes, vector<vector<double>> d
              bool fix_row_z, bool fix_col_z)
     : _num_rows(num_rows), _num_columns(datatypes.size()),  _rng(shared_ptr<PRNG>(new PRNG()))
 {
-    _crp_alpha_config = {5, .2};
+    _crp_alpha_config = {1, 1};
 
     _view_alpha_marker = fix_row_alpha ? baxcat::geweke_default_alpha : -1;
 
     if(fix_col_alpha){
         _crp_alpha = baxcat::geweke_default_alpha;
     }else{
-        _crp_alpha = _rng->gamrand(_crp_alpha_config[0], _crp_alpha_config[1]);
+        _crp_alpha = _rng->invgamrand(_crp_alpha_config[0], _crp_alpha_config[1]);
     }
 
     // should fix column Z if row Z is fixed
-    vector<size_t> row_assignment = {};
+    vector<size_t> row_assignment = vector<size_t>();
     if(fix_row_z){
         fix_col_z = true;
         row_assignment.assign(_num_rows, 0);
@@ -361,14 +361,14 @@ void State::__transitionStateCRPAlpha()
     auto counts = _view_counts;
 
     auto log_crp_posterior = [alpha_shape, alpha_scale, counts, n](double x){
-        return numerics::lcrp(counts, n, x) + dist::gamma::logPdf(x, alpha_shape, alpha_scale);
+        return numerics::lcrp(counts, n, x) + dist::inverse_gamma::logPdf(x, alpha_shape, alpha_scale);
     };
 
     double slice_width = alpha_shape*alpha_scale*alpha_scale/2;  // this is a guess
     size_t burn = 50;
 
     // slice sample
-    _crp_alpha = samplers::sliceSample(_crp_alpha, log_crp_posterior, {ALMOST_ZERO, INF},
+    _crp_alpha = samplers::mhSample(_crp_alpha, log_crp_posterior, {ALMOST_ZERO, INF},
                                        slice_width, burn, _rng.get());
 }
 
@@ -478,7 +478,7 @@ void State::__transitionColumnAssignmentGibbs(size_t col, size_t m)
         vector<View> view_holder;
         double log_crp_m = log(_crp_alpha)-log(static_cast<double>(m));
         for(size_t i = 0; i < m; ++i){
-            View proposal_view(fvec, _rng.get(), _view_alpha_marker, {}, false);
+            View proposal_view(fvec, _rng.get(), _view_alpha_marker, vector<size_t>(), false);
             view_holder.push_back(proposal_view);
             double logp = feature.get()->logp()+log_crp_m;
             logps.push_back(logp);
@@ -540,7 +540,7 @@ void State::__transitionColumnAssignmentGibbsBootstrap(size_t col, size_t m)
     if(!is_singleton){
         // TODO: optimization: do this (cache) for each column in parallel
         vector<shared_ptr<BaseFeature>> fvec = {feature};
-        View proposal_view(fvec, _rng.get(), _view_alpha_marker, {}, true);
+        View proposal_view(fvec, _rng.get(), _view_alpha_marker, vector<size_t>(), true);
         for(size_t i = 0; i < m; ++i){
             proposal_view.transitionRows();
             if(_view_alpha_marker <= 0) proposal_view.transitionCRPAlpha();
@@ -658,16 +658,25 @@ void State::__transitionColumnAssignmentEnumeration(size_t col)
 //`````````````````````````````````````````````````````````````````````````````````````````````````
 void State::__destroySingletonView(size_t feat_idx, size_t to_destroy, size_t move_to)
 {
+    ASSERT(std::cout, to_destroy < _num_views);
+    ASSERT(std::cout, move_to < _num_views);
+
     _column_assignment[feat_idx] = move_to;
     _views[to_destroy].releaseFeature(feat_idx);
+
     for(size_t i = 0; i < _num_columns; ++i)
         _column_assignment[i] -= (_column_assignment[i] > to_destroy) ? 1 : 0;
 
     _views[move_to].assimilateFeature(_features[feat_idx]);
+
     ++_view_counts[move_to];
+
     _view_counts.erase(_view_counts.begin()+to_destroy);
     _views.erase(_views.begin()+to_destroy);
+
     --_num_views;
+
+    ASSERT_EQUAL(std::cout, _views.size(), _num_views);
 }
 
 
@@ -680,23 +689,41 @@ void State::__swapSingletonViews(size_t feat_idx, size_t view_index, View &propo
 
 void State::__createSingletonView(size_t feat_idx, size_t current_view_index, View &proposal_view)
 {
+    ASSERT(std::cout, current_view_index < _num_views);
+
     _column_assignment[feat_idx] = _num_views;
     _features[feat_idx].get()->reassign(proposal_view.getRowAssignments());
     _views[current_view_index].releaseFeature(feat_idx);
+
     --_view_counts[current_view_index];
+
     _view_counts.push_back(1);
     _views.push_back(proposal_view);
+
     ++_num_views;
+
+    ASSERT_EQUAL(std::cout, _views.size(), _num_views);
+    ASSERT_EQUAL(std::cout, _view_counts.back(), 1);
+    ASSERT_EQUAL(std::cout, proposal_view.getNumFeatures(), 1);
 }
 
 
 void State::__moveFeatureToView(size_t feat_idx, size_t move_from, size_t move_to)
 {
+    ASSERT(std::cout, move_from < _num_views);
+    ASSERT(std::cout, move_to < _num_views);
+
     _column_assignment[feat_idx] = move_to;
     _views[move_from].releaseFeature(feat_idx);
+
     --_view_counts[move_from];
+
     _views[move_to].assimilateFeature(_features[feat_idx]);
+
     ++_view_counts[move_to];
+
+    ASSERT_EQUAL(std::cout, _views[move_from].getNumFeatures(), _view_counts[move_from]);
+    ASSERT_EQUAL(std::cout, _views[move_to].getNumFeatures(), _view_counts[move_to]);
 }
 
 
@@ -770,6 +797,24 @@ void State::popRow()
 
 // getters
 //`````````````````````````````````````````````````````````````````````````````````````````````````
+vector<vector<double>> State::getDataTable() const
+{
+    vector<vector<double>> data_table;
+    for(size_t row_index = 0; row_index < _num_rows; ++row_index)
+        data_table.push_back(getDataRow(row_index));
+
+    return data_table;
+}
+
+vector<double> State::getDataRow(size_t row_index) const
+{
+    vector<double> data_row;
+    for(auto & f : _features)
+        data_row.push_back(f.get()->getDataAt(row_index));
+
+    return data_row;
+}
+
 vector<size_t> State::getColumnAssignment() const
 {
     return _column_assignment;
@@ -820,9 +865,36 @@ double State::getStateCRPAlpha() const
     return _crp_alpha;
 }
 
+
 size_t State::getNumViews() const
 {
     return _num_views;
+}
+
+
+vector<vector<size_t>> State::getViewCounts() const
+{
+    vector<vector<size_t>> counts;
+    for(auto &view : _views)
+        counts.push_back(view.getClusterCounts());
+
+    return counts;
+}
+
+double State::logScore()
+{
+    double alpha_shape = _crp_alpha_config[0];
+    double alpha_scale = _crp_alpha_config[1];
+
+    double log_score = 0; 
+
+    log_score += numerics::lcrp(_view_counts, _num_columns, _crp_alpha);
+    log_score += dist::inverse_gamma::logPdf(_crp_alpha, alpha_shape, alpha_scale);
+
+    for(auto &view : _views)
+        log_score += view.logScore();
+
+    return log_score;
 }
 
 
@@ -843,6 +915,35 @@ void State::setHypers(size_t column_index, std::map<std::string, double> hypers_
 void State::setHypers(size_t column_index, std::vector<double> hypers_vec)
 {
     _features[column_index].get()->setHypers(hypers_vec);
+}
+
+void State::replaceSliceData(std::vector<size_t> row_range, std::vector<size_t> col_range,
+                             std::vector<std::vector<double>> new_data)
+{
+    ASSERT(std::cout, row_range[1] >= row_range[0]);
+    ASSERT(std::cout, col_range[1] >= col_range[0]);
+
+    for(size_t c = 0; c < col_range[1]-col_range[0]; ++c){
+        size_t column_index = col_range[c];
+        for(size_t r = 0; r < row_range[1]-row_range[0]; ++r){
+            size_t row_index = row_range[r];
+            auto x = new_data[r][c];
+            auto view_index = _column_assignment[column_index];
+            auto cluster_index = _views[view_index].getAssignmentOfRow(row_index);
+            _features[c].get()->replaceValue(row_index, cluster_index, x);
+        }
+    }
+}
+
+void State::replaceRowData(size_t row_index, std::vector<double> new_row_data)
+{
+    size_t column_index = 0;
+    for(auto &f : _features){
+        auto view_index = _column_assignment[column_index];
+        auto cluster_index = _views[view_index].getAssignmentOfRow(row_index);
+        f.get()->replaceValue(row_index, cluster_index, new_row_data[column_index]);
+        ++column_index;
+    }
 }
 
 

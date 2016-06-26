@@ -24,6 +24,7 @@
 #include "utils.hpp"
 #include "test_utils.hpp"
 #include "datatypes/continuous.hpp"
+#include "models/nng.hpp"
 #include "prng.hpp"
 
 
@@ -34,6 +35,7 @@ using std::vector;
 using std::map;
 using std::string;
 using baxcat::datatypes::Continuous;
+using baxcat::models::NormalNormalGamma;
 
 const double EPSILON = 10E-10;
 
@@ -48,6 +50,8 @@ baxcat::Feature<Continuous, double> Setup(baxcat::PRNG *rng)
 
     return feature;
 }
+
+
 
 //  Constructor test
 // ````````````````````````````````````````````````````````````````````````````
@@ -122,7 +126,7 @@ BOOST_AUTO_TEST_CASE(basefeature_clone_should_copy_members_for_continuous)
 
     static baxcat::PRNG *rng = new baxcat::PRNG(10);
 
-    std::shared_ptr<baxcat::BaseFeature> feature_ptr(new baxcat::Feature<Continuous, double> 
+    std::shared_ptr<baxcat::BaseFeature> feature_ptr(new baxcat::Feature<Continuous, double>
         (index, data, {}, assignment, rng));
     auto cloned_feature_ptr = feature_ptr.get()->clone();
 
@@ -247,6 +251,45 @@ BOOST_AUTO_TEST_CASE(reassign_set_cluster_suffstats){
     BOOST_CHECK_CLOSE_FRACTION( suffstats[4]["sum_x_sq"], 5*5, EPSILON);
 }
 
+BOOST_AUTO_TEST_CASE(reassign_set_cluster_suffstats_2){
+    static baxcat::PRNG *rng = new baxcat::PRNG(10);
+    auto feature = Setup(rng);
+
+    vector<size_t> assignment = {0,0,0,1,1};
+
+    feature.reassign(assignment);
+
+    vector<map<string, double>> suffstats = feature.getModelSuffstats();
+
+    BOOST_REQUIRE(suffstats.size() == 2);
+
+    BOOST_CHECK_CLOSE_FRACTION(suffstats[0]["sum_x"], 1+2+3, EPSILON);
+    BOOST_CHECK_CLOSE_FRACTION(suffstats[0]["sum_x_sq"], 1+4+9, EPSILON);
+
+    BOOST_CHECK_CLOSE_FRACTION(suffstats[1]["sum_x"], 4+5, EPSILON);
+    BOOST_CHECK_CLOSE_FRACTION(suffstats[1]["sum_x_sq"], 16+25, EPSILON);
+}
+
+BOOST_AUTO_TEST_CASE(repeatedly_adding_and_removing_clusters_should_be_ok){
+    static baxcat::PRNG *rng = new baxcat::PRNG(10);
+    auto feature = Setup(rng);
+
+    vector<size_t> assignment = {0,0,0,1,1};
+
+    feature.reassign({0,0,0,1,1});
+    feature.reassign({0,2,0,1,1});
+    feature.reassign({0,0,1,0,0});
+    feature.reassign({0,0,0,0,0});
+
+    vector<map<string, double>> suffstats = feature.getModelSuffstats();
+
+    BOOST_CHECK_EQUAL(suffstats.size(), 1);
+
+    BOOST_CHECK_EQUAL(suffstats[0]["n"], 5);
+    BOOST_CHECK_EQUAL(suffstats[0]["sum_x"], 1+2+3+4+5);
+    BOOST_CHECK_EQUAL(suffstats[0]["sum_x_sq"], 1+4+9+16+25);
+}
+
 //  Cleanup and element-move methods
 // ````````````````````````````````````````````````````````````````````````````
 BOOST_AUTO_TEST_CASE(create_singleton_cluster_should_create_new_cluster)
@@ -268,8 +311,8 @@ BOOST_AUTO_TEST_CASE(create_singleton_cluster_should_update_suffstats_and_hypers
 
     vector<map<string, double>> suffstats = feature.getModelSuffstats();
     BOOST_REQUIRE(suffstats.size() == 1);
-    BOOST_CHECK_CLOSE_FRACTION( suffstats[0]["sum_x"], 15, EPSILON);
-    BOOST_CHECK_CLOSE_FRACTION( suffstats[0]["sum_x_sq"], 55, EPSILON);
+    BOOST_CHECK_CLOSE_FRACTION(suffstats[0]["sum_x"], 15, EPSILON);
+    BOOST_CHECK_CLOSE_FRACTION(suffstats[0]["sum_x_sq"], 55, EPSILON);
 
     feature.createSingletonCluster( 1, 0 );
 
@@ -437,7 +480,7 @@ BOOST_AUTO_TEST_CASE(pop_row_should_remove_element_singleton)
 
     auto data_out = feature.getData();
     auto n_elem = data.size();
-    
+
     size_t K_start = feature.getNumClusters();
 
     // remove element from singleton
@@ -535,4 +578,81 @@ BOOST_AUTO_TEST_CASE(insert_to_singleton_should_work_with_unset_values)
     BOOST_REQUIRE_EQUAL(feature.getNumClusters(), 5);
 }
 
+// Replace values
+//``````````````````````````````````````````````````````````````````````````````````````````````````
+BOOST_AUTO_TEST_CASE(replace_values_should_change_value_in_container){
+    static baxcat::PRNG *rng = new baxcat::PRNG(10);
+    auto feature_0 = Setup(rng);
+
+    feature_0.replaceValue(1, 0, 1.2);
+
+    BOOST_CHECK_CLOSE_FRACTION(1.2, feature_0.getDataAt(1), 10E-6);
+
+    baxcat::DataContainer<double> data({1,2,3,4,5});
+    vector<size_t> assignment = {0,0,1,1,2};
+
+    baxcat::Feature<Continuous, double> feature_1(0, data, {}, assignment, rng);
+
+    feature_1.replaceValue(2, 1, 1.2);
+    BOOST_CHECK_CLOSE_FRACTION(1.2, feature_1.getDataAt(2), EPSILON);
+
+}
+
+BOOST_AUTO_TEST_CASE(replace_values_should_change_suffstats){
+    static baxcat::PRNG *rng = new baxcat::PRNG(10);
+    auto feature_0 = Setup(rng);
+    auto suffstats = feature_0.getModelSuffstats();
+
+    BOOST_CHECK_CLOSE_FRACTION(suffstats[0]["n"], 5, EPSILON);
+    BOOST_CHECK_CLOSE_FRACTION(suffstats[0]["sum_x"], 15, EPSILON);
+    BOOST_CHECK_CLOSE_FRACTION(suffstats[0]["sum_x_sq"], 55, EPSILON);
+
+    feature_0.replaceValue(1, 0, 1.2);
+    suffstats = feature_0.getModelSuffstats();
+
+    BOOST_CHECK_CLOSE_FRACTION(suffstats[0]["n"], 5, EPSILON);
+    BOOST_CHECK_CLOSE_FRACTION(suffstats[0]["sum_x"], 14.2, EPSILON);
+    BOOST_CHECK_CLOSE_FRACTION(suffstats[0]["sum_x_sq"], 52.44, EPSILON);
+}
+
+// value checks
+// ````````````````````````````````````````````````````````````````````````````
+BOOST_AUTO_TEST_CASE(logp_value_test_after_reassign){
+    static baxcat::PRNG *rng = new baxcat::PRNG(10);
+    auto f = Setup(rng);
+
+    vector<size_t> asgn = {0, 0, 0, 1, 1};
+    f.setHypers({0, 1, 1, 1});
+    f.reassign(asgn);
+
+    double logp_f = f.logp();
+    double logp_m_1 = NormalNormalGamma::logMarginalLikelihood(3, 6, 14, 0, 1, 1, 1);
+    double logp_m_2 = NormalNormalGamma::logMarginalLikelihood(2, 9, 41, 0, 1, 1, 1);
+
+    BOOST_CHECK_CLOSE_FRACTION(logp_f, logp_m_1+logp_m_2, TOL);
+
+    f.reassign({0, 0, 0, 0, 0});
+    auto suffstats = f.getModelSuffstats();
+
+    BOOST_CHECK_EQUAL(suffstats.size(), 1);
+    BOOST_CHECK_EQUAL(suffstats[0]["n"], 5);
+    BOOST_CHECK_EQUAL(suffstats[0]["sum_x"], 15);
+    BOOST_CHECK_EQUAL(suffstats[0]["sum_x_sq"], 55);
+
+    logp_f = f.logp();
+    double logp_m = NormalNormalGamma::logMarginalLikelihood(5, 15, 55, 0, 1, 1, 1);
+
+    BOOST_CHECK_CLOSE_FRACTION(logp_f, logp_m, TOL);
+}
+
+BOOST_AUTO_TEST_CASE(logp_value_test){
+    static baxcat::PRNG *rng = new baxcat::PRNG(10);
+    auto f = Setup(rng);
+
+    f.setHypers({0, 1, 1, 1});
+    double logp_f = f.logp();
+    double logp_m = NormalNormalGamma::logMarginalLikelihood(5, 15, 55, 0, 1, 1, 1);
+
+    BOOST_CHECK_CLOSE_FRACTION(logp_f, logp_m, TOL);
+}
 BOOST_AUTO_TEST_SUITE_END()

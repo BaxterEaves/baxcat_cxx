@@ -29,7 +29,7 @@ View::View(vector< shared_ptr<BaseFeature> > &feature_vec, PRNG *rng)
     _num_rows = feature_vec[0].get()->getN();
 
     // alpha
-    _crp_alpha = _rng->gamrand(1, 1);
+    _crp_alpha = _rng->invgamrand(1, 1);
 
     // construct Z, K, Nk from the prior
     _rng->crpGen(_crp_alpha, _num_rows, _row_assignment, _num_clusters, _cluster_counts);
@@ -51,7 +51,7 @@ View::View(vector< shared_ptr<BaseFeature> > &feature_vec, PRNG *rng, double crp
     _num_rows = feature_vec[0].get()->getN();
 
     // alpha is a semi-optional argument. If it is less than zero, we'll choose ourself
-    _crp_alpha = (crp_alpha <= 0) ? _rng->gamrand(1, 1) : crp_alpha;
+    _crp_alpha = (crp_alpha <= 0) ? _rng->invgamrand(1, 1) : crp_alpha;
 
     // build features tree (insert and reassign)
     for(auto &f: feature_vec)
@@ -137,7 +137,7 @@ void View::transitionCRPAlpha()
     double n = _num_rows;
 
     auto log_crp_posterior = [k, n](double x){
-        return numerics::lcrpUNormPost(k, n, x) + dist::gamma::logPdf(x, 1, 1);
+        return numerics::lcrpUNormPost(k, n, x) + dist::inverse_gamma::logPdf(x, 1, 1);
     };
 
     double slice_width = 2.0; // this is a guess
@@ -254,6 +254,20 @@ double View::rowSingletonLogp(size_t row)
         lp += f.get()->singletonLogp(row);
 
     return lp;
+}
+
+
+double View::logScore()
+{
+    double log_score = 0; 
+
+    log_score += numerics::lcrp(_cluster_counts, _num_rows, _crp_alpha);
+    log_score += dist::inverse_gamma::logPdf(_crp_alpha, 1., 1.);
+
+    for(auto &f: _features)
+        log_score += f.get()->logScore();
+
+    return log_score;
 }
 
 
