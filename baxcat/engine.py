@@ -3,6 +3,7 @@ from baxcat.state import BCState
 from baxcat.utils import data_utils as du
 from baxcat.utils import model_utils as mu
 
+from math import exp
 from multiprocessing.pool import Pool
 
 import matplotlib.pyplot as plt
@@ -182,6 +183,7 @@ class Engine(object):
         return [pd.DataFrame(self._diagnostic_tables[m]) for m in model_idxs]
 
     def col_info(self):
+        """ Get a DataFrame with basic info about the columns """
         s_dtypes = pd.Series(self._dtypes, index=self._col_names)
         s_distargs = pd.Series([a[0] for a in self._distargs],
                                index=self._col_names)
@@ -248,7 +250,12 @@ class Engine(object):
         x = du.convert_data(data_out, cols, self._dtypes, self._converters,
                             to_val=True)
 
-        return x
+        if x.shape == (1, 1,):
+            return x[0, 0]
+        elif x.shape[0] == 1:
+            return x[0, :]
+        else:
+            return x
 
     def probability(self, x, cols, given=None):
         """ Predictive probability of x_1, ..., x_n given y_1, ..., y_n
@@ -292,9 +299,26 @@ class Engine(object):
         return depprob
 
     def row_similarity(self, row_a, row_b):
-        raise NotImplementedError
+        """ The similarity between two rows  in terms of their partitions. """
+        if row_a == row_b:
+            # XXX: we will assume that the user meant to do this
+            return 1.0
+
+        idx_a = self._converters['row2idx'][row_a]
+        idx_b = self._converters['row2idx'][row_b]
+
+        sim = np.zeros(self._n_models)
+        for midx, model in enumerate(self._models):
+            n_views = len(model['row_assignments'])
+            sim[midx] = sum(asgn[idx_a] == asgn[idx_b] for asgn in
+                            model['row_assignments'])
+            sim[midx] /= float(n_views)
+        return np.mean(sim)
 
     def impute(self, row, col, min_conf=0.):
+        # XXX: Holding off on this because it's not entirely obvious how to
+        # implement an intuitive, and mathematically reasonable, confidence
+        # measure for multimodal continuous data.
         raise NotImplementedError
 
     # TODO: allow multiple columns for joint entropy
@@ -329,7 +353,7 @@ class Engine(object):
             k = self._distargs[col_idx][0]
             x = np.array([[i] for i in range(k)])
             logps = mu.probability(x, self._models, (col_idx,))
-            assert len(logps) == k
+            assert logps.shape == (k,)
             h = -np.sum(np.exp(logps)*logps)
         else:
             x = mu.sample(self._models, (col_idx,), n=n_samples)
@@ -339,7 +363,8 @@ class Engine(object):
 
         return h
 
-    def mutual_information(self, col_a, col_b, normed=True, n_samples=1000):
+    def mutual_information(self, col_a, col_b, normed=True, linfoot=False,
+                           n_samples=1000):
         """ The mutual information, I(A, B), between two columns.
 
         Parameters
@@ -361,6 +386,9 @@ class Engine(object):
             The mutual information between `col_a` and `col_b`.
         """
 
+        if linfoot:
+            normed = False
+
         idx_a = self._converters['col2idx'][col_a]
         idx_b = self._converters['col2idx'][col_b]
 
@@ -370,20 +398,31 @@ class Engine(object):
                 models.append(model)
 
         if len(models) == 0:
-            return 0.0
+            mi = 0.0
         else:
             h_a = self.entropy(col_a, n_samples=n_samples)
             h_b = self.entropy(col_b, n_samples=n_samples)
             h_ab = mu.joint_entropy(models, [idx_a, idx_b], n_samples)
             mi = h_a + h_b - h_ab
+
+            # XXX: Differential entropy can be negative. Here we prevent
+            # negative mutual information.
+            mi = max(mi, 0.)
             if normed:
                 # normalize using symmetric uncertainty
                 mi = 2.*mi/(h_a + h_b)
 
-            return max(0, mi)
+        if linfoot:
+            mi = (1. - exp(-2*mi))**.5
+
+        return mi
 
     def conditional_entropy(self, col_a, col_b, n_samples=1000):
-        """ Conditional entropy, H(A|B), of a given b
+        """ Conditional entropy, H(A|B), of a given b.
+
+        Implementation notes
+        --------------------
+        Uses MonteCarlo integration at least in the joint entropy component.
 
         Parameters
         ----------
@@ -420,17 +459,22 @@ class Engine(object):
                     depprob = self.dependence_probability(col_a, col_b)
                     mat[i, j] = depprob
                     mat[j, i] = depprob
-        elif func == 'mutual_information':
+        elif func in ['mutual_information', 'linfoot']:
+            if func == 'linfoot':
+                linfoot = True
+            else:
+                linfoot = False
+
             for i in range(self._n_cols):
                 for j in range(i+1, self._n_cols):
                     col_a = self._converters['idx2col'][i]
                     col_b = self._converters['idx2col'][j]
                     print('([%d]%s, [%d]%s)' % (i, col_a, j, col_b,))
                     if i == j:
-                        # mi = self.entropy(col_a, n_samples)
                         mi = 1.
                     else:
-                        mi = self.mutual_information(col_a, col_b, n_samples=n_samples)
+                        mi = self.mutual_information(
+                            col_a, col_b, linfoot=linfoot, n_samples=n_samples)
                     mat[i, j] = mi
                     mat[j, i] = mi
         elif func == 'conditional_entropy':
@@ -439,14 +483,17 @@ class Engine(object):
                 for j in range(self._n_cols):
                     col_a = self._converters['idx2col'][i]
                     col_b = self._converters['idx2col'][j]
+                    print('([%d]%s, [%d]%s)' % (i, col_a, j, col_b,))
                     if i == j:
-                        h = self.entropopy(col_a, n_samples)
+                        h = self.entropy(col_a, n_samples)
                     else:
                         h = self.conditional_entropy(col_a, col_b, n_samples)
 
                     mat[i, j] = h
         else:
             raise ValueError("%s is an invalid function." % (func,))
+
+        print('Done.')
         df = pd.DataFrame(mat, index=self._df.columns, columns=self._df.columns)
 
         return df
@@ -457,17 +504,13 @@ class Engine(object):
             plot_kwargs = {}
 
         if func == 'dependence_probability':
-            df = self.pairwise_func('dependence_probability')
             plot_kwargs['vmin'] = plot_kwargs.get('vmin', 0.)
             plot_kwargs['vmax'] = plot_kwargs.get('vmax', 1.)
             plot_kwargs['cmap'] = plot_kwargs.get('cmap', 'gray_r')
-        elif func == 'mutual_information':
-            df = self.pairwise_func('mutual_information', n_samples=n_samples)
+        elif func in ['mutual_information', 'linfoot']:
             plot_kwargs['cmap'] = plot_kwargs.get('cmap', 'gray_r')
-        elif func == 'conditional_entropy':
-            raise NotImplementedError
-        else:
-            raise ValueError("%s is an invalid function." % (func,))
+
+        df = self.pairwise_func(func, n_samples=n_samples)
 
         g = sns.clustermap(df, **plot_kwargs)
         plt.setp(g.ax_heatmap.get_yticklabels(), rotation=0)
