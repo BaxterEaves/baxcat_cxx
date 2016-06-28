@@ -229,6 +229,8 @@ class Engine(object):
                           'Zv': model['col_assignment'],
                           'Zrcv': model['row_assignments'],
                           'col_hypers': model['col_hypers'],
+                          'state_alpha': model['state_alpha'],
+                          'view_alphas': model['view_alphas'],
                           'seed': sd}
             args.append((self._data, checkpoint, init_kwarg, trans_kwargs,))
 

@@ -79,7 +79,8 @@ BOOST_AUTO_TEST_CASE(verify_constructor_1){
 
 BOOST_AUTO_TEST_CASE(verify_constructor_2){
     Setup s;
-    State state(s.data, s.datatypes, s.distargs, s.seed, s.column_assignment, s.row_assignments, {});
+    State state(s.data, s.datatypes, s.distargs, s.seed, s.column_assignment,
+                s.row_assignments, -1, {}, {});
 
     auto column_assignment = state.getColumnAssignment();
     auto row_assignments = state.getRowAssignments();
@@ -117,7 +118,8 @@ BOOST_AUTO_TEST_CASE(verify_constructor_2){
 BOOST_AUTO_TEST_CASE(transition_col_alpha_should_change_from_out_range_val)
 {
     Setup s;
-    State state(s.data, s.datatypes, s.distargs, s.seed, s.column_assignment, s.row_assignments, {});
+    State state(s.data, s.datatypes, s.distargs, s.seed, s.column_assignment,
+                s.row_assignments, -1, {}, {});
 
     auto alpha_0 = state.getStateCRPAlpha();
     BOOST_CHECK(alpha_0 > 0);
@@ -133,7 +135,8 @@ BOOST_AUTO_TEST_CASE(transition_col_alpha_should_change_from_out_range_val)
 BOOST_AUTO_TEST_CASE(transition_row_alpha_should_change_vals_eventually)
 {
     Setup s;
-    State state(s.data, s.datatypes, s.distargs, s.seed, s.column_assignment, s.row_assignments, {});
+    State state(s.data, s.datatypes, s.distargs, s.seed, s.column_assignment,
+                s.row_assignments, -1, {}, {});
 
     auto view_alphas_0 = state.getViewCRPAlphas();
     for( auto a : view_alphas_0)
@@ -161,7 +164,8 @@ BOOST_AUTO_TEST_CASE(transition_row_alpha_should_change_vals_eventually)
 BOOST_AUTO_TEST_CASE(row_z_should_eventually_change_assignments)
 {
     Setup s;
-    State state(s.data, s.datatypes, s.distargs, s.seed, s.column_assignment, s.row_assignments, {});
+    State state(s.data, s.datatypes, s.distargs, s.seed, s.column_assignment,
+                s.row_assignments, -1, {}, {});
 
     auto row_assignments_0 = state.getRowAssignments();
 
@@ -186,7 +190,8 @@ BOOST_AUTO_TEST_CASE(row_z_should_eventually_change_assignments)
 BOOST_AUTO_TEST_CASE(col_hypers_should_eventually_change)
 {
     Setup s;
-    State state(s.data, s.datatypes, s.distargs, s.seed, s.column_assignment, s.row_assignments, {});
+    State state(s.data, s.datatypes, s.distargs, s.seed, s.column_assignment,
+                s.row_assignments, -1, {}, {});
 
     auto hypers_0 = state.getColumnHypers();
 
@@ -213,7 +218,8 @@ BOOST_AUTO_TEST_CASE(col_hypers_should_eventually_change)
 BOOST_AUTO_TEST_CASE(col_partition_should_eventually_change)
 {
     Setup s;
-    State state(s.data, s.datatypes, s.distargs, s.seed, s.column_assignment, s.row_assignments, {});
+    State state(s.data, s.datatypes, s.distargs, s.seed, s.column_assignment,
+                s.row_assignments, -1, {}, {});
 
     auto column_assignment_0 = state.getColumnAssignment();
     bool partition_changed = false;
@@ -234,7 +240,8 @@ BOOST_AUTO_TEST_CASE(col_partition_should_eventually_change)
 BOOST_AUTO_TEST_CASE(geweke_pullDataColumn_value_checks)
 {
     Setup s;
-    State state(s.data, s.datatypes, s.distargs, s.seed, s.column_assignment, s.row_assignments, {});
+    State state(s.data, s.datatypes, s.distargs, s.seed, s.column_assignment,
+                s.row_assignments, -1, {}, {});
 
     auto data_f0 = state.__geweke_pullDataColumn(0);
     BOOST_CHECK(areIdentical(s.data[0], data_f0));
@@ -257,7 +264,8 @@ BOOST_AUTO_TEST_CASE(categorical_crash_test)
     vector<vector<size_t>> row_assignments = {{0, 0, 0,0 ,0}, {0, 1, 2, 3, 4}};
     vector<vector<double>> distargs = {{5}, {6}};
 
-    State state(data, datatypes, distargs, seed, column_assignment, row_assignments, {});
+    State state(data, datatypes, distargs, seed, column_assignment, row_assignments,
+                -1, {}, {});
 
     auto column_assignments_out = state.getColumnAssignment();
     auto row_assignments_out = state.getRowAssignments();

@@ -56,6 +56,7 @@ State::State(vector<vector<double>> X, vector<string> datatypes, vector<vector<d
 
 State::State(vector<vector<double>> X, vector<string> datatypes, vector<vector<double>> distargs,
              unsigned int rng_seed, vector<size_t> Zv, vector<vector<size_t>> Zrcv,
+             double state_alpha, vector<double> view_alphas,
              vector<map<string, double>> hypers_maps)
     : _column_assignment(Zv), _rng(shared_ptr<PRNG>(new PRNG(rng_seed))),
       _crp_alpha_config({1, 1}), _view_alpha_marker(-1)
@@ -66,7 +67,11 @@ State::State(vector<vector<double>> X, vector<string> datatypes, vector<vector<d
     _feature_types = helpers::getDatatypes(datatypes);
     _features = helpers::genFeatures(X, datatypes, distargs, _rng.get());
 
-    _crp_alpha = _rng->invgamrand(_crp_alpha_config[0], _crp_alpha_config[1]);
+    if (state_alpha <= 0){
+        _crp_alpha = _rng->invgamrand(_crp_alpha_config[0], _crp_alpha_config[1]);
+    }else{
+        _crp_alpha = state_alpha;
+    }
 
     _num_views = utils::vector_max(_column_assignment)+1;
     _view_counts.resize(_num_views,0);
@@ -80,8 +85,10 @@ State::State(vector<vector<double>> X, vector<string> datatypes, vector<vector<d
         view_features[v].push_back(_features[i]);
     }
 
-    for(size_t v = 0; v < _num_views; ++v)
-        _views.push_back(View(view_features[v], _rng.get(), -1, Zrcv[v]));
+    for(size_t v = 0; v < _num_views; ++v){
+        double view_alpha = view_alphas.empty() ? -1 : view_alphas[v];
+        _views.push_back(View(view_features[v], _rng.get(), view_alpha, Zrcv[v]));
+    }
 
     if(!hypers_maps.empty()){
         assert(hypers_maps.size() == _features.size());

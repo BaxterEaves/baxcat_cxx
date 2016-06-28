@@ -38,6 +38,8 @@ cdef extern from "state.hpp" namespace "baxcat":
               size_t rng_seed,
               vector[size_t] Zv,
               vector[vector[size_t]] Zrcv,
+              double state_alpha,
+              vector[double] view_alpha,
               vector[cmap[string, double]] hyper_maps) except +
 
         void transition(vector[string] transition_list,
@@ -119,16 +121,22 @@ cdef class BCState:
     cdef vector[string] datatypes
 
     def __cinit__(self, X, dtypes=None, distargs=None, col_hypers=None,
-                  Zv=None, Zrcv=None, n_grid=31, seed=None):
+                  Zv=None, Zrcv=None, state_alpha=-1, view_alphas=None,
+                  n_grid=31, seed=None):
         # data is column major (the rows in X become the crosscat columns)
         self.n_cols, self.n_rows = X.shape
         if seed is None or seed < 0:
             seed = int(time.time())
+
         if dtypes is None:
             dtypes = ['continuous']*self.n_cols
+
         if distargs is None:
             # 'empty'
             distargs = np.zeros((self.n_cols, 1))
+
+        if view_alphas is None:
+            view_alphas = []
        
         if len(dtypes) != self.n_cols:
             raise ValueError("Should be a dtype for each column.")
@@ -143,7 +151,7 @@ cdef class BCState:
         elif not any(m == None for m in [col_hypers, Zv, Zrcv]):
             col_hypers = [dictstr_enc(hyper) for hyper in col_hypers]
             self.statePtr = new State(X, dtl, distargs, seed, Zv, Zrcv,
-                                      col_hypers)
+                                      state_alpha, view_alphas, col_hypers)
         else:
             raise ValueError('You have specified some, but not all of, Zv, '
                              'Zrcv, and col_hypers. There is currently no '

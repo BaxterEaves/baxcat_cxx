@@ -76,6 +76,8 @@ public:
           unsigned int rng_seed,
           std::vector<size_t> Zv,
           std::vector<std::vector<size_t>> Zrcv,
+          double state_alpha,
+          std::vector<double> view_alphas,
           std::vector<std::map<std::string, double>> hyper_maps);
 
     // do transitions.

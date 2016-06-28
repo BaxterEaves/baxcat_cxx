@@ -107,6 +107,60 @@ def test_run_on_model_subset_should_only_run_those_models(smalldf):
     assert len(tables[4]) == 3
 
 
+def test_state_alpha_should_not_change_if_no_transition(smalldf):
+    engine = Engine(smalldf, no_mp=True)
+    engine.init_models(1)
+
+    state_alpha_start = engine._models[0]['state_alpha']
+
+    t_list = [b'row_assignment', b'row_alpha']
+    engine.run(10, trans_kwargs={'transition_list': t_list})
+
+    state_alpha_end = engine._models[0]['state_alpha']
+
+    assert state_alpha_start == state_alpha_end
+
+
+def test_state_alpha_should_change_if_transition(smalldf):
+    engine = Engine(smalldf, no_mp=True)
+    engine.init_models(1)
+
+    state_alpha_start = engine._models[0]['state_alpha']
+
+    engine.run(10)
+
+    state_alpha_end = engine._models[0]['state_alpha']
+
+    assert state_alpha_start != state_alpha_end
+
+
+def test_view_alpha_should_not_change_if_no_transition(smalldf):
+    engine = Engine(smalldf, no_mp=True)
+    engine.init_models(1)
+
+    view_alpha_start = engine._models[0]['view_alphas']
+
+    t_list = [b'row_assignment', b'column_alpha']
+    engine.run(10, trans_kwargs={'transition_list': t_list})
+
+    view_alpha_end = engine._models[0]['view_alphas']
+
+    assert view_alpha_start == view_alpha_end
+
+
+def test_view_alpha_should_change_if_transition(smalldf):
+    engine = Engine(smalldf, no_mp=True)
+    engine.init_models(1)
+
+    view_alpha_start = engine._models[0]['view_alphas']
+
+    engine.run(10)
+
+    view_alpha_end = engine._models[0]['view_alphas']
+
+    assert view_alpha_start != view_alpha_end
+
+
 # save and load
 # `````````````````````````````````````````````````````````````````````````````
 def test_save_smoke(smalldf):
