@@ -248,7 +248,6 @@ cdef class BCState:
         metadata['col_suffstats'] = sfsts
         metadata['view_counts'] = self.statePtr.getViewCounts() 
 
-        # FIXME: add view_counts field
         return metadata
 
     def conditioned_row_resample(self, row_index, logcf, num_samples=10):
