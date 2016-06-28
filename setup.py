@@ -7,7 +7,6 @@ import numpy as np
 
 cmdclass = dict()
 cmdclass['build_ext'] = build_ext
-boost_dir = '/usr/local/Cellar/boost/1.56.0'
 
 extensions = [
     Extension('baxcat.state',
@@ -16,19 +15,19 @@ extensions = [
                        'src/continuous.cpp', 'src/feature_tree.cpp'],
               extra_compile_args=['-std=c++11', '-Wno-comment'],
               extra_link_args=['-lstdc++', '-fopenmp'],
-              include_dirs=['src', 'include', np.get_include(), boost_dir],
+              include_dirs=['src', 'include', np.get_include()],
               language="c++"),
     Extension('baxcat.dist.nng',
               sources=['baxcat/dist/nng.pyx'],
               extra_compile_args=['-std=c++11'],
               extra_link_args=['-lstdc++', '-fopenmp'],
-              include_dirs=['include', np.get_include(), boost_dir],
+              include_dirs=['include', np.get_include()],
               language="c++"),
     Extension('baxcat.dist.csd',
               sources=['baxcat/dist/csd.pyx'],
               extra_compile_args=['-std=c++11'],
               extra_link_args=['-lstdc++', '-fopenmp'],
-              include_dirs=['include', np.get_include(), boost_dir],
+              include_dirs=['include', np.get_include()],
               language="c++")]
 
 extensions = cythonize(extensions)
