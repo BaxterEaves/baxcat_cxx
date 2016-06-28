@@ -250,6 +250,9 @@ cdef class BCState:
 
         return metadata
 
+    # FIXME: This is not excatly what we want. We don't want to have to
+    # resample entire rows. We'd like to resample parts of rows, for example,
+    # the parameter parts. We need to add column indices as well.
     def conditioned_row_resample(self, row_index, logcf, num_samples=10):
         # TODO: verify that this example works
         """
