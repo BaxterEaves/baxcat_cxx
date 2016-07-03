@@ -61,6 +61,11 @@ cdef extern from "state.hpp" namespace "baxcat":
         vector[vector[cmap[string, double]]] getSuffstats()
         double logScore();
 
+        vector[double] getViewLogps();
+        vector[double] getFeatureLogps();
+        vector[vector[double]] getClusterLogps();
+        vector[vector[double]] getRowLogps();
+
         # setters
         void setHyperConfig(size_t column_index,
                             vector[double] hyperprior_config)
@@ -171,6 +176,15 @@ cdef class BCState:
         # TODO: validate input
         self.statePtr.transition(transition_list, which_rows, which_cols,
                                  which_kernel, N, m)
+
+    def get_logps(self):
+        logps = {}
+        logps['view_logps'] = self.statePtr.getViewLogps()
+        logps['column_logps'] = self.statePtr.getFeatureLogps()
+        logps['row_logps'] = self.statePtr.getRowLogps()
+        logps['cluster_logps'] = self.statePtr.getClusterLogps()
+        return logps
+
 
     def predictive_probability(self, query_indices, query_values,
                                constraint_indices=None,

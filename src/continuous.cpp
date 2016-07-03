@@ -216,7 +216,7 @@ vector<double> Continuous::resampleHypers(vector<Continuous> &models,
     w = hyperprior_config[R_SHAPE]*hyperprior_config[R_SCALE]*hyperprior_config[R_SCALE]/2;
     U = rng->urand(-1,1);
     x_0 = fabs(hyperprior_config[R_SCALE] + U*w);
-    hypers[HYPER_R] = mhSample(x_0, r_unscaled_posterior, {ALMOST_ZERO, INF}, w, burn, rng);
+    hypers[HYPER_R] = sliceSample(x_0, r_unscaled_posterior, {ALMOST_ZERO, INF}, w, burn, rng);
 
     for(auto &model : models)
         model.setHypers(hypers);

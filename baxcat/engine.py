@@ -2,6 +2,7 @@
 from baxcat.state import BCState
 from baxcat.utils import data_utils as du
 from baxcat.utils import model_utils as mu
+from baxcat.utils import plot_utils as pu
 
 from math import exp
 from multiprocessing.pool import Pool
@@ -13,6 +14,8 @@ import numpy as np
 import random
 import time
 import copy
+
+sns.set_style("white")
 
 # cpickle is faster, but not everybody has it.
 try:
@@ -518,21 +521,37 @@ class Engine(object):
         plt.setp(g.ax_heatmap.get_yticklabels(), rotation=0)
         plt.setp(g.ax_heatmap.get_xticklabels(), rotation=90)
 
-    def convergence_plot(self, ax=None, log_x_axis=True):
+    def convergence_plot(self, ax=None, log_x_axis=True, min_time=0.):
         """ Plot the log score of each model as a function of time. """
         if ax is None:
-            ax = plt.gca()
+                ax = plt.gca()
 
+        xs = []
         for table in self.diagnostics():
             x = np.cumsum(table['time'].values)
-            y = table['log_score'].values
-
-            ax.plot(x, y)
+            t = np.nonzero(x > min_time)[0]
+            if len(t) > 0:
+                t = t[0]
+                y = table['log_score'].values
+                xs.extend([x[t], x[-1]])
+                ax.plot(x[t:], y[t:])
         ax.set_xlabel('time (sec)')
         ax.set_ylabel('log score')
 
         if log_x_axis:
             ax.set_xscale('log')
+            ax.set_xlim([min(xs), max(xs)])
 
     def plot_state(self, state_idx):
-        raise NotImplementedError()
+        # raise NotImplementedError()
+        model = self._models[state_idx]
+        init_kwargs = {'dtypes': self._dtypes,
+                       'distargs': self._distargs,
+                       'Zv': model['col_assignment'],
+                       'Zrcv': model['row_assignments'],
+                       'col_hypers': model['col_hypers'],
+                       'state_alpha': model['state_alpha'],
+                       'view_alphas': model['view_alphas']}
+        state = BCState(self._data.T, **init_kwargs)
+        model_logps = state.get_logps()
+        pu.plot_cc_model(self._data, model, model_logps)

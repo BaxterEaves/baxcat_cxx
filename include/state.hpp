@@ -98,6 +98,11 @@ public:
     std::vector<std::vector<size_t>> getViewCounts() const;
     double logScore();
 
+    std::vector<double> getViewLogps();
+    std::vector<double> getFeatureLogps();
+    std::vector<std::vector<double>> getClusterLogps();
+    std::vector<std::vector<double>> getRowLogps();
+
     // setters
     void setHyperConfig(size_t column_index, std::vector<double>
                         hyperprior_config);

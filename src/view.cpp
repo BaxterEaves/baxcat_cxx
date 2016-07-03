@@ -144,8 +144,8 @@ void View::transitionCRPAlpha()
     size_t burn = 50;
 
     // slice sample
-    _crp_alpha = samplers::sliceSample(_crp_alpha, log_crp_posterior, {0, INF},
-                                       slice_width, burn, _rng);
+    _crp_alpha = samplers::mhSample(_crp_alpha, log_crp_posterior, {0, INF},
+                                    slice_width, burn, _rng);
 }
 
 

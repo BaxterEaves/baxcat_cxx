@@ -905,6 +905,54 @@ double State::logScore()
 }
 
 
+vector<double> State::getViewLogps(){
+    vector<double> logps(_num_views);
+    for (size_t v=0; v < _num_views; ++v){
+        logps[v] = _views[v].logScore();
+    }
+    return logps;
+}
+
+
+vector<vector<double>> State::getRowLogps(){
+    vector<vector<double>> logps;
+    for (size_t v=0; v < _num_views; ++v){
+        vector<double> logps_v(_num_rows);
+        for (size_t r=0; r < _num_rows; ++r){
+            size_t clstr_idx = _views[v].getAssignmentOfRow(r);
+            logps_v[r] = _views[v].rowLogp(r, clstr_idx);
+        }
+        logps.push_back(logps_v);
+    }
+    return logps;
+}
+
+
+vector<double> State::getFeatureLogps(){
+    vector<double> logps(_num_columns);
+    for (size_t c=0; c < _num_columns; ++c){
+        logps[c] = _features[c].get()->logp();
+    }
+    return logps;
+}
+
+
+vector<vector<double>> State::getClusterLogps(){
+    vector<vector<double>> row_logps = getRowLogps();
+    vector<vector<double>> logps;
+    for (size_t v=0; v < _num_views; ++v){
+        vector<double> logps_v(_views[v].getNumCategories());
+        vector<size_t> asgn = _views[v].getRowAssignments();
+        for (size_t r=0; r < _num_rows; ++r){
+            size_t clstr_idx = asgn[r];
+            logps_v[clstr_idx] += row_logps[v][r];
+        }
+        logps.push_back(logps_v);
+    }
+    return logps;
+
+}
+
 // setters
 //`````````````````````````````````````````````````````````````````````````````````````````````````
 void State::setHyperConfig(size_t column_index, std::vector<double> hyperprior_config)
