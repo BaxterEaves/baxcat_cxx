@@ -452,7 +452,7 @@ class Engine(object):
 
         return h_c
 
-    # TODO: offloat to external fuction that can be parallelized
+    # TODO: offload to external fuction that can be parallelized
     def pairwise_func(self, func, n_samples=500):
         """ Do a function over all paris of columns/rows """
         mat = np.eye(self._n_cols)
@@ -474,7 +474,6 @@ class Engine(object):
                 for j in range(i+1, self._n_cols):
                     col_a = self._converters['idx2col'][i]
                     col_b = self._converters['idx2col'][j]
-                    print('([%d]%s, [%d]%s)' % (i, col_a, j, col_b,))
                     if i == j:
                         mi = 1.
                     else:
@@ -488,7 +487,6 @@ class Engine(object):
                 for j in range(self._n_cols):
                     col_a = self._converters['idx2col'][i]
                     col_b = self._converters['idx2col'][j]
-                    print('([%d]%s, [%d]%s)' % (i, col_a, j, col_b,))
                     if i == j:
                         h = self.entropy(col_a, n_samples)
                     else:
@@ -498,7 +496,6 @@ class Engine(object):
         else:
             raise ValueError("%s is an invalid function." % (func,))
 
-        print('Done.')
         df = pd.DataFrame(mat, index=self._df.columns, columns=self._df.columns)
 
         return df
@@ -554,4 +551,5 @@ class Engine(object):
                        'view_alphas': model['view_alphas']}
         state = BCState(self._data.T, **init_kwargs)
         model_logps = state.get_logps()
-        pu.plot_cc_model(self._data, model, model_logps)
+        pu.plot_cc_model(self._data, model, model_logps, self._df.index,
+                         self._df.columns)

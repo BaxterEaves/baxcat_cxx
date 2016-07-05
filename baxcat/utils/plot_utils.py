@@ -19,10 +19,9 @@ def _normalize_data_table(data):
     return data
 
 
-# TODO: Add column and row labels
 # TODO: Add highlight rows and columns
 # TODO: normalize data columns and mark missing data with red
-def plot_cc_model(data, model, model_logps, ax=None):
+def plot_cc_model(data, model, model_logps, row_labels, col_labels):
     n_cols = len(model['col_assignment'])
     n_rows = len(model['row_assignments'][0])
 
@@ -34,10 +33,13 @@ def plot_cc_model(data, model, model_logps, ax=None):
     data_mats = []
 
     gs = gridspec.GridSpec(n_rows, n_cols)
+    gs.update(top=.95, bottom=.05, right=.95, left=.05, hspace=10, wspace=20)
 
-    view_order = np.argsort(model['view_counts'])[::-1]
+    view_counts = np.bincount(col_asgn)
+    view_order = np.argsort(view_counts)[::-1]
     for vidx in view_order:
         cols_in_view = [i for i in range(n_cols) if col_asgn[i] == vidx]
+
         col_logps = [model_logps['column_logps'][i] for i in cols_in_view]
         cols = [cols_in_view[i] for i in np.argsort(col_logps)[::-1]]
 
@@ -64,10 +66,18 @@ def plot_cc_model(data, model, model_logps, ax=None):
                     mat[i, j] = data[row, col]
 
             ax = plt.subplot(gs[r_start:r_end+1, c_start:c_end+1])
-            ax.matshow(mat, aspect='auto')
-            ax.set_xticks([])
-            ax.set_yticks([])
-            # data_mats_view.append(mat)
+            ax.matshow(mat, aspect='auto', cmap='Blues')
+            if cidx != clstr_order[0]:
+                ax.set_xticks([])
+            else:
+                ax.xaxis.set_label_position('top')
+                ax.set_xticks(range(len(cols)))
+                xticks = [col_labels[i] for i in cols]
+                ax.set_xticklabels(xticks, rotation=90)
+
+            ax.set_yticks(range(len(rows)))
+            yticks = [row_labels[i] for i in rows]
+            ax.set_yticklabels(yticks)
 
             r_start = r_end + 1
 
