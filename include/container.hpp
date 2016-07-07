@@ -22,25 +22,13 @@
 
 namespace baxcat{
 
-// datacontainer is undefined in general (throw compile-time error)
-template <typename T>
-class __BCDCAllowed__;
-
-// allow only these types
-template <> class __BCDCAllowed__<bool>{};
-template <> class __BCDCAllowed__<double>{};
-template <> class __BCDCAllowed__<size_t>{};
-template <> class __BCDCAllowed__<uint_fast8_t>{};
-template <> class __BCDCAllowed__<uint_fast16_t>{};
-template <> class __BCDCAllowed__<uint_fast32_t>{};
-
-
 // base template for integral types
 template <typename T>
-class DataContainer : __BCDCAllowed__<T>
+class DataContainer
 {
     std::vector<T> _data;
     std::vector<bool> _is_initalized;
+
 public:
     DataContainer(const DataContainer &dc) : _data(dc._data), _is_initalized(dc._is_initalized){};
 
