@@ -24,11 +24,10 @@ BOOST_LIB = /usr/local/Cellar/boost/1.55.0_2/lib
 DIST = $(INCLUDE)/distributions
 HELPERS = $(INCLUDE)/helpers
 
-CXX = g++-4.9
 OPTS = -I$(BOOST_DIR) -I$(INCLUDE) \
 	-I /usr/local/Cellar/mathgl/2.2.2.1/include \
 	-L /usr/local/Cellar/mathgl/2.2.2.1/lib -lmgl \
-	-I ../ -std=c++14 -fopenmp \
+	-I ../ -std=c++11 -fopenmp \
 	-Wall -Wno-unused-function -Wno-unused-local-typedefs -Wno-comment\
 	-L $(BOOST_LIB) -DDEBUG
 

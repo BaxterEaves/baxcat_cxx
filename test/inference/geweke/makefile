@@ -19,15 +19,12 @@
 
 SRC = ../../../src
 INCLUDE = ../../../include
-BOOST_DIR = /usr/local/Cellar/boost/1.56.0/include
-BOOST_LIB = /usr/local/Cellar/boost/1.56.0/lib
 
 # output folder
 F_OUT = build/
 
-CXX = g++-4.9
-OPTS = -I $(BOOST_DIR) -I $(INCLUDE) -std=c++11 -fopenmp -I /usr/local/Cellar/mathgl/2.2.2.1/include \
-	-I ../../ -L /usr/local/Cellar/mathgl/2.2.2.1/lib -L $(BOOST_LIB) -lboost_program_options-mt \
+OPTS = -I $(INCLUDE) -std=c++11 -fopenmp -I /usr/local/Cellar/mathgl/2.2.2.1/include \
+	-I ../../ -L /usr/local/Cellar/mathgl/2.2.2.1/lib -lboost_program_options \
 	-lmgl -Wall -Wextra -Wunreachable-code \
 	-Wno-unused-function -Wno-unused-local-typedefs -O3 -DDEBUG -Wno-comment
 
