@@ -37,9 +37,9 @@ namespace models{
 
     // allow only unsigned integral types
     template <> struct __MDAllowed__<size_t>{};
-    template <> struct __MDAllowed__<uint_fast8_t>{};
-    template <> struct __MDAllowed__<uint_fast16_t>{};
-    template <> struct __MDAllowed__<uint_fast32_t>{};
+    // template <> struct __MDAllowed__<uint_fast8_t>{};
+    // template <> struct __MDAllowed__<uint_fast16_t>{};
+    // template <> struct __MDAllowed__<uint_fast32_t>{};
 
 
     template <typename T>
