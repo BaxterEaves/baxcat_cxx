@@ -539,8 +539,17 @@ class Engine(object):
             ax.set_xscale('log')
             ax.set_xlim([min(xs), max(xs)])
 
-    def plot_state(self, state_idx):
-        # raise NotImplementedError()
+    def plot_state(self, state_idx, hl_rows=(), hl_cols=()):
+        if hl_rows != ():
+            if not isinstance(hl_rows, (list, np.ndarray,)):
+                hl_rows = [hl_rows]
+            hl_rows = [self._converters['row2idx'][row] for row in hl_rows]
+
+        if hl_cols != ():
+            if not isinstance(hl_cols, (list, np.ndarray,)):
+                hl_cols = [hl_cols]
+            hl_cols = [self._converters['col2idx'][col] for col in hl_cols]
+
         model = self._models[state_idx]
         init_kwargs = {'dtypes': self._dtypes,
                        'distargs': self._distargs,
@@ -552,4 +561,4 @@ class Engine(object):
         state = BCState(self._data.T, **init_kwargs)
         model_logps = state.get_logps()
         pu.plot_cc_model(self._data, model, model_logps, self._df.index,
-                         self._df.columns)
+                         self._df.columns, hl_rows=hl_rows, hl_cols=hl_cols)

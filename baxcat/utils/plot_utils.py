@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
+import matplotlib.patches as patches
 
 
 def _normalize_data_table(data):
@@ -21,7 +22,8 @@ def _normalize_data_table(data):
 
 # TODO: Add highlight rows and columns
 # TODO: normalize data columns and mark missing data with red
-def plot_cc_model(data, model, model_logps, row_labels, col_labels):
+def plot_cc_model(data, model, model_logps, row_labels, col_labels,
+                  hl_rows=(), hl_cols=()):
     n_cols = len(model['col_assignment'])
     n_rows = len(model['row_assignments'][0])
 
@@ -78,6 +80,21 @@ def plot_cc_model(data, model, model_logps, row_labels, col_labels):
             ax.set_yticks(range(len(rows)))
             yticks = [row_labels[i] for i in rows]
             ax.set_yticklabels(yticks)
+
+            # highlight rows
+            for i, row in enumerate(rows):
+                if row in hl_rows:
+                    rect = patches.Rectangle((-.5, i-.5,), len(cols), 1,
+                                             fill=False, edgecolor='red',
+                                             linewidth=2)
+                    ax.add_patch(rect)
+
+            for i, col in enumerate(cols):
+                if col in hl_cols:
+                    rect = patches.Rectangle((i-.5, -.5,), 1, len(rows),
+                                             fill=False, edgecolor='red',
+                                             linewidth=2)
+                    ax.add_patch(rect)
 
             r_start = r_end + 1
 
