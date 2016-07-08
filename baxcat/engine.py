@@ -83,6 +83,8 @@ class Engine(object):
         guess_n_unique_cutoff = kwargs.get('guess_n_unique_cutoff', 20)
         use_mp = kwargs.get('use_mp', True)
 
+        # TODO: make converter functions for each column based on the dtype and
+        # the metadata.
         output = du.process_dataframe(df, metadata, guess_n_unique_cutoff)
         self._data, self._dtypes, self._distargs, self._converters = output
 
