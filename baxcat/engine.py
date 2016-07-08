@@ -72,11 +72,8 @@ def _run(args):
 # -----------------------------------------------------------------------------
 class Engine(object):
     """ WRITEME """
-    def __init__(self, df=None, metadata=None, **kwargs):
+    def __init__(self, df, metadata=None, **kwargs):
         """ Initialize """
-
-        if df is None:
-            raise ValueError('Give me some data (;-_-)')
 
         self._init_args = {'df': df, 'metadata': metadata, 'kwargs': kwargs}
 
