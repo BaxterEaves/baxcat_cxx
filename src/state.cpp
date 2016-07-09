@@ -990,15 +990,11 @@ void State::replaceSliceData(std::vector<size_t> row_range, std::vector<size_t> 
     }
 }
 
-void State::replaceRowData(size_t row_index, std::vector<double> new_row_data)
+void State::replaceDatum(size_t row_idx, size_t col_idx, double new_datum)
 {
-    size_t column_index = 0;
-    for(auto &f : _features){
-        auto view_index = _column_assignment[column_index];
-        auto cluster_index = _views[view_index].getAssignmentOfRow(row_index);
-        f.get()->replaceValue(row_index, cluster_index, new_row_data[column_index]);
-        ++column_index;
-    }
+    auto view_index = _column_assignment[col_idx];
+    auto cluster_index = _views[view_index].getAssignmentOfRow(row_idx);
+    _features[col_idx].get()->replaceValue(row_idx, cluster_index, new_datum);
 }
 
 

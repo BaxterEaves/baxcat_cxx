@@ -127,7 +127,7 @@ public:
     void replaceSliceData(std::vector<size_t> row_range,
                           std::vector<size_t> col_range,
                           std::vector<std::vector<double>> new_data);
-    void replaceRowData(size_t row_index, std::vector<double> new_row_data);
+    void replaceDatum(size_t row_idx, size_t col_idx, double new_datum);
     void popRow();
 
     // predictive_draw
