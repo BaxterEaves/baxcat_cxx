@@ -36,13 +36,14 @@ class MInER(baxcat.engine.Engine):
         self._logcf = self._converter_logcf(logcf)
 
     def fit(self, n_iter=1, n_samples=10):
-        self._init_bcstates()
         rowlst = [i for i in range(self._n_rows)]
         for _ in range(n_iter):
+            self._init_bcstates()
             random.shuffle(rowlst)
             for row_idx in rowlst:
                 self.resample_row(row_idx, n_samples)
-        self._teardown_bcstates()
+            self._teardown_bcstates()
+            self.run(1)
 
     def resample_row(self, row_idx, n_samples=1):
         assert(self._bcstates is not None)
@@ -50,12 +51,14 @@ class MInER(baxcat.engine.Engine):
         qidxs = [[row_idx, col_idx] for col_idx in self._miner_col_idxs]
 
         x = [self._data[row_idx, c] for c in self._miner_col_idxs]
+        assert(not np.any(np.isnan(x)))
         lp = self._logcf(row_idx, x)
         for _ in range(n_samples):
             # XXX: because the BCStates are acting as a prior, and they are our
             # transition function, they cancel out of the MH ratio. We only
             # need to worry about logcf
             x_pr = self._get_new_data(qidxs)
+            assert(not np.any(np.isnan(x_pr)))
             lp_pr = self._logcf(row_idx, x_pr)
             if log(np.random.rand()) < lp_pr - lp:
                 x = x_pr
@@ -104,6 +107,7 @@ class MInER(baxcat.engine.Engine):
 
     def _update_data(self, idxs, data):
         for (row_idx, col_idx,), x in zip(idxs, data):
+            assert not np.isnan(x)
             self._data[row_idx, col_idx] = x
 
             col = self._converters['idx2col'][col_idx]
