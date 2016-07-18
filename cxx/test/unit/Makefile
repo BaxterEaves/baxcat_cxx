@@ -36,7 +36,7 @@ $(TARGET) : $(OBJFILES)
 	./$(TARGET) --log_level=all
 
 clean:
-	-@$(RM) $(wildcard $(OBJFILES) $(DEPFILES) $(TSTFILES) $(TARGET))
+	-@$(RM) $(wildcard $(OBJFILES) $(TARGET))
 
 %.o: %.cpp Makefile
 	@$(CXX) $(CFLAGS) -MMD -MP -c $< -o $@
