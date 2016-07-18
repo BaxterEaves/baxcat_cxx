@@ -236,7 +236,7 @@ BOOST_AUTO_TEST_CASE(clear_should_set_suffstats_to_zero)
 	BOOST_REQUIRE_EQUAL( suffstats["sum_x"], x+y);
 	BOOST_REQUIRE_EQUAL( suffstats["sum_x_sq"], x*x + y*y);
 
-	model.clear({});
+	model.clear(std::vector<double>());
 
 	suffstats = model.getSuffstatsMap();
 

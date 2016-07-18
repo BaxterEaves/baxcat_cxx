@@ -46,7 +46,8 @@ baxcat::Feature<Continuous, double> Setup(baxcat::PRNG *rng)
     baxcat::DataContainer<double> data({1,2,3,4,5});
     vector<size_t> assignment = {0,0,0,0,0};
 
-    baxcat::Feature<Continuous, double> feature(index, data, {}, assignment, rng);
+    baxcat::Feature<Continuous, double> feature(index, data, vector<double>(),
+                                                assignment, rng);
 
     return feature;
 }
@@ -63,7 +64,8 @@ BOOST_AUTO_TEST_CASE(constructor_should_produce_valid_object){
 
    static baxcat::PRNG *rng = new baxcat::PRNG(10);
 
-   baxcat::Feature<Continuous, double> feature(index, data, {}, assignment, rng);
+   baxcat::Feature<Continuous, double> feature(index, data, vector<double>(),
+                                               assignment, rng);
 
    BOOST_REQUIRE( feature.getIndex() == 0 );
 
@@ -96,7 +98,8 @@ BOOST_AUTO_TEST_CASE(copy_constructor_should_copy_all_members)
 
     static baxcat::PRNG *rng = new baxcat::PRNG(10);
 
-    baxcat::Feature<Continuous, double> feature(index, data, {}, assignment, rng);
+    baxcat::Feature<Continuous, double> feature(index, data, vector<double>(),
+                                                assignment, rng);
     auto feature_copy = baxcat::Feature<Continuous, double>(feature);
 
     auto suffstats = feature.getModelSuffstats();
@@ -127,7 +130,7 @@ BOOST_AUTO_TEST_CASE(basefeature_clone_should_copy_members_for_continuous)
     static baxcat::PRNG *rng = new baxcat::PRNG(10);
 
     std::shared_ptr<baxcat::BaseFeature> feature_ptr(new baxcat::Feature<Continuous, double>
-        (index, data, {}, assignment, rng));
+        (index, data, std::vector<double>(), assignment, rng));
     auto cloned_feature_ptr = feature_ptr.get()->clone();
 
     auto suffstats = feature_ptr.get()->getModelSuffstats();
@@ -476,7 +479,7 @@ BOOST_AUTO_TEST_CASE(pop_row_should_remove_element_singleton)
     baxcat::DataContainer<double> data({1,2,3,4,5});
     vector<size_t> assignment = {0,0,0,0,1};
 
-    baxcat::Feature<Continuous, double> feature(index, data, {}, assignment, rng);
+    baxcat::Feature<Continuous, double> feature(index, data, std::vector<double>(), assignment, rng);
 
     auto data_out = feature.getData();
     auto n_elem = data.size();
@@ -505,7 +508,7 @@ BOOST_AUTO_TEST_CASE(clear_should_remove_clusters)
     baxcat::DataContainer<double> data({1,2,3,4,5});
     vector<size_t> assignment = {0,0,1,1,2};
 
-    baxcat::Feature<Continuous, double> feature(index, data, {}, assignment, rng);
+    baxcat::Feature<Continuous, double> feature(index, data, std::vector<double>(), assignment, rng);
 
     size_t K_start = feature.getNumClusters();
     BOOST_REQUIRE_EQUAL(K_start, 3);
@@ -526,7 +529,7 @@ BOOST_AUTO_TEST_CASE(insert_to_singleton_should_work_with_set_values)
     baxcat::DataContainer<double> data({1,2,3,4,5});
     vector<size_t> assignment = {0,0,1,1,2};
 
-    baxcat::Feature<Continuous, double> feature(index, data, {}, assignment, rng);
+    baxcat::Feature<Continuous, double> feature(index, data, std::vector<double>(), assignment, rng);
 
     feature.clear();
 
@@ -556,7 +559,7 @@ BOOST_AUTO_TEST_CASE(insert_to_singleton_should_work_with_unset_values)
     baxcat::DataContainer<double> data({1,NAN,3,NAN,5});
     vector<size_t> assignment = {0,0,1,1,2};
 
-    baxcat::Feature<Continuous, double> feature(index, data, {}, assignment, rng);
+    baxcat::Feature<Continuous, double> feature(index, data, std::vector<double>(), assignment, rng);
 
     feature.clear();
 
@@ -591,7 +594,7 @@ BOOST_AUTO_TEST_CASE(replace_values_should_change_value_in_container){
     baxcat::DataContainer<double> data({1,2,3,4,5});
     vector<size_t> assignment = {0,0,1,1,2};
 
-    baxcat::Feature<Continuous, double> feature_1(0, data, {}, assignment, rng);
+    baxcat::Feature<Continuous, double> feature_1(0, data, std::vector<double>(), assignment, rng);
 
     feature_1.replaceValue(2, 1, 1.2);
     BOOST_CHECK_CLOSE_FRACTION(1.2, feature_1.getDataAt(2), EPSILON);

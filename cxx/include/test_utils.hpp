@@ -374,14 +374,15 @@ namespace test_utils{
         auto x_orig = sdg.getData();
         
         baxcat::State state(x_orig, datatypes, distargs, 0);
-        state.transition({},{},{},0,num_transitions);
+        state.transition(vector<string>(),vector<size_t>(),vector<size_t>(),0,num_transitions);
 
         // FIXME: when unobserved sample is implemented, use unobserved query
         std::vector<std::vector<size_t>> query(num_rows);
         for(size_t i = 0; i < num_rows; ++i)
             query[i] = {i,0};
 
-        auto x_predict_raw = state.predictiveDraw(query,{},{},num_rows);
+        auto x_predict_raw = state.predictiveDraw(query,vector<vector<size_t>>(),
+                                                  vector<double>(),num_rows);
 
         std::vector<double> x_predict(num_rows);
         for(size_t i = 0; i < num_rows; ++i)
@@ -415,7 +416,8 @@ namespace test_utils{
                 double x = static_cast<double>(k);
                 f_true[k] = exp(sdg.logLikelihood({x}, 0)[0]);
                 counts_expected[k] = f_true[k]*scale;
-                auto fx = state.predictiveLogp({{num_rows, 0}}, {x}, {}, {});
+                auto fx = state.predictiveLogp({{num_rows, 0}}, {x}, vector<vector<size_t>>(),
+                                               vector<double>());
                 f_inferred[k] = exp(fx[0]);
             }
 
@@ -475,7 +477,8 @@ namespace test_utils{
 
             std::vector<double> f_inferred;
             for (auto x : X){
-                auto fx = state.predictiveLogp({{num_rows,0}}, {x}, {}, {});
+                auto fx = state.predictiveLogp({{num_rows,0}}, {x}, vector<vector<size_t>>(),
+                                               vector<double>());
                 f_inferred.push_back( exp(fx[0]) );
             }
 

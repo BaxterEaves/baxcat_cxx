@@ -45,11 +45,11 @@ using baxcat::datatypes::Continuous;
 struct Setup{
     Setup(baxcat::PRNG *rng){
         baxcat::DataContainer<double> X1({-2,-1,0,1,2});
-        f1 = std::shared_ptr<BaseFeature>(new Feature<Continuous, double>(0,X1,{},rng));
+        f1 = std::shared_ptr<BaseFeature>(new Feature<Continuous, double>(0,X1,vector<double>(),rng));
         baxcat::DataContainer<double> X2({-5,-3,0,3,5});
-        f2 = std::shared_ptr<BaseFeature>(new Feature<Continuous, double>(1,X2,{},rng));
+        f2 = std::shared_ptr<BaseFeature>(new Feature<Continuous, double>(1,X2,vector<double>(),rng));
         baxcat::DataContainer<double> X3({-7,-4,0,4,7});
-        f3 = std::shared_ptr<BaseFeature>(new Feature<Continuous, double>(2,X3,{},rng));
+        f3 = std::shared_ptr<BaseFeature>(new Feature<Continuous, double>(2,X3,vector<double>(),rng));
     }
 
     std::shared_ptr<BaseFeature> f1;

@@ -39,11 +39,11 @@ using baxcat::datatypes::Continuous;
 struct Setup{
     Setup(baxcat::PRNG *rng){
         baxcat::DataContainer<double> X1({-2,-1,0,1,2});
-        f1 = std::shared_ptr<BaseFeature>(new Feature<Continuous, double>(0,X1,{},rng));
+        f1 = std::shared_ptr<BaseFeature>(new Feature<Continuous, double>(0,X1,vector<double>(),rng));
         baxcat::DataContainer<double> X2({-5,-3,0,3,5});
-        f2 = std::shared_ptr<BaseFeature>(new Feature<Continuous, double>(1,X2,{},rng));
+        f2 = std::shared_ptr<BaseFeature>(new Feature<Continuous, double>(1,X2,vector<double>(),rng));
         baxcat::DataContainer<double> X3({-7,-4,0,4,7});
-        f3 = std::shared_ptr<BaseFeature>(new Feature<Continuous, double>(2,X3,{},rng));
+        f3 = std::shared_ptr<BaseFeature>(new Feature<Continuous, double>(2,X3,vector<double>(),rng));
 
         features = {f1,f2,f3};
     }
@@ -100,7 +100,7 @@ BOOST_AUTO_TEST_CASE(gibbs_init_should_work){
     static baxcat::PRNG *rng = new baxcat::PRNG(10);
     Setup s(rng);
 
-    View view( s.features, rng, -1, {}, true);
+    View view( s.features, rng, -1, vector<size_t>(), true);
 
     BOOST_CHECK_EQUAL(view.checkPartitions(), 1);
 }

@@ -34,7 +34,7 @@ BOOST_AUTO_TEST_CASE(construct_single_continuous_feature)
 {
     std::vector<std::vector<double>> data_in = {{-2.5, -1, 0, 1, 2.5}};
     std::vector<std::string> datatypes = {"continuous"};
-    std::vector<std::vector<double>> distargs = {{}};
+    std::vector<std::vector<double>> distargs = {std::vector<double>()};
     baxcat::PRNG *rng = new baxcat::PRNG;
 
     std::vector<std::shared_ptr<BaseFeature>> features_out;
@@ -72,7 +72,7 @@ BOOST_AUTO_TEST_CASE(construct_single_feature_of_each_type)
 {
     std::vector<std::vector<double>> data_in = {{-2.5, -1, 0, 1, 2.5},{0, 1, 2, 3}};
     std::vector<std::string> datatypes = {"continuous","categorical"};
-    std::vector<std::vector<double>> distargs = {{},{6}};
+    std::vector<std::vector<double>> distargs = {std::vector<double>(),{6}};
     baxcat::PRNG *rng = new baxcat::PRNG;
 
     std::vector<std::shared_ptr<BaseFeature>> features_out;

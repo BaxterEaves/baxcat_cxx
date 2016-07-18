@@ -18,6 +18,10 @@
 #ifndef baxcat_cxx_constants_guard
 #define baxcat_cxx_constants_guard
 
+#include <map>
+#include <string>
+#include <vector>
+
 namespace baxcat{
 
 // Indicate which transition to do
