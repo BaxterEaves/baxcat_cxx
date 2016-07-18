@@ -105,7 +105,8 @@ void GewekeTester::posteriorSample(size_t num_times, bool do_init, size_t lag)
             printf("\rSample %zu of %zu", i+1, num_times); fflush(stdout);
 
         for( size_t j = 0; j < lag; ++j ){
-            _state.transition(_transition_list, {}, {}, _ct_kernel, 1, _m);
+            _state.transition(_transition_list, vector<size_t>(), vector<size_t>(),
+                              _ct_kernel, 1, _m);
             _state.__geweke_clear();
             _state.__geweke_resampleRows();
         }
