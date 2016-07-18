@@ -1,8 +1,9 @@
-# Compiled Object files
+# Compiled Object files and depfile
 *.slo
 *.lo
 *.o
 *.obj
+*.d
 
 # Precompiled Headers
 *.gch
