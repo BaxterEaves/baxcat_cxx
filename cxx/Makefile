@@ -15,28 +15,36 @@
 # You may contact the mantainers of this software via github
 # <https://github.com/BaxterEaves/baxcat_cxx>.
 
-TARGET = main.test
+SRC := src
+INCLUDE := include
+UNIT := test/unit
+GEWEKE := test/inference/geweke
 
-SRC := ../../src
-INCLUDE := ../../include
-
-SRCFILES := $(shell find $(SRC) -name '*.cpp') $(shell find . -name '*.cpp')
+SRCFILES := $(shell find $(SRC) -name '*.cpp') $(shell find $(UNIT) -name '*test.cpp')
 OBJFILES := $(patsubst %.cpp,%.o,$(SRCFILES))
+DEPFILES := $(patsubst %.cpp,%.d,$(SRCFILES))
 
 WARNINGS := -Wall -Wno-unused-function -Wno-unused-local-typedefs -Wno-comment
 CFLAGS   := -I$(INCLUDE) -std=c++11 -fopenmp -lmgl -DDEBUG $(WARNINGS)
 
 
-.PHONY: all clean todolist
+.PHONY: all clean todolist geweke
 
-all : $(TARGET)
 
-$(TARGET) : $(OBJFILES)
-	@$(CXX) $(CFLAGS) $(OBJFILES) -o $(TARGET)
-	./$(TARGET) --log_level=all
+all : unit
+
+unit : $(OBJFILES)
+	@$(CXX) $(CFLAGS) -MMD -MP -c $(UNIT)/test_main.cpp -o $(UNIT)/test_main.o
+	@$(CXX) $(CFLAGS) $(OBJFILES) $(UNIT)/test_main.o -o unit.test
+	./unit.test --log_level=all
+
+geweke : $(OBJFILES)
+	@$(CXX) $(CFLAGS) -MMD -MP -lboost_program_options -c $(GEWEKE)/geweke_test.cpp -o $(GEWEKE)/geweke_test.o
+	@$(CXX) $(CFLAGS) $(OBJFILES)  $(GEWEKE)/geweke_test.o -o geweke.test
+	./geweke.test
 
 clean:
-	-@$(RM) $(wildcard $(OBJFILES) $(TARGET))
+	-@$(RM) $(wildcard $(OBJFILES) $(DEPFILES) *.test)
 
 %.o: %.cpp Makefile
 	@$(CXX) $(CFLAGS) -MMD -MP -c $< -o $@
