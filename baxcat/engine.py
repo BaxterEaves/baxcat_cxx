@@ -109,7 +109,7 @@ class Engine(object):
         self._models = []
         self._diagnostic_tables = []
 
-    def init_models(self, n_models):
+    def init_models(self, n_models, structureless=False):
         """ Intialize a number of cross-categorization models.
 
         Parameters
@@ -127,6 +127,10 @@ class Engine(object):
             kwarg = {'dtypes': self._dtypes,
                      'distargs': self._distargs,
                      'seed': sd}
+            if structureless:
+                kwarg['Zv'] = [0]*self._n_cols
+                kwarg['Zrcv'] = [[0]*self._n_rows]
+
             args.append((self._data, kwarg,))
 
         res = self._mapper(_initialize, args)
@@ -175,6 +179,10 @@ class Engine(object):
 
         with open(filename, 'wb') as f:
             pkl.dump(dat, f)
+
+    @property
+    def columns(self):
+        return self._col_names
 
     @property
     def models(self):

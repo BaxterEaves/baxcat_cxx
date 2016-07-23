@@ -153,14 +153,15 @@ cdef class BCState:
 
         if all(m == None for m in[col_hypers, Zv, Zrcv]):
             self.statePtr = new State(X, dtl, distargs, seed)
-        elif not any(m == None for m in [col_hypers, Zv, Zrcv]):
+        elif all(m is not None for m in [col_hypers, Zv, Zrcv]):
             col_hypers = [dictstr_enc(hyper) for hyper in col_hypers]
             self.statePtr = new State(X, dtl, distargs, seed, Zv, Zrcv,
                                       state_alpha, view_alphas, col_hypers)
+        elif (col_hypers is None) and (Zv is not None) and (Zrcv is not None):
+            self.statePtr = new State(X, dtl, distargs, seed, Zv, Zrcv,
+                                      state_alpha, view_alphas, [])
         else:
-            raise ValueError('You have specified some, but not all of, Zv, '
-                             'Zrcv, and col_hypers. There is currently no '
-                             'initializer to handle this.')
+            raise ValueError('No initializer for this variable set.')
 
 
     def __dealloc__(self):
@@ -333,7 +334,6 @@ cdef class BCState:
         for _ in range(num_samples):
             # get a sample from the row
             yp = get_random_row(row_index, self.n_cols)
-            print(yp)
             lp = row_predictive_probability(row_index, yp) + logcf(yp)
 
             # calcualte acceptance probability

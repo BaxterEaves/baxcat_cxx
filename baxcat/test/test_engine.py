@@ -55,6 +55,18 @@ def test_engine_init_smoke_metadata(smalldf):
     engine.init_models(1)
 
 
+def test_engine_init_structureless(smalldf):
+    df = pd.DataFrame(np.random.rand(30, 5))
+    engine = Engine(df, no_mp=True)
+    engine.init_models(4, structureless=True)
+
+    assert len(engine._models) == 4
+    assert all([max(m['col_assignment']) == 0 for m in engine._models])
+    assert all([len(m['row_assignments']) == 1 for m in engine._models])
+    for m in engine._models:
+        assert all([max(z) == 0 for z in m['row_assignments']])
+
+
 # test run
 # `````````````````````````````````````````````````````````````````````````````
 def test_engine_run_smoke_default(smalldf):
