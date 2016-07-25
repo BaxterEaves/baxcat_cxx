@@ -297,6 +297,19 @@ class Engine(object):
 
         return mu.probability(x_cnv, self._models, col_idxs)
 
+    def impute(self, col, row=None, min_conf=0., replace=False):
+        """ Predict the values of missing entries """
+        # XXX: Holding off on this because it's not entirely obvious how to
+        # implement an intuitive, and mathematically reasonable, confidence
+        # measure for multimodal continuous data.
+        raise NotImplementedError
+
+    def predict(self, cols, given=None):
+        """ Predict the value of columns given hypothetical values of other
+        columns.
+        """
+        raise NotImplementedError
+
     def suprisal(self, col, rows=None):
         """ Suprisal, or self-information, of the observations in a column.
 
@@ -372,12 +385,6 @@ class Engine(object):
                             model['row_assignments'])
             sim[midx] /= float(n_views)
         return np.mean(sim)
-
-    def impute(self, row, col, min_conf=0.):
-        # XXX: Holding off on this because it's not entirely obvious how to
-        # implement an intuitive, and mathematically reasonable, confidence
-        # measure for multimodal continuous data.
-        raise NotImplementedError
 
     # TODO: allow multiple columns for joint entropy
     def entropy(self, col, n_samples=500):
