@@ -369,3 +369,33 @@ def test_sample_multi_col_multi_mixed(smallengine):
     assert isinstance(x[0, 1], str)
     assert isinstance(x[1, 1], str)
     assert isinstance(x[2, 1], str)
+
+
+# suprisal
+# ````````````````````````````````````````````````````````````````````````````
+def test_suprisal_default(smallengine):
+    s = smallengine.suprisal('x_1')
+
+    assert isinstance(s, pd.DataFrame)
+    assert s.shape == (30, 4,)
+
+    assert 'column' in s.columns
+    assert 'row' in s.columns
+    assert 'value' in s.columns
+    assert 'surprisal' in s.columns
+
+
+def test_suprisal_specify_rows(smallengine):
+    s = smallengine.suprisal('x_1', rows=[2, 5, 11])
+
+    assert isinstance(s, pd.DataFrame)
+    assert s.shape == (3, 4,)
+
+    assert 2 in s['row'].values
+    assert 5 in s['row'].values
+    assert 11 in s['row'].values
+
+    assert 'column' in s.columns
+    assert 'row' in s.columns
+    assert 'value' in s.columns
+    assert 'surprisal' in s.columns

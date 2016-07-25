@@ -227,6 +227,49 @@ def sample(models, col_idxs, given=None, n=1):
     return samples
 
 
+def suprisal(col_idx, queries, models):
+    """ The suprisal, or self-information, of a set of observations
+
+    Parameters
+    ----------
+    col_idx : int
+        column index
+    queries : list(tuple(int, float,))
+        list of (row_index, value,) tuples
+    models : list
+        list of baxcat models
+
+    Returns
+    -------
+    s : numpy.ndarray(float)
+       The suprisal of each observation in queries.
+
+
+    Example
+    -------
+    >>> col_idx = 1
+    >>> queries = [(0, 1.,), (2, .5,)]
+    >>> models = engine.models
+    >>> s = suprisal(col_idx, queries, models)
+    """
+
+    f = PROBFUNC[models[0]['dtypes'][col_idx]]
+    n_models = len(models)
+
+    s = np.zeros(len(queries))
+    for i, (row_idx, x,) in enumerate(queries):
+        s_row = np.zeros(n_models)
+        for j, model in enumerate(models):
+            view_idx = model['col_assignment'][col_idx]
+            component_idx = model['row_assignments'][view_idx][row_idx]
+
+            s_row[j] = f(x, model, col_idx, component_idx)
+
+        s[i] = -logsumexp(s_row) + log(n_models)
+
+    return s
+
+
 def probability(x, models, col_idxs, given=None):
     """ The average probability of x under the models
 

@@ -297,6 +297,51 @@ class Engine(object):
 
         return mu.probability(x_cnv, self._models, col_idxs)
 
+    def suprisal(self, col, rows=None):
+        """ Suprisal, or self-information, of the observations in a column.
+
+        Ignores missing values.
+
+        Parameters
+        ----------
+        col : index
+            The column index
+        rows : list(index)
+            A list of rows for which to compute suprisal. If not defined
+            (default), computes for all rows.
+
+        Returns
+        -------
+        pandas.DataFrame
+            colums for 'column', 'row', 'value', and 'suprisal'
+        """
+        col_idx = self._converters['col2idx'][col]
+        if rows is None:
+            row_idxs = [i for i in range(self._n_rows)]
+        else:
+            row_idxs = [self._converters['row2idx'][row] for row in rows]
+
+        vals = []
+        rows = []
+        queries = []
+        for row_idx in row_idxs:
+            row = self._converters['idx2row'][row_idx]
+            rows.append(row)
+            vals.append(self._df[col][row])
+            x = self._data[row_idx, col_idx]
+
+            # ignore missing values
+            if not np.isnan(x):
+                queries.append((row_idx, x,))
+
+        s = mu.suprisal(col_idx, queries, self._models)
+        data = []
+        for row, val, si in zip(rows, vals, s):
+            datum = {'column': col, 'row': row, 'value': val, 'surprisal': si}
+            data.append(datum)
+
+        return pd.DataFrame(data)
+
     def dependence_probability(self, col_a, col_b):
         """ The probabiilty that a dependence exists between a and b. """
         depprob = 0.
