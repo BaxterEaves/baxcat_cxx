@@ -339,21 +339,20 @@ class Engine(object):
         queries = []
         for row_idx in row_idxs:
             row = self._converters['idx2row'][row_idx]
-            rows.append(row)
-            vals.append(self._df[col][row])
             x = self._data[row_idx, col_idx]
 
             # ignore missing values
             if not np.isnan(x):
+                rows.append(row)
+                vals.append(self._df[col][row])
                 queries.append((row_idx, x,))
 
         s = mu.suprisal(col_idx, queries, self._models)
         data = []
-        for row, val, si in zip(rows, vals, s):
-            datum = {'column': col, 'row': row, 'value': val, 'surprisal': si}
-            data.append(datum)
+        for val, si in zip(vals, s):
+            data.append({'surprisal': si, col: val})
 
-        return pd.DataFrame(data)
+        return pd.DataFrame(data, index=rows)
 
     def dependence_probability(self, col_a, col_b):
         """ The probabiilty that a dependence exists between a and b. """

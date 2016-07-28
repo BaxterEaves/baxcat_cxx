@@ -377,11 +377,9 @@ def test_suprisal_default(smallengine):
     s = smallengine.suprisal('x_1')
 
     assert isinstance(s, pd.DataFrame)
-    assert s.shape == (30, 4,)
+    assert s.shape == (30, 2,)
 
-    assert 'column' in s.columns
-    assert 'row' in s.columns
-    assert 'value' in s.columns
+    assert 'x_1' in s.columns
     assert 'surprisal' in s.columns
 
 
@@ -389,13 +387,11 @@ def test_suprisal_specify_rows(smallengine):
     s = smallengine.suprisal('x_1', rows=[2, 5, 11])
 
     assert isinstance(s, pd.DataFrame)
-    assert s.shape == (3, 4,)
+    assert s.shape == (3, 2,)
 
-    assert 2 in s['row'].values
-    assert 5 in s['row'].values
-    assert 11 in s['row'].values
+    assert 2 in s.index
+    assert 5 in s.index
+    assert 11 in s.index
 
-    assert 'column' in s.columns
-    assert 'row' in s.columns
-    assert 'value' in s.columns
+    assert 'x_1' in s.columns
     assert 'surprisal' in s.columns
