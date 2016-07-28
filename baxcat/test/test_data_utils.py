@@ -9,7 +9,7 @@ from baxcat.utils import data_utils as du
 @pytest.fixture()
 def smalldf():
 
-    s1 = pd.Series(np.random.rand(30))
+    s1 = pd.Series(np.array(np.random.rand(30)*2**31, dtype=int))
     s2 = pd.Series([0.0, 1.0]*15)
     s3 = pd.Series(['one', 'two', 'three']*10)
     s4 = pd.Series(np.random.rand(30))
