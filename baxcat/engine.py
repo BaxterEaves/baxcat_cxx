@@ -46,15 +46,19 @@ def _run(args):
     init_kwargs = args[2]
     trans_kwargs = args[3]
 
+    # create copy of trans_kwargs so we don't mutate
+    trans_kwargs = dict(trans_kwargs)
     n_iter = trans_kwargs['N']
     if checkpoint is None:
         checkpoint = n_iter
+        n_sweeps = 1
     else:
         trans_kwargs['N'] = checkpoint
+        n_sweeps = int(n_iter/checkpoint)
 
     diagnostics = []
     state = BCState(data.T, **init_kwargs)  # transpose dat to col-major
-    for i in range(int(n_iter/checkpoint)):
+    for i in range(n_sweeps):
         t_start = time.time()
         state.transition(**trans_kwargs)
         t_iter = time.time() - t_start
@@ -233,7 +237,8 @@ class Engine(object):
             model_idxs = [i for i in range(self._n_models)]
 
         args = []
-        for idx, model in enumerate(self._models):
+        for idx in model_idxs:
+            model = self._models[idx]
             sd = np.random.randint(2**31-1)
             init_kwarg = {'dtypes': self._dtypes,
                           'distargs': self._distargs,
