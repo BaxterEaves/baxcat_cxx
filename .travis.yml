@@ -9,7 +9,7 @@ before_install:
     - sudo apt-get install -qq libboost-all-dev
 
 install:
-    - pip install -q cython, numpy, scipy, pandas, pytest, freeze
+    - pip install -q cython numpy scipy pandas pytest freeze
     - pip install -q matplotlib seaborn
     - python setup.py -q install
 
