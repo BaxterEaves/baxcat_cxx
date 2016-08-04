@@ -464,7 +464,8 @@ class Engine(object):
 
         models = []
         for model in self._models:
-            if model['col_assignment'][idx_a] == model['col_assignment'][idx_b]:
+            if model['col_assignment'][idx_a] == \
+                    model['col_assignment'][idx_b]:
                 models.append(model)
 
         if len(models) == 0:
@@ -561,7 +562,8 @@ class Engine(object):
         else:
             raise ValueError("%s is an invalid function." % (func,))
 
-        df = pd.DataFrame(mat, index=self._df.columns, columns=self._df.columns)
+        df = pd.DataFrame(mat, index=self._df.columns,
+                          columns=self._df.columns)
 
         return df
 
