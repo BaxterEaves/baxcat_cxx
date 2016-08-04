@@ -27,9 +27,8 @@ To run the python unit tests:
 ## Continuous
 Uses Normal likelihood with Normal-Gamma prior.
 
-# Categorical
+## Categorical
 Uses Categorical likelihood with symmetric Dirichlet prior.
 
 ## License
-
 Licensed under the GNU General Public License, version 3. See `LICENSE.txt` for details.
