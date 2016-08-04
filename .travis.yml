@@ -9,8 +9,9 @@ before_install:
     - sudo apt-get install -qq libboost-all-dev
 
 install:
-    - pip install -q cython numpy scipy pandas pytest freeze
-    - pip install -q matplotlib seaborn
+    - pip install -q cython numpy pytest
+    - pip install scipy
+    - pip install -q pandas freeze matplotlib seaborn
     - python setup.py -q install
 
 script: py.test baxcat/
