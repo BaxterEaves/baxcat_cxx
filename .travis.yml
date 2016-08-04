@@ -1,0 +1,16 @@
+language:
+    python
+
+python:
+    - "3.4"
+
+before_install:
+    - sudo apt-get update -qq
+    - sudo apt-get install -qq libboost-all-dev
+
+install:
+    - pip install -q cython, numpy, scipy, pandas, pytest, freeze
+    - pip install -q matplotlib seaborn
+    - python setup.py -q install
+
+script: py.test baxcat/
