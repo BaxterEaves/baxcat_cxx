@@ -519,14 +519,16 @@ class Engine(object):
         return h_c
 
     # TODO: offload to external fuction that can be parallelized
-    def pairwise_func(self, func, n_samples=500):
+    def pairwise_func(self, func, cols=None, n_samples=500):
         """ Do a function over all paris of columns/rows """
-        mat = np.eye(self._n_cols)
         if func == 'dependence_probability':
-            for i in range(self._n_cols):
-                for j in range(i+1, self._n_cols):
-                    col_a = self._converters['idx2col'][i]
-                    col_b = self._converters['idx2col'][j]
+            if cols is None:
+                cols = self._col_names
+
+            mat = np.eye(len(cols))
+            for i, col_a in enumerate(cols):
+                for j in range(i+1, len(cols)):
+                    col_b = cols[j]
                     depprob = self.dependence_probability(col_a, col_b)
                     mat[i, j] = depprob
                     mat[j, i] = depprob
@@ -536,10 +538,14 @@ class Engine(object):
             else:
                 linfoot = False
 
-            for i in range(self._n_cols):
-                for j in range(i+1, self._n_cols):
-                    col_a = self._converters['idx2col'][i]
-                    col_b = self._converters['idx2col'][j]
+            if cols is None:
+                cols = self._col_names
+
+            mat = np.eye(len(cols))
+            for i, col_a in enumerate(cols):
+                for j in range(i+1, len(cols)):
+                    col_b = cols[j]
+
                     if i == j:
                         mi = 1.
                     else:
@@ -548,11 +554,12 @@ class Engine(object):
                     mat[i, j] = mi
                     mat[j, i] = mi
         elif func == 'conditional_entropy':
-            mat = np.eye(self._n_cols)
-            for i in range(self._n_cols):
-                for j in range(self._n_cols):
-                    col_a = self._converters['idx2col'][i]
-                    col_b = self._converters['idx2col'][j]
+            if cols is None:
+                cols = self._col_names
+
+            mat = np.eye(len(cols))
+            for i, col_a in enumerate(cols):
+                for j, col_b in enumerate(cols):
                     if i == j:
                         h = self.entropy(col_a, n_samples)
                     else:
@@ -562,15 +569,34 @@ class Engine(object):
         else:
             raise ValueError("%s is an invalid function." % (func,))
 
-        df = pd.DataFrame(mat, index=self._df.columns,
-                          columns=self._df.columns)
+        df = pd.DataFrame(mat, index=cols, columns=cols)
 
         return df
 
-    def heatmap(self, func, n_samples=100, plot_kwargs=None):
-        """ Heatmap of a pairwise function """
+    def heatmap(self, func, n_samples=100, ignore_cols=None, include_cols=None,
+                plot_kwargs=None):
+        """ Heatmap of a pairwise function
+
+        Prameters
+        ---------
+        func : str
+            'dependence_probability', 'linfoot', 'mutual_information', or
+            'conditional_entropy'.
+        n_samples : int
+            the number of samples to estimate information theoretic quantities.
+        ignore_cols : list(column names)
+            A list of column names not to include in the output.
+        include_cols : list(column names)
+            A list of columns to include in the output.
+        """
         if plot_kwargs is None:
             plot_kwargs = {}
+
+        cols = None
+        if ignore_cols is not None:
+            cols = [col for col in self._col_names if col not in ignore_cols]
+        elif include_cols is not None:
+            cols = include_cols
 
         if func == 'dependence_probability':
             plot_kwargs['vmin'] = plot_kwargs.get('vmin', 0.)
@@ -579,7 +605,7 @@ class Engine(object):
         elif func in ['mutual_information', 'linfoot']:
             plot_kwargs['cmap'] = plot_kwargs.get('cmap', 'gray_r')
 
-        df = self.pairwise_func(func, n_samples=n_samples)
+        df = self.pairwise_func(func, cols=cols, n_samples=n_samples)
 
         g = sns.clustermap(df, **plot_kwargs)
         plt.setp(g.ax_heatmap.get_yticklabels(), rotation=0)
