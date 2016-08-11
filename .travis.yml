@@ -1,6 +1,6 @@
 # http://conda.pydata.org/docs/travis.html
 language: python
-dist: trusty 
+dist: trusty
 
 python:
     - "3.4"
@@ -21,8 +21,9 @@ install:
     - conda config --set always_yes yes --set changeps1 no
     - conda update -q conda
     - conda info -a
-    - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION cython numpy scipy matplotlib seaborn pytest pandas freeze
+    - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION cython numpy scipy matplotlib seaborn pytest pandas
     - source activate test-environment
+    - pip install freeze
     - python setup.py install
 
 script: py.test baxcat/
