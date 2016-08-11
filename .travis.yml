@@ -24,6 +24,8 @@ install:
     - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION cython numpy scipy matplotlib seaborn pytest pandas
     - source activate test-environment
     - pip install freeze
-    - python setup.py install
+    - python setup.py develop
+    - export PYTHONPATH=`pwd`/baxcat_cxx:$PYTHONPATH
+
 
 script: py.test baxcat/
