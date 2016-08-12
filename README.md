@@ -1,4 +1,7 @@
 # baxcat_cxx
+
+![Travis-CI status](https://travis-ci.org/BaxterEaves/baxcat_cxx.svg?branch=master)
+
 A C++/python implementation of cross-cutting categorization.
 
 # Installation
