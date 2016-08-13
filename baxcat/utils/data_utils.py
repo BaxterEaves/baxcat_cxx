@@ -167,7 +167,7 @@ def guess_dtypes(df, n_unique_cutoff=20, metadata=None):
         else:
             n_unique = len(df[col].unique())
             dtype = str(df[col].dtype)
-            if 'float' in dtype and n_unique > n_unique_cutoff:
+            if np.issubdtype(dtype, np.number) and n_unique > n_unique_cutoff:
                 dtype = 'continuous'
             else:
                 dtype = 'categorical'
