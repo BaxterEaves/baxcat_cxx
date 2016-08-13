@@ -6,8 +6,9 @@ from Cython.Distutils import build_ext
 import numpy as np
 import os
 
-cmdclass = dict()
-cmdclass['build_ext'] = build_ext
+
+requirements = ['setuptools>=18.0', 'cython', 'numpy', 'scipy', 'pandas',
+                'matplotlib', 'seaborn', 'pytest', 'freeze']
 
 SRC = os.path.join('cxx', 'src')
 INC = os.path.join('cxx', 'include')
@@ -37,8 +38,6 @@ extensions = [
               include_dirs=[INC, np.get_include()],
               language="c++")]
 
-extensions = cythonize(extensions)
-
 setup(
     name='baxcat',
     version='0.0.1',
@@ -46,6 +45,7 @@ setup(
     url='TBA',
     long_description='TBA.',
     package_dir={'baxcat': 'baxcat/'},
-    ext_modules=extensions,
-    cmdclass=cmdclass
+    setup_requires=requirements,
+    ext_modules=cythonize(extensions),
+    cmdclass={'build_ext': build_ext}
 )

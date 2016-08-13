@@ -1,4 +1,7 @@
 # baxcat_cxx
+
+![Travis-CI status](https://travis-ci.org/BaxterEaves/baxcat_cxx.svg?branch=master)
+
 A C++/python implementation of cross-cutting categorization.
 
 # Installation
@@ -27,9 +30,8 @@ To run the python unit tests:
 ## Continuous
 Uses Normal likelihood with Normal-Gamma prior.
 
-# Categorical
+## Categorical
 Uses Categorical likelihood with symmetric Dirichlet prior.
 
 ## License
-
 Licensed under the GNU General Public License, version 3. See `LICENSE.txt` for details.

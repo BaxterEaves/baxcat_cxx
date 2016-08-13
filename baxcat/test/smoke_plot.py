@@ -22,9 +22,8 @@ def smalldf():
     return pd.concat([s1, s2, s3, s4], axis=1)
 
 
-# heatmap
-# `````````````````````````````````````````````````````````````````````````````
-def test_heatmap_dependence_probability():
+@pytest.fixture
+def engine():
     x = np.random.randn(30)
     s1 = pd.Series(x)
     s2 = pd.Series(x + 1.0)
@@ -34,11 +33,34 @@ def test_heatmap_dependence_probability():
     df.columns = ['c_%d' % i for i in range(12)]
 
     engine = Engine(df)
-    engine.init_models(10)
+    engine.init_models(8)
     engine.run(20)
 
+    return engine
+
+
+# --- heatmap
+def test_heatmap_dependence_probability(engine):
     engine.heatmap('dependence_probability')
 
     if not os.path.exists(DIR):
         os.makedirs(DIR)
     plt.savefig(os.path.join(DIR, 'heatmap-dp.png'), dpi=300)
+
+
+def test_heatmap_dependence_probability_include_cols(engine):
+    engine.heatmap('dependence_probability',
+                   include_cols=['c_1', 'c_2', 'c_7'])
+
+    if not os.path.exists(DIR):
+        os.makedirs(DIR)
+    plt.savefig(os.path.join(DIR, 'heatmap-dp-include-1-2-7.png'), dpi=300)
+
+
+def test_heatmap_dependence_probability_ignore_cols(engine):
+    engine.heatmap('dependence_probability',
+                   ignore_cols=['c_1', 'c_2', 'c_7'])
+
+    if not os.path.exists(DIR):
+        os.makedirs(DIR)
+    plt.savefig(os.path.join(DIR, 'heatmap-dp-ignore-1-2-7.png'), dpi=300)
