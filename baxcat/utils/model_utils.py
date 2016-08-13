@@ -6,6 +6,7 @@ from baxcat.dist import csd
 from baxcat.misc import pflip
 
 from scipy.misc import logsumexp
+from scipy import optimize
 from math import log
 
 
@@ -326,6 +327,48 @@ def probability(x, models, col_idxs, given=None):
         return logps[0]
     else:
         return logps
+
+
+def impute(row_idx, col_idx, models, bounds):
+    """ Impute (choose the max logp value) ad return confidence
+
+    Parameters
+    ----------
+    row_idx : int
+        The row index to impute
+    col_idx : int
+        The column index to impute
+    models : dict
+        The baxcat models
+    relvals : list(tuple(columns index, value))
+        List of column, value tuples that specify the values of all the columns
+        dependent with `col_idx` in `row_idx`.
+    bounds : list(float) or tuple(float, float)
+        A list of values to evaluate (if `col_idx` is categorical) or the lower
+        and upper bound for optimization (if `col_idx` is continuous).
+
+    Returns
+    -------
+    y : float
+        The imputed value
+    conf : float
+        The confidence
+    """
+    dtype = models[0]['dtypes'][col_idx]
+    if dtype == 'categorical':
+        queries = [(row_idx, val,) for val in bounds]
+        s = suprisal(col_idx, queries, models)
+        min_idx = np.argmin(s)
+        y = queries[min_idx][1]
+    else:
+        # XXX: Note that fmin function finds the local maxima
+        def func(x):
+            return suprisal(col_idx, [(row_idx, float(x),)], models)
+        resbrute = optimize.brute(func, (bounds,), finish=optimize.fmin)
+        y = resbrute[0]
+
+    # FIXME: Confidence not implemeted
+    return y, float('NaN')
 
 
 def joint_entropy(models, col_idxs, n_samples=1000):

@@ -275,6 +275,53 @@ class Engine(object):
         else:
             return x
 
+    def impute(self, col, rows=None):
+        """ Infer the most likely value
+
+        Note that confidence is not currently implemented and, for the time
+        being, will always be `NaN`.
+
+        Parameters
+        ----------
+        col : column name
+            The column name to impute
+        rows : list(row name), optional
+            A list of the rows to impute. If None (default), all missing values
+            will be imputed.
+
+        Returns
+        -------
+        impdata : pandas.DataFrame
+            Row-indexed DataFrame with a columns for the imputed values and
+            the confidence (`conf`) in those values.
+        """
+
+        if rows is None:
+            # Get row indices where col is null
+            rows = self._df[pd.isnull(self._df[col])].index
+
+        row_idxs = [self._converters['row2idx'][row] for row in rows]
+        col_idx = self._converters['col2idx'][col]
+
+        # FIXME: In the future we'll want a better way to determine
+        # optimization bounds for different dtypes. If statements are gross.
+        dtype = self._dtypes[col_idx]
+        if dtype == 'continuous':
+            lower = np.min(self._data[:, col_idx])
+            upper = np.max(self._data[:, col_idx])
+            bounds = (lower, upper,)
+        elif dtype == 'categorical':
+            bounds = self._converters['row2idx'][row].values()
+        else:
+            raise ValueError('Unsupported dtype: {}'.format(dtype))
+
+        impdata = []
+        for row_idx in row_idxs:
+            x, conf = mu.impute(row_idx, col_idx, self._models, bounds)
+            impdata.append({col: x, 'conf': conf})
+
+        return pd.DataFrame(impdata, index=rows)
+
     def probability(self, x, cols, given=None):
         """ Predictive probability of x_1, ..., x_n given y_1, ..., y_n
 
@@ -301,13 +348,6 @@ class Engine(object):
             given = du.convert_given(given, self._dtypes, self._converters)
 
         return mu.probability(x_cnv, self._models, col_idxs)
-
-    def impute(self, col, row=None, min_conf=0., replace=False):
-        """ Predict the values of missing entries """
-        # XXX: Holding off on this because it's not entirely obvious how to
-        # implement an intuitive, and mathematically reasonable, confidence
-        # measure for multimodal continuous data.
-        raise NotImplementedError
 
     def predict(self, cols, given=None):
         """ Predict the value of columns given hypothetical values of other
