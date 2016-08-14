@@ -482,3 +482,41 @@ def test_suprisal_specify_rows(gendf):
 
     assert 'x_1' in s.columns
     assert 'surprisal' in s.columns
+
+
+# impute
+# ````````````````````````````````````````````````````````````````````````````
+def test_impute_continuous_default():
+    engine = gen_engine(smalldf_mssg())
+
+    impdata = engine.impute('x_1')
+
+    assert isinstance(impdata, pd.DataFrame)
+    assert impdata.shape == (1, 2,)  # only one missing value
+
+
+def test_impute_continuous_select_rows():
+    engine = gen_engine(smalldf_mssg())
+
+    impdata = engine.impute('x_1', rows=[1, 2, 3])
+
+    assert isinstance(impdata, pd.DataFrame)
+    assert impdata.shape == (3, 2,)
+
+
+def test_impute_categorical():
+    engine = gen_engine(smalldf_mssg())
+
+    impdata = engine.impute('x_2')
+
+    assert isinstance(impdata, pd.DataFrame)
+    assert impdata.shape == (1, 2,)  # only one missing value
+
+
+def test_impute_categorical_select_rows():
+    engine = gen_engine(smalldf_mssg())
+
+    impdata = engine.impute('x_2', rows=[1, 2, 3])
+
+    assert isinstance(impdata, pd.DataFrame)
+    assert impdata.shape == (3, 2,)

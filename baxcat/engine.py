@@ -311,13 +311,15 @@ class Engine(object):
             upper = np.max(self._data[:, col_idx])
             bounds = (lower, upper,)
         elif dtype == 'categorical':
-            bounds = self._converters['row2idx'][row].values()
+            bounds = self._converters['valmaps'][col]['val2idx'].values()
         else:
             raise ValueError('Unsupported dtype: {}'.format(dtype))
 
         impdata = []
         for row_idx in row_idxs:
             x, conf = mu.impute(row_idx, col_idx, self._models, bounds)
+            if dtype == 'categorical':
+                x = self._converters['valmaps'][col]['idx2val'][x]
             impdata.append({col: x, 'conf': conf})
 
         return pd.DataFrame(impdata, index=rows)

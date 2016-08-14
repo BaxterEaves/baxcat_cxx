@@ -355,7 +355,7 @@ def impute(row_idx, col_idx, models, bounds):
         The confidence
     """
     dtype = models[0]['dtypes'][col_idx]
-    if dtype == 'categorical':
+    if dtype == b'categorical':
         queries = [(row_idx, val,) for val in bounds]
         s = suprisal(col_idx, queries, models)
         min_idx = np.argmin(s)
