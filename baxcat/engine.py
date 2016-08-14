@@ -1,19 +1,21 @@
+""" The main interface to `baxcat_cxx`
+"""
+
+import random
+import time
+import copy
+from math import exp
+from multiprocessing.pool import Pool
 
 from baxcat.state import BCState
 from baxcat.utils import data_utils as du
 from baxcat.utils import model_utils as mu
 from baxcat.utils import plot_utils as pu
 
-from math import exp
-from multiprocessing.pool import Pool
-
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import numpy as np
-import random
-import time
-import copy
 
 sns.set_style("white")
 
@@ -31,13 +33,13 @@ def _initialize(args):
     t_start = time.time()
     state = BCState(data.T, **kwargs)  # transpose data to col-major
 
-    md = state.get_metadata()
+    metadata = state.get_metadata()
     diagnostics = {
         'log_score': state.log_score(),
         'iters': 0,
         'time': time.time() - t_start}
 
-    return md, [diagnostics]
+    return metadata, [diagnostics]
 
 
 def _run(args):
@@ -58,7 +60,7 @@ def _run(args):
 
     diagnostics = []
     state = BCState(data.T, **init_kwargs)  # transpose dat to col-major
-    for i in range(n_sweeps):
+    for _ in range(n_sweeps):
         t_start = time.time()
         state.transition(**trans_kwargs)
         t_iter = time.time() - t_start
@@ -69,15 +71,52 @@ def _run(args):
             'time': t_iter}
         diagnostics.append(diagnostic)
 
-    md = state.get_metadata()
-    return md, diagnostics
+    metadata = state.get_metadata()
+    return metadata, diagnostics
 
 
-# -----------------------------------------------------------------------------
+# ---
 class Engine(object):
-    """ WRITEME """
+    """
+    The inference engine interface.
+
+    Attributes
+    ----------
+    columns : list(index)
+        A list of columns names
+    models : metadata
+        A list of metadata objects that store all the relvant information for
+        a set of cross-categorization states.
+    """
+
     def __init__(self, df=None, metadata=None, **kwargs):
-        """ Initialize """
+        """
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            The data for inference.
+        metadata : dict
+            Column metadata to speed processing. Providing more data in
+            `metadata` speeds up the processing of `df` by obviating the need
+            to infer data types and create value maps.
+        seed : integer
+            Positive integer seed for the random number generators.
+        use_mp : bool, optional
+            If True (default), model-parallel tasts are run in parallel.
+
+        Example
+        -------
+        Initialize with partial metadata
+        >>> data = pd.read_csv('example/zoo.csv', index_col=0)
+        >>> metadata = {
+        ...     'stripes': {
+        ...         'dtype': 'categorical',
+        ...         'values': [0, 1]
+        ...     }
+        ... }
+        >>> engine = Engine(df, metadata)
+
+        """
 
         if df is None:
             raise ValueError('Give me some data (;-_-)')
@@ -111,6 +150,7 @@ class Engine(object):
             self._mapper = lambda func, args: [func(arg) for arg in args]
 
         self._models = []
+        self._n_models = 0
         self._diagnostic_tables = []
 
     def init_models(self, n_models, structureless=False):
@@ -120,8 +160,15 @@ class Engine(object):
         ----------
         n_models : int
             The number of models to initialize.
+
+        Other parameters
+        ----------------
+        structureless : bool, optional
+            If True, initalize each cross-categorization state to have one
+            view and one category (default is False). This is primiarily for
+            debugging and visualization, and negatively affects inference.
         """
-        if len(self._models) != 0:
+        if self._n_models != 0:
             raise NotImplementedError('Cannot add more models.')
 
         self._n_models = n_models
@@ -193,6 +240,32 @@ class Engine(object):
         return copy.deepcopy(self._models)
 
     def diagnostics(self, model_idxs=None):
+        """ Get diagnostics for each model.
+
+        There will be no diagnostics if `checkpoint` is not specified in
+        `Engine.run`.
+
+        Parameters
+        ----------
+        model_idxs : list(int)
+            List of model integer indices for which to collect diagnostics.
+
+        Returns
+        -------
+        list(pandas.DataFrame)
+            A diagnostics table for each model. Each table has columns
+            `log_score` (log score of the model), `iters` (number of inferece
+            iterations since the last checkpoint), and `time` (the number of
+            seconds ellapsed since the last checkpoint).
+
+        Example
+        -------
+        >>> df = pd.read_csv('examples/zoo.csv')
+        >>> engine = Engine(df, seed=1337)
+        >>> engine.init_models(2)
+        >>> engine.run(10, checpoint=2)
+        >>> engine.diagnostics([1])
+        """
         if model_idxs is None:
             model_idxs = [i for i in range(self._n_models)]
         return [pd.DataFrame(self._diagnostic_tables[m]) for m in model_idxs]
@@ -256,8 +329,24 @@ class Engine(object):
             self._diagnostic_tables[idx].extend(diagnostics)
 
     def sample(self, cols, given=None, n=1):
-        """ Draw samples from cols """
-        # TODO: make sure that given goes not caontain columns rom cols
+        """ Draw samples from cols
+
+        Parameters
+        ----------
+        cols : list(index)
+            List of columns from which to jointly draw.
+        given : list(tuple(int, value))
+            List of column-value tuples that specify conditions
+        n : int
+            The number of samples to draw
+
+        Example
+        -------
+        Draw whether an animal is fast and agile given that it is bulbous.
+        >>> engine = Engine.load('examples/zoo.bcmodels')
+        >>> engine.sample(['fast', 'agile'], given=[('bulbous': 1]))
+        """
+        # FIXME: make sure that given does not contain columns from cols
         if given is not None:
             given = du.convert_given(given, self._dtypes, self._converters)
 
@@ -340,6 +429,14 @@ class Engine(object):
         Returns
         -------
         logps : numpy.ndarray
+
+        Example
+        -------
+        The probability that an animal is fast and agile given that it is
+        bulbous.
+        >>> engine = Engine.load('examples/zoo.bcmodels')
+        >>> engine.probability(np.array([[1, 1]]), ['fast', 'agile'],
+        ...                    given=[('bulbous': 1]))
         """
         # TODO: make sure that given goes not caontain columns rom cols
         x = du.format_query_data(x)
@@ -415,8 +512,11 @@ class Engine(object):
 
         return depprob
 
-    def row_similarity(self, row_a, row_b):
-        """ The similarity between two rows  in terms of their partitions. """
+    def row_similarity(self, row_a, row_b, wrt=None):
+        """ The similarity between two rows in terms of their partitions. """
+        if wrt is not None:
+            raise NotImplementedError('With respect to (wrt) not implemented.')
+
         if row_a == row_b:
             # XXX: we will assume that the user meant to do this
             return 1.0
@@ -561,7 +661,22 @@ class Engine(object):
 
     # TODO: offload to external fuction that can be parallelized
     def pairwise_func(self, func, cols=None, n_samples=500):
-        """ Do a function over all paris of columns/rows """
+        """ Do a function over all paris of columns/rows
+
+        Currently only column functions are implemented.
+
+        Parameters
+        ----------
+        func : str
+            `dependence_probability`, `mutual_information`, `linfoot`,
+            or `conditional_entropy`
+        cols : list(column index), optional
+            List of columns. If None (default), the function is run on all
+            pairs of columns.
+        n_samples : int, optional
+            The number of samples for Monte Carlo approximation when
+            applicable.
+        """
         if func == 'dependence_probability':
             if cols is None:
                 cols = self._col_names
@@ -655,7 +770,7 @@ class Engine(object):
     def convergence_plot(self, ax=None, log_x_axis=True, min_time=0.):
         """ Plot the log score of each model as a function of time. """
         if ax is None:
-                ax = plt.gca()
+            ax = plt.gca()
 
         xs = []
         for table in self.diagnostics():
@@ -674,6 +789,14 @@ class Engine(object):
             ax.set_xlim([min(xs), max(xs)])
 
     def plot_state(self, state_idx, hl_rows=(), hl_cols=()):
+        """ Visualize a cross-categorization state.
+
+        .. note :: Work in progress
+            This function is currently only suited to small data tables. There
+            are problems with the row labels overlapping. There are problems
+            with singleton views and categories having negative size or
+            appearing as lines. Lots to fix.
+        """
         if hl_rows != ():
             if not isinstance(hl_rows, (list, np.ndarray,)):
                 hl_rows = [hl_rows]

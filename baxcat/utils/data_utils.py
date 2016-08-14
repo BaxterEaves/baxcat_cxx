@@ -1,8 +1,5 @@
+""" Various utilities to process data for baxcat.
 
-import numpy as np
-import pandas as pd
-
-"""
 Data Format
 -----------
 Pass data as a pandas DataFrame.
@@ -20,6 +17,9 @@ Example
         'dtype': 'categorical',
         'values': ('disagree', 'agree', 'not sure',)}}
 """
+
+import numpy as np
+import pandas as pd
 
 
 def convert_given(given, dtypes, converters):
