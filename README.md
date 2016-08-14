@@ -33,5 +33,24 @@ Uses Normal likelihood with Normal-Gamma prior.
 ## Categorical
 Uses Categorical likelihood with symmetric Dirichlet prior.
 
-## License
+# Hacking
+
+Some things I need to do to make this more accessible and useful to non-bax humans.
+
+- [ ] Spynx documentation
+- [ ] Real-world examples in `examples` directory
+- [ ] Interval probabilities in `Engine.probability`
+- [ ] Row similarity heatmap
+- [ ] Row similarity WRT specific columns (#1)
+
+Optimizations and refactoring
+
+- [ ] Should have `Engine._converters['valmaps']` for every column
+- [ ] rename `msd` in `cxx` to `csd` (#3) 
+- [ ] Remove stupid copyright boilerplate.
+- [ ] dial back the namespaces and better organize headers
+- [ ] Figure out better prior for CRP alpha. Maybe need prior MH to avoid numerical problems (#2)
+- [ ] Fix super-redundant code in `Engine.pairwise_func`
+
+# License
 Licensed under the GNU General Public License, version 3. See `LICENSE.txt` for details.
