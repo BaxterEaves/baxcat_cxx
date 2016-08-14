@@ -7,9 +7,7 @@ import numpy as np
 from baxcat.engine import Engine
 
 
-@pytest.fixture()
 def smalldf():
-
     s1 = pd.Series(np.random.rand(30))
     s2 = pd.Series([0.0, 1.0]*15)
     s3 = pd.Series(['one', 'two', 'three']*10)
@@ -20,9 +18,18 @@ def smalldf():
     return df
 
 
-@pytest.fixture()
-def smallengine(smalldf):
-    engine = Engine(smalldf, no_mp=True)
+def smalldf_mssg():
+    df = smalldf()
+    df['x_1'].ix[0] = float('NaN')
+    df['x_2'].ix[1] = float('NaN')
+    df['x_3'].ix[2] = float('NaN')
+    df['x_4'].ix[3] = float('NaN')
+
+    return df
+
+
+def gen_engine(df):
+    engine = Engine(df, no_mp=True)
     engine.init_models(2)
     engine.run(10)
     # print(engine.col_info())
@@ -31,16 +38,17 @@ def smallengine(smalldf):
 
 # test init
 # `````````````````````````````````````````````````````````````````````````````
-def test_engine_init_smoke_default(smalldf):
-    df = pd.DataFrame(np.random.rand(30, 5))
-    engine = Engine(df, no_mp=True)
+@pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
+def test_engine_init_smoke_default(gendf):
+    df = gendf()
+    engine = Engine(df)
     engine.init_models(1)
 
-    engine = Engine(smalldf)
-    engine.init_models(1)
 
+@pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
+def test_engine_init_smoke_metadata(gendf):
+    df = gendf()
 
-def test_engine_init_smoke_metadata(smalldf):
     metadata = dict()
     metadata['x_2'] = {
         'dtype': 'categorical',
@@ -49,13 +57,14 @@ def test_engine_init_smoke_metadata(smalldf):
         'dtype': 'categorical',
         'values': ['zero', 'one', 'two', 'three', 'four']}
 
-    engine = Engine(smalldf, metadata=metadata)
-    engine.init_models(1)
-    engine = Engine(smalldf,  metadata=metadata)
+    engine = Engine(df, metadata=metadata)
     engine.init_models(1)
 
 
-def test_engine_init_structureless(smalldf):
+@pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
+def test_engine_init_structureless(gendf):
+    df = gendf()
+
     df = pd.DataFrame(np.random.rand(30, 5))
     engine = Engine(df, no_mp=True)
     engine.init_models(4, structureless=True)
@@ -69,24 +78,35 @@ def test_engine_init_structureless(smalldf):
 
 # test run
 # `````````````````````````````````````````````````````````````````````````````
-def test_engine_run_smoke_default(smalldf):
-    engine = Engine(smalldf)
+@pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
+def test_engine_run_smoke_default(gendf):
+    df = gendf()
+
+    engine = Engine(df)
     engine.init_models(1)
     engine.run()
     engine.run(10)
+
     assert len(engine.models) == 1
 
 
-def test_engine_run_smoke_multiple(smalldf):
-    engine = Engine(smalldf)
+@pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
+def test_engine_run_smoke_multiple(gendf):
+    df = gendf()
+
+    engine = Engine(df)
     engine.init_models(10)
     engine.run()
     engine.run(10)
+
     assert len(engine.models) == 10
 
 
-def test_run_with_checkpoint_valid_diagnostic_output(smalldf):
-    engine = Engine(smalldf)
+@pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
+def test_run_with_checkpoint_valid_diagnostic_output(gendf):
+    df = gendf()
+
+    engine = Engine(df)
     engine.init_models(5)
     engine.run(10, checkpoint=5)
 
@@ -102,8 +122,11 @@ def test_run_with_checkpoint_valid_diagnostic_output(smalldf):
             assert 'time' in entry
 
 
-def test_run_on_model_subset_should_only_run_those_models(smalldf):
-    engine = Engine(smalldf)
+@pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
+def test_run_on_model_subset_should_only_run_those_models(gendf):
+    df = gendf()
+
+    engine = Engine(df)
     engine.init_models(5)
     engine.run(10, checkpoint=5)
     engine.run(10, checkpoint=5, model_idxs=[1, 2])
@@ -119,8 +142,11 @@ def test_run_on_model_subset_should_only_run_those_models(smalldf):
     assert len(tables[4]) == 3
 
 
-def test_state_alpha_should_not_change_if_no_transition(smalldf):
-    engine = Engine(smalldf, no_mp=True)
+@pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
+def test_state_alpha_should_not_change_if_no_transition(gendf):
+    df = gendf()
+
+    engine = Engine(df, no_mp=True)
     engine.init_models(1)
 
     state_alpha_start = engine._models[0]['state_alpha']
@@ -133,8 +159,11 @@ def test_state_alpha_should_not_change_if_no_transition(smalldf):
     assert state_alpha_start == state_alpha_end
 
 
-def test_state_alpha_should_change_if_transition(smalldf):
-    engine = Engine(smalldf, no_mp=True)
+@pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
+def test_state_alpha_should_change_if_transition(gendf):
+    df = gendf()
+
+    engine = Engine(df, no_mp=True)
     engine.init_models(1)
 
     state_alpha_start = engine._models[0]['state_alpha']
@@ -146,8 +175,11 @@ def test_state_alpha_should_change_if_transition(smalldf):
     assert state_alpha_start != state_alpha_end
 
 
-def test_view_alpha_should_not_change_if_no_transition(smalldf):
-    engine = Engine(smalldf, no_mp=True)
+@pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
+def test_view_alpha_should_not_change_if_no_transition(gendf):
+    df = gendf()
+
+    engine = Engine(df, no_mp=True)
     engine.init_models(1)
 
     view_alpha_start = engine._models[0]['view_alphas']
@@ -160,8 +192,11 @@ def test_view_alpha_should_not_change_if_no_transition(smalldf):
     assert view_alpha_start == view_alpha_end
 
 
-def test_view_alpha_should_change_if_transition(smalldf):
-    engine = Engine(smalldf, no_mp=True)
+@pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
+def test_view_alpha_should_change_if_transition(gendf):
+    df = gendf()
+
+    engine = Engine(df, no_mp=True)
     engine.init_models(1)
 
     view_alpha_start = engine._models[0]['view_alphas']
@@ -175,16 +210,22 @@ def test_view_alpha_should_change_if_transition(smalldf):
 
 # save and load
 # `````````````````````````````````````````````````````````````````````````````
-def test_save_smoke(smalldf):
-    engine = Engine(smalldf)
+@pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
+def test_save_smoke(gendf):
+    df = gendf()
+
+    engine = Engine(df)
     engine.init_models(5)
 
     with tempfile.NamedTemporaryFile('wb') as tf:
         engine.save(tf.name)
 
 
-def test_load_smoke(smalldf):
-    engine = Engine(smalldf)
+@pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
+def test_load_smoke(gendf):
+    df = gendf()
+
+    engine = Engine(df)
     engine.init_models(5)
 
     with tempfile.NamedTemporaryFile('wb') as tf:
@@ -192,8 +233,11 @@ def test_load_smoke(smalldf):
         Engine.load(tf.name)
 
 
-def test_save_and_load_equivalence(smalldf):
-    engine = Engine(smalldf)
+@pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
+def test_save_and_load_equivalence(gendf):
+    df = gendf()
+
+    engine = Engine(df)
     engine.init_models(5)
 
     with tempfile.NamedTemporaryFile('wb') as tf:
@@ -258,73 +302,97 @@ def test_pairwise_dependence_probability():
 
 # probability
 # `````````````````````````````````````````````````````````````````````````````
-def test_probability_single_col_single_datum(smallengine):
+@pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
+def test_probability_single_col_single_datum(gendf):
+    engine = gen_engine(gendf())
+
     data = 1.2
     col = 'x_1'
-    p = smallengine.probability(data, [col])
+    p = engine.probability(data, [col])
 
     assert isinstance(p, (float, np.float64,))
 
 
-def test_probability_multi_col_single_datum(smallengine):
+@pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
+def test_probability_multi_col_single_datum(gendf):
+    engine = gen_engine(gendf())
+
     data = [1.2, 2.3]
     cols = ['x_1', 'x_4']
-    p = smallengine.probability(data, cols)
+    p = engine.probability(data, cols)
 
     assert isinstance(p, (float, np.float64,))
 
 
-def test_probability_single_col_multi_datum(smallengine):
+@pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
+def test_probability_single_col_multi_datum(gendf):
+    engine = gen_engine(gendf())
+
     data = [[1.2], [0.2]]
     col = 'x_1'
-    p = smallengine.probability(data, [col])
+    p = engine.probability(data, [col])
 
     assert isinstance(p, np.ndarray)
     assert p.shape == (2,)
 
 
-def test_probability_multi_col_multi_datum(smallengine):
+@pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
+def test_probability_multi_col_multi_datum(gendf):
+    engine = gen_engine(gendf())
+
     data = [[1.2, 'two'], [0.2, 'one']]
     cols = ['x_1', 'x_3']
     given = [('x_2', 0,), ('x_4', 0,)]
-    p = smallengine.probability(data, cols, given=given)
+    p = engine.probability(data, cols, given=given)
 
     assert isinstance(p, np.ndarray)
     assert p.shape == (2,)
 
 
-def test_probability_single_col_single_datum_given(smallengine):
+@pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
+def test_probability_single_col_single_datum_given(gendf):
+    engine = gen_engine(gendf())
+
     data = 1.2
     col = 'x_1'
     given = [('x_2', 0,), ('x_4', 0,)]
-    p = smallengine.probability(data, [col], given=given)
+    p = engine.probability(data, [col], given=given)
 
     assert isinstance(p, (float, np.float64,))
 
 
-def test_probability_multi_col_single_datum_given(smallengine):
+@pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
+def test_probability_multi_col_single_datum_given(gendf):
+    engine = gen_engine(gendf())
+
     data = [1.2, 2.3]
     cols = ['x_1', 'x_4']
     given = [('x_2', 0,), ('x_4', 0,)]
-    p = smallengine.probability(data, cols, given=given)
+    p = engine.probability(data, cols, given=given)
 
     assert isinstance(p, (float, np.float64,))
 
 
-def test_probability_single_col_multi_datum_given(smallengine):
+@pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
+def test_probability_single_col_multi_datum_given(gendf):
+    engine = gen_engine(gendf())
+
     data = [[1.2], [0.2]]
     col = 'x_1'
-    p = smallengine.probability(data, [col])
+    p = engine.probability(data, [col])
 
     assert isinstance(p, np.ndarray)
     assert p.shape == (2,)
 
 
-def test_probability_multi_col_multi_datum_given(smallengine):
+@pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
+def test_probability_multi_col_multi_datum_given(gendf):
+    engine = gen_engine(gendf())
+
     data = [[1.2, 'two'], [0.2, 'one']]
     cols = ['x_1', 'x_3']
     given = [('x_2', 0,), ('x_4', 0,)]
-    p = smallengine.probability(data, cols, given=given)
+    p = engine.probability(data, cols, given=given)
 
     assert isinstance(p, np.ndarray)
     assert p.shape == (2,)
@@ -332,23 +400,32 @@ def test_probability_multi_col_multi_datum_given(smallengine):
 
 # sample
 # ````````````````````````````````````````````````````````````````````````````
-def test_sample_single_col_single_float(smallengine):
+@pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
+def test_sample_single_col_single_float(gendf):
+    engine = gen_engine(gendf())
+
     cols = ['x_1']
-    x = smallengine.sample(cols, n=1)
+    x = engine.sample(cols, n=1)
 
     assert isinstance(x, (float, np.float64,))
 
 
-def test_sample_single_col_single_str(smallengine):
+@pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
+def test_sample_single_col_single_str(gendf):
+    engine = gen_engine(gendf())
+
     cols = ['x_3']
-    x = smallengine.sample(cols, n=1)
+    x = engine.sample(cols, n=1)
 
     assert isinstance(x, str)
 
 
-def test_sample_multi_col_single_mixed(smallengine):
+@pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
+def test_sample_multi_col_single_mixed(gendf):
+    engine = gen_engine(gendf())
+
     cols = ['x_1', 'x_3']
-    x = smallengine.sample(cols, n=1)
+    x = engine.sample(cols, n=1)
 
     assert isinstance(x, np.ndarray)
     assert x.shape == (2,)
@@ -356,9 +433,12 @@ def test_sample_multi_col_single_mixed(smallengine):
     assert isinstance(x[1], str)
 
 
-def test_sample_multi_col_multi_mixed(smallengine):
+@pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
+def test_sample_multi_col_multi_mixed(gendf):
+    engine = gen_engine(gendf())
+
     cols = ['x_1', 'x_3']
-    x = smallengine.sample(cols, n=3)
+    x = engine.sample(cols, n=3)
 
     assert isinstance(x, np.ndarray)
     assert x.shape == (3, 2,)
@@ -373,18 +453,25 @@ def test_sample_multi_col_multi_mixed(smallengine):
 
 # suprisal
 # ````````````````````````````````````````````````````````````````````````````
-def test_suprisal_default(smallengine):
-    s = smallengine.suprisal('x_1')
+@pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
+def test_suprisal_default(gendf):
+    df = gendf()
+    engine = gen_engine(df)
+
+    s = engine.suprisal('x_1')
 
     assert isinstance(s, pd.DataFrame)
-    assert s.shape == (30, 2,)
+    assert s.shape == (np.sum(pd.notnull(df['x_1'])), 2,)
 
     assert 'x_1' in s.columns
     assert 'surprisal' in s.columns
 
 
-def test_suprisal_specify_rows(smallengine):
-    s = smallengine.suprisal('x_1', rows=[2, 5, 11])
+@pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
+def test_suprisal_specify_rows(gendf):
+    engine = gen_engine(gendf())
+
+    s = engine.suprisal('x_1', rows=[2, 5, 11])
 
     assert isinstance(s, pd.DataFrame)
     assert s.shape == (3, 2,)
