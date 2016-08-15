@@ -654,6 +654,12 @@ class Engine(object):
 
         return mi
 
+    def linfoot(self, col_a, col_b, n_samples=1000):
+        """ Wrapper for mutual_information(..., linfoot=True) """
+        lfi = self.mutual_information(col_a, col_b, linfoot=True,
+                                      n_samples=n_samples)
+        return lfi
+
     def conditional_entropy(self, col_a, col_b, n_samples=1000):
         """ Conditional entropy, H(A|B), of a given b.
 
@@ -685,7 +691,7 @@ class Engine(object):
         return h_c
 
     # TODO: offload to external fuction that can be parallelized
-    def pairwise_func(self, func, cols=None, n_samples=500):
+    def pairwise_func(self, func, idxs=None, **kwargs):
         """ Do a function over all paris of columns/rows
 
         Currently only column functions are implemented.
@@ -702,60 +708,55 @@ class Engine(object):
             The number of samples for Monte Carlo approximation when
             applicable.
         """
-        if func == 'dependence_probability':
-            if cols is None:
-                cols = self._col_names
+        itertypes = {
+            'dependence_probability': 'comb',
+            'mutual_information': 'comb',
+            'linfoot': 'comb',
+            'conditional_entropy': 'prod',
+            'similarity': 'comb'}
+        functypes = {
+            'dependence_probability': 'col',
+            'mutual_information': 'col',
+            'linfoot': 'col',
+            'conditional_entropy': 'col',
+            'similarity': 'row'}
+        itertype = itertypes[func]
+        functype = functypes[func]
 
-            mat = np.eye(len(cols))
-            for i, col_a in enumerate(cols):
-                for j in range(i+1, len(cols)):
-                    col_b = cols[j]
-                    depprob = self.dependence_probability(col_a, col_b)
-                    mat[i, j] = depprob
-                    mat[j, i] = depprob
-        elif func in ['mutual_information', 'linfoot']:
-            if func == 'linfoot':
-                linfoot = True
+        pfunc = getattr(self, func)
+
+        if idxs is None:
+            if functype == 'row':
+                idxs = self._row_names
+            elif functype == 'col':
+                idxs = self._col_names
             else:
-                linfoot = False
+                msg = 'Unexpected functype ({}} for func {}'
+                raise ValueError(msg.format(functype, func))
 
-            if cols is None:
-                cols = self._col_names
-
-            mat = np.eye(len(cols))
-            for i, col_a in enumerate(cols):
-                for j in range(i+1, len(cols)):
-                    col_b = cols[j]
-
-                    if i == j:
-                        mi = 1.
-                    else:
-                        mi = self.mutual_information(
-                            col_a, col_b, linfoot=linfoot, n_samples=n_samples)
-                    mat[i, j] = mi
-                    mat[j, i] = mi
-        elif func == 'conditional_entropy':
-            if cols is None:
-                cols = self._col_names
-
-            mat = np.eye(len(cols))
-            for i, col_a in enumerate(cols):
-                for j, col_b in enumerate(cols):
-                    if i == j:
-                        h = self.entropy(col_a, n_samples)
-                    else:
-                        h = self.conditional_entropy(col_a, col_b, n_samples)
-
-                    mat[i, j] = h
+        mat = np.eye(len(idxs))
+        if itertype == 'comb':
+            for i, idx_a in enumerate(idxs):
+                for j in range(i+1, len(idxs)):
+                    idx_b = idxs[j]
+                    fval = pfunc(idx_a, idx_b, **kwargs)
+                    mat[i, j] = fval
+                    mat[j, i] = fval
+        elif itertype == 'prod':
+            for i, idx_a in enumerate(idxs):
+                for j, idx_b in enumerate(idxs):
+                    fval = pfunc(idx_a, idx_b, **kwargs)
+                    mat[i, j] = fval
         else:
-            raise ValueError("%s is an invalid function." % (func,))
+            msg = 'Unexpcted itertype ({}) for func {}'
+            raise ValueError(msg.format(itertype, func))
 
-        df = pd.DataFrame(mat, index=cols, columns=cols)
+        df = pd.DataFrame(mat, index=idxs, columns=idxs)
 
         return df
 
-    def heatmap(self, func, n_samples=100, ignore_cols=None, include_cols=None,
-                plot_kwargs=None):
+    def heatmap(self, func, ignore_cols=None, include_cols=None,
+                plot_kwargs=None, **kwargs):
         """ Heatmap of a pairwise function
 
         Prameters
@@ -786,7 +787,7 @@ class Engine(object):
         elif func in ['mutual_information', 'linfoot']:
             plot_kwargs['cmap'] = plot_kwargs.get('cmap', 'gray_r')
 
-        df = self.pairwise_func(func, cols=cols, n_samples=n_samples)
+        df = self.pairwise_func(func, idxs=cols, **kwargs)
 
         g = sns.clustermap(df, **plot_kwargs)
         plt.setp(g.ax_heatmap.get_yticklabels(), rotation=0)

@@ -54,7 +54,7 @@ Optimizations and refactoring
 - [ ] Remove stupid copyright boilerplate.
 - [ ] dial back the namespaces and better organize headers
 - [ ] Figure out better prior for CRP alpha. Maybe need prior MH to avoid numerical problems (#2)
-- [ ] Fix super-redundant code in `Engine.pairwise_func`
+- [X] Fix super-redundant code in `Engine.pairwise_func`
 
 # License
 Licensed under the GNU General Public License, version 3. See `LICENSE.txt` for details.
