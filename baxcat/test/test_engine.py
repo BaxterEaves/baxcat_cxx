@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 
 from baxcat.engine import Engine
+from baxcat.metrics import SquaredError
 
 
 def smalldf():
@@ -37,7 +38,7 @@ def gen_engine(df):
 
 
 # test init
-# `````````````````````````````````````````````````````````````````````````````
+# ---
 @pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
 def test_engine_init_smoke_default(gendf):
     df = gendf()
@@ -77,7 +78,7 @@ def test_engine_init_structureless(gendf):
 
 
 # test run
-# `````````````````````````````````````````````````````````````````````````````
+# ---
 @pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
 def test_engine_run_smoke_default(gendf):
     df = gendf()
@@ -209,7 +210,7 @@ def test_view_alpha_should_change_if_transition(gendf):
 
 
 # save and load
-# `````````````````````````````````````````````````````````````````````````````
+# ---
 @pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
 def test_save_smoke(gendf):
     df = gendf()
@@ -254,7 +255,7 @@ def test_save_and_load_equivalence(gendf):
 
 
 # dependence probability
-# `````````````````````````````````````````````````````````````````````````````
+# ---
 def test_dependence_probability():
     x = np.random.randn(30)
 
@@ -301,7 +302,7 @@ def test_pairwise_dependence_probability():
 
 
 # probability
-# `````````````````````````````````````````````````````````````````````````````
+# ---
 @pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
 def test_probability_single_col_single_datum(gendf):
     engine = gen_engine(gendf())
@@ -399,7 +400,7 @@ def test_probability_multi_col_multi_datum_given(gendf):
 
 
 # sample
-# ````````````````````````````````````````````````````````````````````````````
+# ---
 @pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
 def test_sample_single_col_single_float(gendf):
     engine = gen_engine(gendf())
@@ -452,7 +453,7 @@ def test_sample_multi_col_multi_mixed(gendf):
 
 
 # surprisal
-# ````````````````````````````````````````````````````````````````````````````
+# ---
 @pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
 def test_surprisal_default(gendf):
     df = gendf()
@@ -485,7 +486,7 @@ def test_surprisal_specify_rows(gendf):
 
 
 # impute
-# ````````````````````````````````````````````````````````````````````````````
+# ---
 def test_impute_continuous_default():
     engine = gen_engine(smalldf_mssg())
 
@@ -520,3 +521,21 @@ def test_impute_categorical_select_rows():
 
     assert isinstance(impdata, pd.DataFrame)
     assert impdata.shape == (3, 2,)
+
+
+# eval
+# ---
+def test_eval_numeric():
+    engine = gen_engine(smalldf())
+    testdata = pd.Series([.1, .2], index=[2, 3], name='x_4')
+    impdata, err = engine.eval(testdata, metric=SquaredError())
+
+    assert isinstance(err, (float, np.float32, np.float64,))
+    assert isinstance(impdata, pd.DataFrame)
+
+
+@pytest.mark.xfail(raises=NotImplementedError)
+def test_eval_not_implemented_for_string_data():
+    engine = gen_engine(smalldf())
+    testdata = pd.Series(['one', 'two'], index=[2, 3], name='x_3')
+    engine.eval(testdata, metric=SquaredError())

@@ -45,6 +45,7 @@ Some things I need to do to make this more accessible and useful to non-bax huma
 - [ ] Interval probabilities in `Engine.probability`
 - [ ] Row similarity heatmap
 - [ ] Row similarity WRT specific columns (#1)
+- [X] Way to evalute predictive power `Engine.eval`
 
 Optimizations and refactoring
 

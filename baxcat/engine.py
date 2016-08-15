@@ -11,6 +11,7 @@ from baxcat.state import BCState
 from baxcat.utils import data_utils as du
 from baxcat.utils import model_utils as mu
 from baxcat.utils import plot_utils as pu
+from baxcat import metrics
 
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -412,6 +413,30 @@ class Engine(object):
             impdata.append({col: x, 'conf': conf})
 
         return pd.DataFrame(impdata, index=rows)
+
+    def eval(self, testdata, metric=None):
+        """ Impute and evaluate
+
+        Parameters
+        ----------
+        testdata : pandas.Series
+            Held-out values for a single column. Indices must be present in
+            the baxcat data.
+        metric : baxcat.metric.Metric
+            The metric to use for evaluation
+        """
+        if not isinstance(testdata, pd.Series):
+            raise TypeError('testdata must be a pandas.Series')
+
+        if self._df[testdata.name].dtype == 'object':
+            raise NotImplementedError('eval only works on numeric data')
+
+        if metric is None:
+            metric = metrics.SquaredError()
+
+        impdata = self.impute(testdata.name, rows=testdata.index)
+
+        return impdata, metric(testdata, impdata[testdata.name])
 
     def probability(self, x, cols, given=None):
         """ Predictive probability of x_1, ..., x_n given y_1, ..., y_n
