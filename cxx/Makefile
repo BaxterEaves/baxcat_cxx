@@ -34,13 +34,13 @@ CFLAGS   := -I$(INCLUDE) -std=c++11 -fopenmp -lmgl -DDEBUG $(WARNINGS)
 all : unit
 
 unit : $(OBJFILES)
-	@$(CXX) $(CFLAGS) -MMD -MP -c $(UNIT)/test_main.cpp -o $(UNIT)/test_main.o
-	@$(CXX) $(CFLAGS) $(OBJFILES) $(UNIT)/test_main.o -o unit.test
-	./unit.test --log_level=all
+	@$(CXX) -c $(UNIT)/test_main.cpp -o $(UNIT)/test_main.o $(CFLAGS) -MMD -MP
+	@$(CXX) $(OBJFILES) $(UNIT)/test_main.o -o unit.test $(CFLAGS) 
+	./unit.test --log_level=error --report_level=short
 
 geweke : $(OBJFILES)
-	@$(CXX) $(CFLAGS) -MMD -MP -lboost_program_options -c $(GEWEKE)/geweke_test.cpp -o $(GEWEKE)/geweke_test.o
-	@$(CXX) $(CFLAGS) $(OBJFILES)  $(GEWEKE)/geweke_test.o -o geweke.test
+	@$(CXX) -c $(GEWEKE)/geweke_test.cpp -o $(GEWEKE)/geweke_test.o $(CFLAGS) -MMD -MP -lboost_program_options
+	@$(CXX) $(OBJFILES)  $(GEWEKE)/geweke_test.o -o geweke.test $(CFLAGS)
 	./geweke.test
 
 clean:
