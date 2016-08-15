@@ -454,8 +454,8 @@ class Engine(object):
         """
         raise NotImplementedError
 
-    def suprisal(self, col, rows=None):
-        """ Suprisal, or self-information, of the observations in a column.
+    def surprisal(self, col, rows=None):
+        """ Surprisal, or self-information, of the observations in a column.
 
         Ignores missing values.
 
@@ -464,13 +464,13 @@ class Engine(object):
         col : index
             The column index
         rows : list(index)
-            A list of rows for which to compute suprisal. If not defined
+            A list of rows for which to compute surprisal. If not defined
             (default), computes for all rows.
 
         Returns
         -------
         pandas.DataFrame
-            colums for 'column', 'row', 'value', and 'suprisal'
+            colums for 'column', 'row', 'value', and 'surprisal'
         """
         col_idx = self._converters['col2idx'][col]
         if rows is None:
@@ -491,7 +491,7 @@ class Engine(object):
                 vals.append(self._df[col][row])
                 queries.append((row_idx, x,))
 
-        s = mu.suprisal(col_idx, queries, self._models)
+        s = mu.surprisal(col_idx, queries, self._models)
         data = []
         for val, si in zip(vals, s):
             data.append({'surprisal': si, col: val})

@@ -228,8 +228,8 @@ def sample(models, col_idxs, given=None, n=1):
     return samples
 
 
-def suprisal(col_idx, queries, models):
-    """ The suprisal, or self-information, of a set of observations
+def surprisal(col_idx, queries, models):
+    """ The surprisal, or self-information, of a set of observations
 
     Parameters
     ----------
@@ -243,7 +243,7 @@ def suprisal(col_idx, queries, models):
     Returns
     -------
     s : numpy.ndarray(float)
-       The suprisal of each observation in queries.
+       The surprisal of each observation in queries.
 
 
     Example
@@ -251,7 +251,7 @@ def suprisal(col_idx, queries, models):
     >>> col_idx = 1
     >>> queries = [(0, 1.,), (2, .5,)]
     >>> models = engine.models
-    >>> s = suprisal(col_idx, queries, models)
+    >>> s = surprisal(col_idx, queries, models)
     """
 
     f = PROBFUNC[models[0]['dtypes'][col_idx]]
@@ -357,13 +357,13 @@ def impute(row_idx, col_idx, models, bounds):
     dtype = models[0]['dtypes'][col_idx]
     if dtype == b'categorical':
         queries = [(row_idx, val,) for val in bounds]
-        s = suprisal(col_idx, queries, models)
+        s = surprisal(col_idx, queries, models)
         min_idx = np.argmin(s)
         y = queries[min_idx][1]
     else:
         # XXX: Note that fmin function finds the local maxima
         def func(x):
-            return suprisal(col_idx, [(row_idx, float(x),)], models)
+            return surprisal(col_idx, [(row_idx, float(x),)], models)
         resbrute = optimize.brute(func, (bounds,), finish=optimize.fmin)
         y = resbrute[0]
 

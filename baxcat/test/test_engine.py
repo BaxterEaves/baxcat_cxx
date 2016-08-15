@@ -451,14 +451,14 @@ def test_sample_multi_col_multi_mixed(gendf):
     assert isinstance(x[2, 1], str)
 
 
-# suprisal
+# surprisal
 # ````````````````````````````````````````````````````````````````````````````
 @pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
-def test_suprisal_default(gendf):
+def test_surprisal_default(gendf):
     df = gendf()
     engine = gen_engine(df)
 
-    s = engine.suprisal('x_1')
+    s = engine.surprisal('x_1')
 
     assert isinstance(s, pd.DataFrame)
     assert s.shape == (np.sum(pd.notnull(df['x_1'])), 2,)
@@ -468,10 +468,10 @@ def test_suprisal_default(gendf):
 
 
 @pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
-def test_suprisal_specify_rows(gendf):
+def test_surprisal_specify_rows(gendf):
     engine = gen_engine(gendf())
 
-    s = engine.suprisal('x_1', rows=[2, 5, 11])
+    s = engine.surprisal('x_1', rows=[2, 5, 11])
 
     assert isinstance(s, pd.DataFrame)
     assert s.shape == (3, 2,)
