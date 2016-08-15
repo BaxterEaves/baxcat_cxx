@@ -38,7 +38,7 @@ print(col_info)
 # make inference about the data given the posterior distribution of states, so
 # we take several models.
 print('Initializing 16 models...')
-engine.init_models(16)
+engine.init_models(32)
 print('Running models for 200 iterations...')
 engine.run(200, checkpoint=5)
 
@@ -52,6 +52,9 @@ plt.show()
 # between two columns. Note that the dependence probability is simply the
 # probability that a dependence exists, not the strength of the dependence.
 engine.heatmap('dependence_probability', plot_kwargs={'figsize': (10, 10,)})
+plt.show()
+
+engine.heatmap('row_similarity', plot_kwargs={'figsize': (10, 10,)})
 plt.show()
 
 # The paint job is an important part of what makes a pine wood derby car fast,

@@ -708,20 +708,8 @@ class Engine(object):
             The number of samples for Monte Carlo approximation when
             applicable.
         """
-        itertypes = {
-            'dependence_probability': 'comb',
-            'mutual_information': 'comb',
-            'linfoot': 'comb',
-            'conditional_entropy': 'prod',
-            'similarity': 'comb'}
-        functypes = {
-            'dependence_probability': 'col',
-            'mutual_information': 'col',
-            'linfoot': 'col',
-            'conditional_entropy': 'col',
-            'similarity': 'row'}
-        itertype = itertypes[func]
-        functype = functypes[func]
+        itertype = Engine.pairwise_iter_type(func)
+        functype = Engine.pairwise_func_type(func)
 
         pfunc = getattr(self, func)
 
@@ -755,39 +743,49 @@ class Engine(object):
 
         return df
 
-    def heatmap(self, func, ignore_cols=None, include_cols=None,
+    def heatmap(self, func, ignore_idxs=None, include_idxs=None,
                 plot_kwargs=None, **kwargs):
         """ Heatmap of a pairwise function
 
         Prameters
         ---------
         func : str
-            'dependence_probability', 'linfoot', 'mutual_information', or
-            'conditional_entropy'.
+            'dependence_probability', 'linfoot', 'mutual_information',
+            'conditional_entropy', or 'row_similarity'
         n_samples : int
             the number of samples to estimate information theoretic quantities.
-        ignore_cols : list(column names)
-            A list of column names not to include in the output.
-        include_cols : list(column names)
-            A list of columns to include in the output.
+        ignore_idxs : list(column or row names)
+            A list of column/row names not to include in the output.
+        include_idxs : list(column or row names)
+            A list of columns/rows to include in the output.
         """
         if plot_kwargs is None:
             plot_kwargs = {}
 
-        cols = None
-        if ignore_cols is not None:
-            cols = [col for col in self._col_names if col not in ignore_cols]
-        elif include_cols is not None:
-            cols = include_cols
+        idxs = None
+        if ignore_idxs is not None:
+            functype = Engine.pairwise_func_type(func)
+            if functype == 'row':
+                ptl_idxs = self._row_names
+            elif functype == 'col':
+                ptl_idxs = self._col_names
+            else:
+                msg = 'Unexpected functype ({}} for func {}'
+                raise ValueError(msg.format(functype, func))
 
-        if func == 'dependence_probability':
+            idxs = [idx for idx in ptl_idxs if idx not in ignore_idxs]
+
+        elif include_idxs is not None:
+            idxs = include_idxs
+
+        if func in ['dependence_probability', 'row_similarity']:
             plot_kwargs['vmin'] = plot_kwargs.get('vmin', 0.)
             plot_kwargs['vmax'] = plot_kwargs.get('vmax', 1.)
             plot_kwargs['cmap'] = plot_kwargs.get('cmap', 'gray_r')
         elif func in ['mutual_information', 'linfoot']:
             plot_kwargs['cmap'] = plot_kwargs.get('cmap', 'gray_r')
 
-        df = self.pairwise_func(func, idxs=cols, **kwargs)
+        df = self.pairwise_func(func, idxs=idxs, **kwargs)
 
         g = sns.clustermap(df, **plot_kwargs)
         plt.setp(g.ax_heatmap.get_yticklabels(), rotation=0)
@@ -845,3 +843,25 @@ class Engine(object):
         model_logps = state.get_logps()
         pu.plot_cc_model(self._data, model, model_logps, self._df.index,
                          self._df.columns, hl_rows=hl_rows, hl_cols=hl_cols)
+
+    @staticmethod
+    def pairwise_func_type(func):
+        functypes = {
+            'dependence_probability': 'col',
+            'mutual_information': 'col',
+            'linfoot': 'col',
+            'conditional_entropy': 'col',
+            'row_similarity': 'row'}
+
+        return functypes[func]
+
+    @staticmethod
+    def pairwise_iter_type(func):
+        itertypes = {
+            'dependence_probability': 'comb',
+            'mutual_information': 'comb',
+            'linfoot': 'comb',
+            'conditional_entropy': 'prod',
+            'row_similarity': 'comb'}
+
+        return itertypes[func]
