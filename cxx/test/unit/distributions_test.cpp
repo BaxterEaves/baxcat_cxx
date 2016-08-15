@@ -275,13 +275,13 @@ BOOST_AUTO_TEST_CASE(beta_should_add_suffstats){
 
     baxcat::dist::beta::suffstatInsert(.25, sum_log_x, sum_log_minus_x);
 
-    BOOST_CHECK_EQUAL(sum_log_x, log(.25));
-    BOOST_CHECK_EQUAL(sum_log_minus_x, log(1-.25));
+    BOOST_CHECK_CLOSE_FRACTION(sum_log_x, log(.25), TOL);
+    BOOST_CHECK_CLOSE_FRACTION(sum_log_minus_x, log(1-.25), TOL);
 
     baxcat::dist::beta::suffstatInsert(.1, sum_log_x, sum_log_minus_x);
 
-    BOOST_CHECK_EQUAL(sum_log_x, log(.25)+log(.1));
-    BOOST_CHECK_EQUAL(sum_log_minus_x, log(1-.25)+log(1-.1));
+    BOOST_CHECK_CLOSE_FRACTION(sum_log_x, log(.25)+log(.1), TOL);
+    BOOST_CHECK_CLOSE_FRACTION(sum_log_minus_x, log(1-.25)+log(1-.1), TOL);
 }
 
 BOOST_AUTO_TEST_CASE(beta_should_remove_suffstats){

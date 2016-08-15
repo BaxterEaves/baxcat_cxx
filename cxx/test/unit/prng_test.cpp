@@ -54,38 +54,42 @@ BOOST_AUTO_TEST_CASE(subsequent_numbers_should_not_be_equal){
 }
 
 BOOST_AUTO_TEST_CASE(number_from_other_threads_should_not_be_equal){
-    static baxcat::PRNG prng(10);
-    std::uniform_int_distribution<unsigned int> dist;
+    if (omp_get_num_procs() > 1){
+        static baxcat::PRNG prng(10);
+        std::uniform_int_distribution<unsigned int> dist;
 
-    unsigned int r1, r2;
-    r1 = dist(prng.getRNGByIndex(0));
-    r2 = dist(prng.getRNGByIndex(1));
+        unsigned int r1, r2;
+        r1 = dist(prng.getRNGByIndex(0));
+        r2 = dist(prng.getRNGByIndex(1));
 
-    BOOST_CHECK( r1 != r2);
+        BOOST_CHECK( r1 != r2);
+    }
 }
 
 BOOST_AUTO_TEST_CASE(number_from_edge_thread_should_be_same_with_seed){
 
-    unsigned int last_thread = omp_get_max_threads()-1;
-    unsigned int r0a, r4a;
-    unsigned int r0b, r4b;
+    if (omp_get_num_procs() > 1){
+        unsigned int last_thread = omp_get_max_threads()-1;
+        unsigned int r0a, r4a;
+        unsigned int r0b, r4b;
 
-    // can't test a parallel RNG if we aren't in a parallel environment
-    BOOST_REQUIRE(last_thread > 0 );
+        // can't test a parallel RNG if we aren't in a parallel environment
+        BOOST_REQUIRE(last_thread > 0 );
 
-    static baxcat::PRNG prng(10);
-    static baxcat::PRNG prng_2(10);
+        static baxcat::PRNG prng(10);
+        static baxcat::PRNG prng_2(10);
 
-    std::uniform_int_distribution<unsigned int>  dist;
+        std::uniform_int_distribution<unsigned int>  dist;
 
-    r0a = dist(prng.getRNGByIndex(0));
-    r0b = dist(prng_2.getRNGByIndex(0));
+        r0a = dist(prng.getRNGByIndex(0));
+        r0b = dist(prng_2.getRNGByIndex(0));
 
-    r4a = dist(prng.getRNGByIndex(last_thread));
-    r4b = dist(prng_2.getRNGByIndex(last_thread));
+        r4a = dist(prng.getRNGByIndex(last_thread));
+        r4b = dist(prng_2.getRNGByIndex(last_thread));
 
-    BOOST_CHECK_EQUAL(r0a, r0b);
-    BOOST_CHECK_EQUAL(r4a, r4b);
+        BOOST_CHECK_EQUAL(r0a, r0b);
+        BOOST_CHECK_EQUAL(r4a, r4b);
+    }
 }
 
 // Test random element
