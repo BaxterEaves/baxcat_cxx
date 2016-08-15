@@ -1,6 +1,18 @@
+""" An example for animals with attributes data takes from
+http://attributes.kyb.tuebingen.mpg.de/
+
+Each row is an animal and each column is an attribute. Each cell is a binary
+value denoting whether the attribute is present (1) or absent (0).
+
+Usage:
+    $ python animals.py
+"""
+
 import os
 
 from baxcat.engine import Engine
+from math import exp
+
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -9,7 +21,7 @@ assert __name__ == "__main__"
 
 exdir = os.path.dirname(os.path.realpath(__file__))
 
-df = pd.read_csv(os.path.join(exdir, 'zoo.csv'), index_col=0)
+df = pd.read_csv(os.path.join(exdir, 'animals.csv'), index_col=0)
 
 
 # Let's create out engine. Well just pass in the data and let baxcat decide
@@ -54,8 +66,23 @@ print('Linfoot(fast, stripes) = %f' % (linfoot_stripes,))
 
 # We can also figure out which animals are more similar. Is a wolf more
 # similar to a dalmatian or a rat.
-sim_dalmatian = engine.row_similarity('wolf', 'dalmatian')
-sim_rat = engine.row_similarity('wolf', 'rat')
+sim_wolves = engine.row_similarity('chihuahua', 'wolf')
+sim_rats = engine.row_similarity('chihuahua', 'rat')
 
-print('Similarity between wolves and dalmatians is %f' % (sim_dalmatian,))
-print('Similarity between wolves and rats is %f' % (sim_rat,))
+print('Similarity between Chihuahuas and wolves is %f' % (sim_wolves,))
+print('Similarity between Chihuahuas and rats is %f' % (sim_rats,))
+
+
+# Which animals are outliers with respect to their being fast. We can find out
+# by calculating the surprisal (self infotmation).
+s = engine.surprisal('fast')
+s.sort(['surprisal'], ascending=False, inplace=True)
+print(s.head(10))
+
+# Lets say we're out in the woods and we see a lean, spotted animal with a
+# tail. What is the probability that it is fierce and fast?
+# Note that for continuous variables, Engine.probability returns the log PDF
+# of an event given observations.
+logp = engine.probability([1, 1], ['fierce', 'fast'],
+                          given=[('lean', 1,), ('spots', 1,), ('tail', 1,)])
+print('p(fierce, fast | lean, spots, tail) = %s' % (exp(logp),))

@@ -25,6 +25,9 @@ To run the python unit tests:
 
     $ py.test
 
+# Use
+Examples are stored in the `examples` directory. More coming soon.
+
 # Currently implemented data types
 
 ## Continuous
