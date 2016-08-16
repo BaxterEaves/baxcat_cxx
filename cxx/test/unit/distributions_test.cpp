@@ -25,7 +25,7 @@
 #include "distributions/gamma.hpp"
 #include "distributions/gaussian.hpp"
 #include "distributions/students_t.hpp"
-#include "distributions/multinomial.hpp"
+#include "distributions/categorical.hpp"
 #include "distributions/symmetric_dirichlet.hpp"
 
 
@@ -170,19 +170,19 @@ BOOST_AUTO_TEST_CASE(gamma_cdf_value_check){
     BOOST_CHECK_CLOSE_FRACTION( baxcat::dist::gamma::cdf(.2,2.3,4.5), 0.000280450981357375, TOL );
 }
 
-// multinomial
+// categorical
 // `````````````````````````````````````````````````````````````````````````````````````````````````
-BOOST_AUTO_TEST_CASE(multinomial_insert_suffstats){
+BOOST_AUTO_TEST_CASE(categorical_insert_suffstats){
     std::vector<unsigned int> counts(5,0);
     std::vector<unsigned int> values = {0,1,2,3,4,4};
 
     unsigned int val = 0;
 
-    baxcat::dist::multinomial::suffstatInsert(val,counts);
+    baxcat::dist::categorical::suffstatInsert(val,counts);
     BOOST_CHECK_EQUAL( counts[0], 1);
 
     for( auto x : values)
-        baxcat::dist::multinomial::suffstatInsert(x,counts);
+        baxcat::dist::categorical::suffstatInsert(x,counts);
 
     BOOST_CHECK_EQUAL( counts[0], 2);
     BOOST_CHECK_EQUAL( counts[1], 1);
@@ -192,13 +192,13 @@ BOOST_AUTO_TEST_CASE(multinomial_insert_suffstats){
 
 }
 
-BOOST_AUTO_TEST_CASE(multinomial_remove_suffstats){
+BOOST_AUTO_TEST_CASE(categorical_remove_suffstats){
     std::vector<unsigned int> counts(5,0);
     std::vector<unsigned int> values = {0,0,1,2,3,4,4};
 
 
     for( auto x : values)
-        baxcat::dist::multinomial::suffstatInsert(x,counts);
+        baxcat::dist::categorical::suffstatInsert(x,counts);
 
     BOOST_CHECK_EQUAL( counts[0], 2);
     BOOST_CHECK_EQUAL( counts[1], 1);
@@ -207,7 +207,7 @@ BOOST_AUTO_TEST_CASE(multinomial_remove_suffstats){
     BOOST_CHECK_EQUAL( counts[4], 2);
 
     for( auto x : values)
-        baxcat::dist::multinomial::suffstatRemove(x,counts);
+        baxcat::dist::categorical::suffstatRemove(x,counts);
 
     BOOST_CHECK_EQUAL( counts[0], 0);
     BOOST_CHECK_EQUAL( counts[1], 0);
@@ -217,52 +217,52 @@ BOOST_AUTO_TEST_CASE(multinomial_remove_suffstats){
 
 }
 
-BOOST_AUTO_TEST_CASE(multinomial_log_pdf_single_value_check){
+BOOST_AUTO_TEST_CASE(categorical_log_pdf_single_value_check){
 
     std::vector<double> p = {.2, .5, .1, .15, .05};
 
     double pdf;
 
-    pdf = baxcat::dist::multinomial::logPdf(1, p);
+    pdf = baxcat::dist::categorical::logPdf(1, p);
     BOOST_CHECK_CLOSE_FRACTION( pdf, -0.693147180559945, TOL);
 
-    pdf = baxcat::dist::multinomial::logPdf(4, p);
-    BOOST_CHECK_CLOSE_FRACTION( pdf, -2.99573227355399, TOL);
+    pdf = baxcat::dist::categorical::logPdf(4, p);
+    BOOST_CHECK_CLOSE_FRACTION( pdf, -2.995732273553991, TOL);
 }
 
-BOOST_AUTO_TEST_CASE(multinomial_log_pdf_suffstat_value_check){
+BOOST_AUTO_TEST_CASE(categorical_log_pdf_suffstat_value_check){
 
     std::vector<double> p = {.2,.5,.1,.15,.05};
     std::vector<char> counts = {1,1,1,1,1};
 
     double pdf, true_val;
 
-    true_val = -4.71053070164592;
-    pdf = baxcat::dist::multinomial::logPdfSuffstats(5, counts, p);
+    true_val = -9.4980224444279635;
+    pdf = baxcat::dist::categorical::logPdfSuffstats(5, counts, p);
     BOOST_CHECK_CLOSE_FRACTION( pdf, true_val, TOL);
 
     counts = {2,2,2,2,2};
 
-    true_val = -7.35736821858014;
-    pdf = baxcat::dist::multinomial::logPdfSuffstats(10, counts, p);
+    true_val = -18.996044888855927;
+    pdf = baxcat::dist::categorical::logPdfSuffstats(10, counts, p);
     BOOST_CHECK_CLOSE_FRACTION( pdf, true_val, TOL);
 }
 
-BOOST_AUTO_TEST_CASE(multinomial_log_pdf_vector_value_check){
+BOOST_AUTO_TEST_CASE(categorical_log_pdf_vector_value_check){
 
     std::vector<double> p = {.2,.5,.1,.15,.05};
     std::vector<char> X = {0,1,2,3,4};
 
     double pdf, true_val;
 
-    true_val = -4.71053070164592;
-    pdf = baxcat::dist::multinomial::logPdf(X, p);
+    true_val = -9.4980224444279635;
+    pdf = baxcat::dist::categorical::logPdf(X, p);
     BOOST_CHECK_CLOSE_FRACTION( pdf, true_val, TOL);
 
     X = {0,1,2,3,4,0,1,2,3,4};
 
-    true_val = -7.35736821858014;
-    pdf = baxcat::dist::multinomial::logPdf(X, p);
+    true_val = -18.996044888855927;
+    pdf = baxcat::dist::categorical::logPdf(X, p);
     BOOST_CHECK_CLOSE_FRACTION( pdf, true_val, TOL);
 
 }

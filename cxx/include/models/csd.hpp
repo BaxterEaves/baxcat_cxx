@@ -23,7 +23,7 @@
 
 #include "prng.hpp"
 #include "utils.hpp"
-#include "distributions/multinomial.hpp"
+#include "distributions/categorical.hpp"
 #include "distributions/symmetric_dirichlet.hpp"
 
 using std::vector;
@@ -32,27 +32,27 @@ namespace baxcat{
 namespace models{
 
     template <typename T>
-    struct __MDAllowed__;
+    struct __CDAllowed__;
 
 
     // allow only unsigned integral types
-    template <> struct __MDAllowed__<size_t>{};
-    // template <> struct __MDAllowed__<uint_fast8_t>{};
-    // template <> struct __MDAllowed__<uint_fast16_t>{};
-    // template <> struct __MDAllowed__<uint_fast32_t>{};
+    template <> struct __CDAllowed__<size_t>{};
+    // template <> struct __CDAllowed__<uint_fast8_t>{};
+    // template <> struct __CDAllowed__<uint_fast16_t>{};
+    // template <> struct __CDAllowed__<uint_fast32_t>{};
 
 
     template <typename T>
-    struct MultinomialDirichlet : __MDAllowed__<T>{
+    struct CategoricalDirichlet : __CDAllowed__<T>{
 
         static void suffstatInsert(T x, std::vector<T> &counts)
         {
-            baxcat::dist::multinomial::suffstatInsert(x, counts);
+            baxcat::dist::categorical::suffstatInsert(x, counts);
         }
 
         static void suffstatRemove(T x, std::vector<T> &counts)
         {
-            baxcat::dist::multinomial::suffstatRemove(x, counts);
+            baxcat::dist::categorical::suffstatRemove(x, counts);
         }
 
         static double logPrior(const std::vector<double> &p, double alpha)
@@ -69,7 +69,7 @@ namespace models{
         static double logLikelihood(const std::vector<T> &counts, const std::vector<double> &p)
         {
             double n = static_cast<double>(baxcat::utils::sum(counts));
-            return baxcat::dist::multinomial::logPdfSuffstats(n, counts, p);
+            return baxcat::dist::categorical::logPdfSuffstats(n, counts, p);
         }
 
         static double logMarginalLikelihood(double n, const std::vector<T> &counts, double alpha)

@@ -19,6 +19,7 @@
 #define baxcat_cxx_container_guard
 
 #include <vector>
+#include <cmath>
 
 namespace baxcat{
 

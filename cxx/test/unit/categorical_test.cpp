@@ -24,7 +24,7 @@
 #include <map>
 
 #include "prng.hpp"
-#include "models/msd.hpp"
+#include "models/csd.hpp"
 #include "distributions/gamma.hpp"
 
 #include "datatypes/categorical.hpp"
@@ -220,7 +220,7 @@ BOOST_AUTO_TEST_CASE(marginal_likelihood_value_checks)
     std::vector<size_t> counts = {2, 3, 5};
     Categorical model(n, counts, dirichlet_alpha);
 
-    baxcat::models::MultinomialDirichlet<size_t> msd;
+    baxcat::models::CategoricalDirichlet<size_t> msd;
 
     double logp_model = model.logp();
     double logp_msd = msd.logMarginalLikelihood(n, counts, dirichlet_alpha);
@@ -244,7 +244,7 @@ BOOST_AUTO_TEST_CASE(marginal_likelihood_value_checks_with_insert)
 
     model.updateConstants();
 
-    baxcat::models::MultinomialDirichlet<size_t> msd;
+    baxcat::models::CategoricalDirichlet<size_t> msd;
 
     double logp_model = model.logp();
     double logp_msd = msd.logMarginalLikelihood(n, counts, dirichlet_alpha);
@@ -260,7 +260,7 @@ BOOST_AUTO_TEST_CASE(predictive_probability_value_checks)
     std::vector<size_t> counts = {2, 3, 5};
     Categorical model(n, counts, dirichlet_alpha);
 
-    baxcat::models::MultinomialDirichlet<size_t> msd;
+    baxcat::models::CategoricalDirichlet<size_t> msd;
     double log_z = msd.logZ(n, counts, dirichlet_alpha);
 
     size_t x = 0;
@@ -292,7 +292,7 @@ BOOST_AUTO_TEST_CASE(test_dirichlet_alpha_conditional_values_single)
 
     double a = 1.3;
 
-    baxcat::models::MultinomialDirichlet<size_t> msd;
+    baxcat::models::CategoricalDirichlet<size_t> msd;
 
     auto hypers = model.getHypersMap();
     auto suffstats = model.getSuffstatsMap();
@@ -325,7 +325,7 @@ BOOST_AUTO_TEST_CASE(test_dirichlet_alpha_conditional_values_mulitple)
 
     double a = 1.3;
 
-    baxcat::models::MultinomialDirichlet<size_t> msd;
+    baxcat::models::CategoricalDirichlet<size_t> msd;
 
     double f_a = 0;
     f_a += baxcat::dist::gamma::logPdf(a, 1., config[0]);

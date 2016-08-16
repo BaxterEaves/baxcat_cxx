@@ -237,7 +237,7 @@ vector<map<string, double>> SyntheticDataGenerator::__generateCategoricalParamet
 	vector<map<string, double>> params;
 
 	for(size_t i = 0; i < num_categories; ++i){
-		// draw multinomial vector for dirichlet
+		// draw categorical vector for dirichlet
 		vector<double> p = _rng.get()->dirrand(alpha_vec);
 
 		ASSERT_EQUAL(std::cout, p.size(), K);
@@ -284,7 +284,7 @@ double SyntheticDataGenerator::__categoricalLogp(double x, size_t column)
 			string key = std::to_string(k);
 			p[k] = _params[column][i][key];
 		}
-		weights[i] = log(weights[i]) + dist::multinomial::logPdf(y, p);
+		weights[i] = log(weights[i]) + dist::categorical::logPdf(y, p);
 	}
 
 	return numerics::logsumexp(weights);

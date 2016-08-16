@@ -30,7 +30,7 @@
 #include "distributions/gamma.hpp"
 
 #include "component.hpp"
-#include "models/msd.hpp"
+#include "models/csd.hpp"
 
 namespace baxcat{
 namespace datatypes{
@@ -98,7 +98,7 @@ protected:
     double hyperDirichletAlphaConditional_(double alpha) const;
 
 private:
-	baxcat::models::MultinomialDirichlet<size_t> _msd;
+	baxcat::models::CategoricalDirichlet<size_t> _csd;
 
 	// for indexing
 	enum hyper_idx {HYPER_DIRICHLET_ALPHA=0};

@@ -31,14 +31,14 @@ using baxcat::datatypes::Categorical;
 void Categorical::insertElement(size_t x)
 {
 	++_n;
-	_msd.suffstatInsert(x, _counts);
+	_csd.suffstatInsert(x, _counts);
 }
 
 
 void Categorical::removeElement(size_t x)
 {
 	--_n;
-	_msd.suffstatRemove(x, _counts);
+	_csd.suffstatRemove(x, _counts);
 }
 
 
@@ -54,19 +54,19 @@ void Categorical::clear(const std::vector<double> &distargs)
 // ````````````````````````````````````````````````````````````````````````````````````````````````
 double Categorical::logp() const
 {
-    return _msd.logMarginalLikelihood(_n, _counts, _dirichlet_alpha);
+    return _csd.logMarginalLikelihood(_n, _counts, _dirichlet_alpha);
 }
 
 
 double Categorical::elementLogp(size_t x) const
 {
-    return _msd.logPredictiveProbability(x, _counts, _dirichlet_alpha, _log_Z0 );
+    return _csd.logPredictiveProbability(x, _counts, _dirichlet_alpha, _log_Z0 );
 }
 
 
 double Categorical::singletonLogp(size_t x) const
 {
-	return _msd.logSingletonProbability(x, _counts.size(), _dirichlet_alpha);
+	return _csd.logSingletonProbability(x, _counts.size(), _dirichlet_alpha);
 }
 
 
@@ -82,7 +82,7 @@ double Categorical::hyperpriorLogp(const std::vector<double> &hyperprior_config)
 // ````````````````````````````````````````````````````````````````````````````````````````````````
 size_t Categorical::draw(baxcat::PRNG *rng) const
 {
-	return _msd.predictiveSample(_counts, _dirichlet_alpha, rng, _log_Z0);
+	return _csd.predictiveSample(_counts, _dirichlet_alpha, rng, _log_Z0);
 }
 
 
@@ -91,7 +91,7 @@ size_t Categorical::drawConstrained(vector<size_t> contraints, baxcat::PRNG *rng
 	auto counts_copy = _counts;
 	for( auto &c : contraints)
 		++counts_copy[c];
-	return _msd.predictiveSample(counts_copy, _dirichlet_alpha, rng, _log_Z0);
+	return _csd.predictiveSample(counts_copy, _dirichlet_alpha, rng, _log_Z0);
 }
 
 
@@ -153,7 +153,7 @@ vector<double> Categorical::resampleHypers(vector<Categorical> &models,
 // ````````````````````````````````````````````````````````````````````````````````````````````````
 double Categorical::hyperDirichletAlphaConditional_(double alpha) const
 {
-    return _msd.logMarginalLikelihood(_n, _counts, alpha);
+    return _csd.logMarginalLikelihood(_n, _counts, alpha);
 }
 
 

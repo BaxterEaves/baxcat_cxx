@@ -26,7 +26,7 @@
 
 #include "prng.hpp"
 #include "distributions/gaussian.hpp"
-#include "distributions/multinomial.hpp"
+#include "distributions/categorical.hpp"
 #include "helpers/constants.hpp"
 #include "helpers/state_helper.hpp"
 

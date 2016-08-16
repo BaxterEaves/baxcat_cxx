@@ -15,8 +15,8 @@
 // You may contact the mantainers of this software via github
 // <https://github.com/BaxterEaves/baxcat_cxx>.
 
-#ifndef baxcat_cxx_distributions_multinomial
-#define baxcat_cxx_distributions_multinomial
+#ifndef baxcat_cxx_distributions_categorical
+#define baxcat_cxx_distributions_categorical
 
 #include <vector>
 #include <cmath>
@@ -26,7 +26,7 @@
 
 namespace baxcat{
 namespace dist{
-namespace multinomial{
+namespace categorical{
 
 
 template <typename T>
@@ -50,13 +50,10 @@ static typename baxcat::enable_if<std::is_integral<T>,double> logPdfSuffstats(do
     std::vector<T> counts, std::vector<double> p)
 {
     double logp = 0;
-    double C = baxcat::numerics::lfactorial(n);
-    for (size_t k = 0; k < counts.size(); ++k){
+    for (size_t k = 0; k < counts.size(); ++k)
         logp += counts[k]*log(p[k]);
-        C -= baxcat::numerics::lfactorial(counts[k]);
-    }
 
-    return C+logp;
+    return logp;
 }
 
 
