@@ -694,16 +694,14 @@ class Engine(object):
     def pairwise_func(self, func, idxs=None, **kwargs):
         """ Do a function over all paris of columns/rows
 
-        Currently only column functions are implemented.
-
         Parameters
         ----------
         func : str
             `dependence_probability`, `mutual_information`, `linfoot`,
             or `conditional_entropy`
-        cols : list(column index), optional
-            List of columns. If None (default), the function is run on all
-            pairs of columns.
+        idxs : list(column or row index), optional
+            List of columns/rows. If None (default), the function is run on all
+            pairs of columns/rows.
         n_samples : int, optional
             The number of samples for Monte Carlo approximation when
             applicable.
@@ -844,6 +842,7 @@ class Engine(object):
         pu.plot_cc_model(self._data, model, model_logps, self._df.index,
                          self._df.columns, hl_rows=hl_rows, hl_cols=hl_cols)
 
+    # --- static utility functions
     @staticmethod
     def pairwise_func_type(func):
         functypes = {
