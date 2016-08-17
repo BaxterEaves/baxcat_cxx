@@ -555,7 +555,7 @@ class Engine(object):
     def row_similarity(self, row_a, row_b, wrt=None):
         """ The similarity between two rows in terms of their partitions. """
         if wrt is not None:
-            raise NotImplementedError('With respect to (wrt) not implemented.')
+            colidxs = [self._converters['col2idx'][col] for col in wrt]
 
         if row_a == row_b:
             # XXX: we will assume that the user meant to do this
@@ -566,10 +566,17 @@ class Engine(object):
 
         sim = np.zeros(self._n_models)
         for midx, model in enumerate(self._models):
-            n_views = len(model['row_assignments'])
-            sim[midx] = sum(asgn[idx_a] == asgn[idx_b] for asgn in
-                            model['row_assignments'])
-            sim[midx] /= float(n_views)
+            if wrt is not None:
+                relviews = set([model['col_assignment'][c] for c in colidxs])
+            else:
+                relviews = list(range(len(model['row_assignments'])))
+
+            for vidx in relviews:
+                asgn = model['row_assignments'][vidx]
+                sim[midx] += (asgn[idx_a] == asgn[idx_b])
+
+            sim[midx] /= float(len(relviews))
+
         return np.mean(sim)
 
     # TODO: allow multiple columns for joint entropy

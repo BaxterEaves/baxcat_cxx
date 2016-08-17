@@ -301,6 +301,61 @@ def test_pairwise_dependence_probability():
     assert depprob.ix[1, 2] == depprob.ix[2, 1]
 
 
+# --- Row similarity
+def test_row_similarity():
+    x = np.random.randn(30)
+
+    s1 = pd.Series(x)
+    s2 = pd.Series(x + 1.0)
+    s3 = pd.Series(np.random.rand(30))
+
+    df = pd.concat([s1, s2, s3], axis=1)
+    df.columns = ['c0', 'c1', 'c2']
+
+    engine = Engine(df, no_mp=True)
+    engine.init_models(4)
+
+    engine._models[0]['col_assignment'] = [0, 0, 1]
+    engine._models[1]['col_assignment'] = [0, 0, 1]
+    engine._models[2]['col_assignment'] = [0, 0, 1]
+    engine._models[3]['col_assignment'] = [0, 0, 1]
+
+    engine._models[0]['row_assignments'] = [[0] + [1]*29, [0]*30]
+    engine._models[1]['row_assignments'] = [[0] + [1]*29, [0]*30]
+    engine._models[2]['row_assignments'] = [[1]*29 + [0], [0]*30]
+    engine._models[3]['row_assignments'] = [[1]*29 + [0], [0]*30]
+
+    assert engine.row_similarity(0, 1) == .75
+    assert engine.row_similarity(1, 2) == 1.
+
+
+def test_row_similarity_wrt():
+    x = np.random.randn(30)
+
+    s1 = pd.Series(x)
+    s2 = pd.Series(x + 1.0)
+    s3 = pd.Series(np.random.rand(30))
+
+    df = pd.concat([s1, s2, s3], axis=1)
+    df.columns = ['c0', 'c1', 'c2']
+
+    engine = Engine(df, no_mp=True)
+    engine.init_models(4)
+
+    engine._models[0]['col_assignment'] = [0, 0, 1]
+    engine._models[1]['col_assignment'] = [0, 0, 1]
+    engine._models[2]['col_assignment'] = [0, 0, 1]
+    engine._models[3]['col_assignment'] = [0, 0, 1]
+
+    engine._models[0]['row_assignments'] = [[0] + [1]*29, [0]*30]
+    engine._models[1]['row_assignments'] = [[0] + [1]*29, [0]*30]
+    engine._models[2]['row_assignments'] = [[1]*29 + [0], [0]*30]
+    engine._models[3]['row_assignments'] = [[1]*29 + [0], [0]*30]
+
+    assert engine.row_similarity(0, 1, wrt=['c0']) == .5
+    assert engine.row_similarity(0, 1, wrt=['c2']) == 1.
+
+
 # probability
 # ---
 @pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
