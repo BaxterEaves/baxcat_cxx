@@ -162,7 +162,7 @@ class Engine(object):
             self._mapper = self._pool.map
         else:
             self._pool = None
-            self._mapper = lambda func, args: [func(arg) for arg in args]
+            self._mapper = lambda func, args: list(map(func, args))
 
         self._models = []
         self._n_models = 0
@@ -282,7 +282,7 @@ class Engine(object):
         >>> engine.diagnostics([1])
         """
         if model_idxs is None:
-            model_idxs = [i for i in range(self._n_models)]
+            model_idxs = list(range(self._n_models))
         return [pd.DataFrame(self._diagnostic_tables[m]) for m in model_idxs]
 
     def col_info(self):
@@ -322,7 +322,7 @@ class Engine(object):
         trans_kwargs['N'] = n_iter
 
         if model_idxs is None:
-            model_idxs = [i for i in range(self._n_models)]
+            model_idxs = list(range(self._n_models))
 
         args = []
         for idx in model_idxs:
@@ -514,7 +514,7 @@ class Engine(object):
         """
         col_idx = self._converters['col2idx'][col]
         if rows is None:
-            row_idxs = [i for i in range(self._n_rows)]
+            row_idxs = list(range(self._n_rows))
         else:
             row_idxs = [self._converters['row2idx'][row] for row in rows]
 
@@ -555,7 +555,7 @@ class Engine(object):
     def row_similarity(self, row_a, row_b, wrt=None):
         """ The similarity between two rows in terms of their partitions. """
         if wrt is not None:
-            raise NotImplementedError('With respect to (wrt) not implemented.')
+            colidxs = [self._converters['col2idx'][col] for col in wrt]
 
         if row_a == row_b:
             # XXX: we will assume that the user meant to do this
@@ -566,10 +566,17 @@ class Engine(object):
 
         sim = np.zeros(self._n_models)
         for midx, model in enumerate(self._models):
-            n_views = len(model['row_assignments'])
-            sim[midx] = sum(asgn[idx_a] == asgn[idx_b] for asgn in
-                            model['row_assignments'])
-            sim[midx] /= float(n_views)
+            if wrt is not None:
+                relviews = set([model['col_assignment'][c] for c in colidxs])
+            else:
+                relviews = list(range(len(model['row_assignments'])))
+
+            for vidx in relviews:
+                asgn = model['row_assignments'][vidx]
+                sim[midx] += (asgn[idx_a] == asgn[idx_b])
+
+            sim[midx] /= float(len(relviews))
+
         return np.mean(sim)
 
     # TODO: allow multiple columns for joint entropy
