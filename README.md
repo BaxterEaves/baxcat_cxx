@@ -46,6 +46,7 @@ Some things I need to do to make this more accessible and useful to non-bax huma
 - [X] Row similarity heatmap
 - [ ] Row similarity WRT specific columns (#1)
 - [X] Way to evalute predictive power `Engine.eval`
+- [X] Optional ouput during Engine.run
 
 Optimizations and refactoring
 

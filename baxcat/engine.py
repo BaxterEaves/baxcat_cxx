@@ -46,8 +46,10 @@ def _initialize(args):
 def _run(args):
     data = args[0]
     checkpoint = args[1]
-    init_kwargs = args[2]
-    trans_kwargs = args[3]
+    t_id = args[2]
+    quiet = args[3]
+    init_kwargs = args[4]
+    trans_kwargs = args[5]
 
     # create copy of trans_kwargs so we don't mutate
     trans_kwargs = dict(trans_kwargs)
@@ -61,18 +63,30 @@ def _run(args):
 
     diagnostics = []
     state = BCState(data.T, **init_kwargs)  # transpose dat to col-major
-    for _ in range(n_sweeps):
+    for i in range(n_sweeps):
         t_start = time.time()
         state.transition(**trans_kwargs)
         t_iter = time.time() - t_start
 
+        n_views = state.n_views
+        log_score = state.log_score()
+
         diagnostic = {
-            'log_score': state.log_score(),
+            'log_score': log_score,
+            'n_views': n_views,
             'iters': checkpoint,
             'time': t_iter}
         diagnostics.append(diagnostic)
 
+        if not quiet:
+            msg = "Model {}:\n\t+ sweep {} of {} in {} sec."
+            msg += "\n\t+ log score: {}"
+            msg += "\n\t+ n_views: {}\n"
+
+            print(msg.format(t_id, i, n_sweeps, t_iter, log_score, n_views))
+
     metadata = state.get_metadata()
+
     return metadata, diagnostics
 
 
@@ -286,7 +300,7 @@ class Engine(object):
         return df
 
     def run(self, n_iter=1, checkpoint=None, model_idxs=None,
-            trans_kwargs=None):
+            trans_kwargs=None, quiet=True):
         """ Run the sampler.
 
         Parameters
@@ -322,7 +336,8 @@ class Engine(object):
                           'state_alpha': model['state_alpha'],
                           'view_alphas': model['view_alphas'],
                           'seed': sd}
-            args.append((self._data, checkpoint, init_kwarg, trans_kwargs,))
+            args.append((self._data, checkpoint, idx, quiet, init_kwarg,
+                         trans_kwargs,))
 
         res = self._mapper(_run, args)
         for idx, (model, diagnostics) in zip(model_idxs, res):
