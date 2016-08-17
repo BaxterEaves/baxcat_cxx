@@ -44,9 +44,10 @@ Some things I need to do to make this more accessible and useful to non-bax huma
 - [ ] Real-world examples in `examples` directory
 - [ ] Interval probabilities in `Engine.probability`
 - [X] Row similarity heatmap
-- [ ] Row similarity WRT specific columns (#1)
+- [X] Row similarity WRT specific columns (#1)
 - [X] Way to evalute predictive power `Engine.eval`
 - [X] Optional ouput during Engine.run
+- [ ] More options for parallelization (IPython, Pathos, etc)
 
 Optimizations and refactoring
 
