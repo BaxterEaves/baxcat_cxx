@@ -162,7 +162,7 @@ class Engine(object):
             self._mapper = self._pool.map
         else:
             self._pool = None
-            self._mapper = lambda func, args: [func(arg) for arg in args]
+            self._mapper = lambda func, args: list(map(func, args))
 
         self._models = []
         self._n_models = 0
@@ -282,7 +282,7 @@ class Engine(object):
         >>> engine.diagnostics([1])
         """
         if model_idxs is None:
-            model_idxs = [i for i in range(self._n_models)]
+            model_idxs = list(range(self._n_models))
         return [pd.DataFrame(self._diagnostic_tables[m]) for m in model_idxs]
 
     def col_info(self):
@@ -322,7 +322,7 @@ class Engine(object):
         trans_kwargs['N'] = n_iter
 
         if model_idxs is None:
-            model_idxs = [i for i in range(self._n_models)]
+            model_idxs = list(range(self._n_models))
 
         args = []
         for idx in model_idxs:
@@ -514,7 +514,7 @@ class Engine(object):
         """
         col_idx = self._converters['col2idx'][col]
         if rows is None:
-            row_idxs = [i for i in range(self._n_rows)]
+            row_idxs = list(range(self._n_rows))
         else:
             row_idxs = [self._converters['row2idx'][row] for row in rows]
 
