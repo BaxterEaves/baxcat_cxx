@@ -52,10 +52,19 @@ Optimizations and refactoring
 
 - [ ] Should have `Engine._converters['valmaps']` for every column
 - [X] rename `msd` in `cxx` to `csd` (#3) 
-- [ ] Remove stupid copyright boilerplate.
+- [X] Remove stupid copyright boilerplate.
 - [ ] dial back the namespaces and better organize headers
 - [ ] Figure out better prior for CRP alpha. Maybe need prior MH to avoid numerical problems (#2)
 - [X] Fix super-redundant code in `Engine.pairwise_func`
 
 # License
-Licensed under the GNU General Public License, version 3. See `LICENSE.txt` for details.
+BaxCat: an extensible cross-catigorization engine.
+Copyright (C) 2016 Baxter Eaves
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 3.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License (LICENSE.txt) along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+You may contact the mantainers of this software via github <https://github.com/BaxterEaves/baxcat_cxx>.
