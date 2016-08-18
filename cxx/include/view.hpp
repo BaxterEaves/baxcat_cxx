@@ -6,6 +6,7 @@
 #include <cmath>
 #include <memory>
 #include <iostream>
+#include <functional>
 #include "omp.h"
 
 #include "utils.hpp"

@@ -22,7 +22,7 @@ geweke.inftest:
 	$(CXX) geweke_test.cpp -o $(F_OUT)geweke.inftest \
 	$(SRC)/continuous.cpp $(SRC)/categorical.cpp $(SRC)/synthetic_data_generator.cpp \
 	$(SRC)/state.cpp $(SRC)/view.cpp $(SRC)/feature_tree.cpp \
-	geweke_tester.cpp $(OPTS)
+	$(SRC)/geweke_tester.cpp $(OPTS)
 
 runtests: $(TEST_FILES)
 	./$(F_OUT)geweke.inftest;

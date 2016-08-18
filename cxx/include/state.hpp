@@ -7,6 +7,7 @@
 #include <memory>
 #include <vector>
 #include <typeinfo>
+#include <functional>
 #include "omp.h"
 
 #include "prng.hpp"

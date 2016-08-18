@@ -5,6 +5,7 @@
 #include "debug.hpp"
 
 #include <limits>
+#include <functional>
 
 #include "prng.hpp"
 
@@ -32,8 +33,8 @@ namespace baxcat{
 namespace samplers{
 
     template <typename lambda>
-    double mhSample(double x_0, lambda &log_pdf, baxcat::Domain D, double w, size_t burn,
-        baxcat::PRNG *rng)
+    double mhSample(double x_0, lambda &log_pdf, baxcat::Domain D,
+            double w, size_t burn, baxcat::PRNG *rng)
     {
         double qstd = 0.2*w;
         double lp = log_pdf(x_0);
@@ -51,9 +52,31 @@ namespace samplers{
         return x_0;
     };
 
+    static double priormh(std::function<double(double)> lpdf,
+                          std::function<double(double)> q_lpdf,
+                          std::function<double()> draw, size_t burn,
+                          baxcat::PRNG *rng)
+    {
+        std::vector<double> out(500);
+        
+        auto x = draw();
+        auto l = lpdf(x) - q_lpdf(x);
+        for (size_t i=0; i < burn; ++i){
+            auto xp = draw();
+            auto lp = lpdf(xp) - q_lpdf(xp);
+            
+            if (log(rng->rand()) < lp-l){
+                l = lp;
+                x = xp;
+            }
+        }
+
+        return x;
+    };
+
     template <typename lambda>
-    void __stepout(double x_0, double y, double w, double m, lambda f, baxcat::Domain D,
-        baxcat::PRNG *rng, double &L, double &R)
+    void __stepout(double x_0, double y, double w, double m, lambda f,
+            baxcat::Domain D, baxcat::PRNG *rng, double &L, double &R)
     {
 
         double U = rng->rand();
@@ -80,12 +103,12 @@ namespace samplers{
         }
     }
 
-    // slice sample the log function log_pdf with bounds defined in domain, D, and starting from
-    // point x_0. w is the expected slice width and burn the the number of samples to ignore before
-    // the samples is collected.
+    // slice sample the log function log_pdf with bounds defined in domain, D,
+    // and starting from point x_0. w is the expected slice width and burn the
+    // the number of samples to ignore before the samples is collected.
     template <typename lambda>
-    double sliceSample(double x_0, lambda &log_pdf, baxcat::Domain D, double w, size_t burn,
-        baxcat::PRNG *rng)
+    double sliceSample(double x_0, lambda &log_pdf, baxcat::Domain D, double w,
+            size_t burn, baxcat::PRNG *rng)
     {
         const double m = 256;
 
@@ -124,7 +147,7 @@ namespace samplers{
                 if( num_loops > MAX_LOOPS ){
                     reduce_width = true;
                     goto reduce_width_and_try_again; // yep. that's a goto
-                    DEBUG_MESSAGE(std::cout, "Reached MAX_LOOPS. Reducing width.");
+                    DEBUG_MESSAGE(std::cout, "Reached MAX_LOOPS");
                 }
             }
         }
@@ -132,7 +155,6 @@ namespace samplers{
         return x_0;
     }
 
-}
-}
+}}
 
 #endif

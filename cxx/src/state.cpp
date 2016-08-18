@@ -3,6 +3,7 @@
 
 using std::vector;
 using std::string;
+using std::function;
 using std::shared_ptr;
 
 
@@ -332,7 +333,7 @@ void State::__doTransition(transition_type t, vector<size_t> which_rows, vector<
 
 
 // Transitions
-//`````````````````````````````````````````````````````````````````````````````````````````````````
+// ---
 void State::__transitionStateCRPAlpha()
 {
     // don't worry about CRP alpha is there is only one column
@@ -342,25 +343,31 @@ void State::__transitionStateCRPAlpha()
     double k = _num_views;
     double n = _num_columns;
 
-    double alpha_shape = _crp_alpha_config[0];
-    double alpha_scale = _crp_alpha_config[1];
+    double shape = _crp_alpha_config[0];
+    double scale = _crp_alpha_config[1];
 
-    // auto log_crp_posterior = [alpha_shape, alpha_scale, k, n](double x){
-    //     return numerics::lcrpUNormPost(k, n, x) + dist::gamma::logPdf(x, alpha_shape, alpha_scale);
-    // };
+    auto cts = _view_counts;
 
-    auto counts = _view_counts;
-
-    auto log_crp_posterior = [alpha_shape, alpha_scale, counts, n](double x){
-        return numerics::lcrp(counts, n, x) + dist::inverse_gamma::logPdf(x, alpha_shape, alpha_scale);
-    };
-
-    double slice_width = alpha_shape*alpha_scale*alpha_scale/2;  // this is a guess
     size_t burn = 50;
 
-    // slice sample
-    _crp_alpha = samplers::mhSample(_crp_alpha, log_crp_posterior, {ALMOST_ZERO, INF},
-                                       slice_width, burn, _rng.get());
+    auto rng = _rng.get();
+
+    function<double(double)> log_crp_posterior = [shape, scale, cts, n](double x){
+        double a = numerics::lcrp(cts, n, x);
+        double b = dist::inverse_gamma::logPdf(x, shape, scale);
+        return a + b;
+    };
+
+    function<double(double)> q_lpdf = [shape, scale](double x){
+        return dist::inverse_gamma::logPdf(x, shape, scale);
+    };
+
+    function<double()> draw = [rng, shape, scale](){
+        return rng->invgamrand(shape, scale);
+    };
+
+    _crp_alpha = samplers::priormh(log_crp_posterior, q_lpdf, draw, burn,
+                                   _rng.get());
 }
 
 
