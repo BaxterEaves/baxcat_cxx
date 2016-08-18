@@ -47,7 +47,7 @@ def _run(args):
     data = args[0]
     checkpoint = args[1]
     t_id = args[2]
-    quiet = args[3]
+    verbose = args[3]
     init_kwargs = args[4]
     trans_kwargs = args[5]
 
@@ -78,7 +78,7 @@ def _run(args):
             'time': t_iter}
         diagnostics.append(diagnostic)
 
-        if not quiet:
+        if verbose:
             msg = "Model {}:\n\t+ sweep {} of {} in {} sec."
             msg += "\n\t+ log score: {}"
             msg += "\n\t+ n_views: {}\n"
@@ -300,7 +300,7 @@ class Engine(object):
         return df
 
     def run(self, n_iter=1, checkpoint=None, model_idxs=None,
-            trans_kwargs=None, quiet=True):
+            trans_kwargs=None, verbose=False):
         """ Run the sampler.
 
         Parameters
@@ -314,6 +314,8 @@ class Engine(object):
             The indices of the models to run, if not all models.
         trans_kwargs : dict
             Keyword arguments sent to `BCState.transition`
+        verbose : bool
+            If True, print disagnostic info ate every checkpoint
         """
 
         if trans_kwargs is None:
@@ -336,7 +338,7 @@ class Engine(object):
                           'state_alpha': model['state_alpha'],
                           'view_alphas': model['view_alphas'],
                           'seed': sd}
-            args.append((self._data, checkpoint, idx, quiet, init_kwarg,
+            args.append((self._data, checkpoint, idx, verbose, init_kwarg,
                          trans_kwargs,))
 
         res = self._mapper(_run, args)
