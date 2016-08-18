@@ -339,8 +339,6 @@ void State::__transitionStateCRPAlpha()
     // don't worry about CRP alpha is there is only one column
     if(_num_columns == 1) return;
 
-    // construct crp alpha posterior
-    double k = _num_views;
     double n = _num_columns;
 
     double shape = _crp_alpha_config[0];
@@ -352,6 +350,7 @@ void State::__transitionStateCRPAlpha()
 
     auto rng = _rng.get();
 
+    // construct crp alpha posterior
     function<double(double)> log_crp_posterior = [shape, scale, cts, n](double x){
         double a = numerics::lcrp(cts, n, x);
         double b = dist::inverse_gamma::logPdf(x, shape, scale);

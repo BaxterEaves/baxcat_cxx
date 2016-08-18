@@ -120,18 +120,10 @@ void View::__gibbsInit()
 // crp alpha
 void View::transitionCRPAlpha()
 {
-    // construct crp alpha posterior
-    double k = _num_clusters;
     double n = _num_rows;
-
-    // double slice_width = 2.0; // this is a guess
     size_t burn = 50;
 
-    // sample
-    // _crp_alpha = samplers::mhSample(_crp_alpha, log_crp_posterior, {0, INF},
-    //                                 slice_width, burn, _rng);
-    //
-
+    // construct crp alpha posterior
     const auto cts = _cluster_counts;
     function<double(double)> log_crp_posterior = [cts, n](double x){
         double a = numerics::lcrp(cts, n, x);

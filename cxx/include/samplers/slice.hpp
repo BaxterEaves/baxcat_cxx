@@ -36,7 +36,6 @@ namespace samplers{
     double mhSample(double x_0, lambda &log_pdf, baxcat::Domain D,
             double w, size_t burn, baxcat::PRNG *rng)
     {
-        double qstd = 0.2*w;
         double lp = log_pdf(x_0);
 
         for (size_t i=0; i < burn; ++i){
