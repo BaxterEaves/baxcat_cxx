@@ -1,8 +1,9 @@
 import pytest
-
 import tempfile
 import pandas as pd
 import numpy as np
+
+from multiprocessing.pool import Pool
 
 from baxcat.engine import Engine
 from baxcat.metrics import SquaredError
@@ -66,7 +67,6 @@ def test_engine_init_smoke_metadata(gendf):
 def test_engine_init_structureless(gendf):
     df = gendf()
 
-    df = pd.DataFrame(np.random.rand(30, 5))
     engine = Engine(df, no_mp=True)
     engine.init_models(4, structureless=True)
 
@@ -75,6 +75,43 @@ def test_engine_init_structureless(gendf):
     assert all([len(m['row_assignments']) == 1 for m in engine._models])
     for m in engine._models:
         assert all([max(z) == 0 for z in m['row_assignments']])
+
+
+@pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
+def test_engine_with_mapper_stl(gendf):
+    engine = Engine(gendf(), mapper=lambda f, args: list(map(f, args)))
+    engine.init_models(4)
+    engine.run(2)
+
+    assert len(engine.models) == 4
+
+
+@pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
+def test_engine_with_mapper_mp(gendf):
+    pool = Pool()
+
+    engine = Engine(gendf(), mapper=pool.map)
+    engine.init_models(4)
+    engine.run(2)
+
+    assert len(engine.models) == 4
+
+    # Terminate the pool or it'll fudge up the other tests by blocking.
+    pool.terminate()
+
+
+@pytest.mark.skip(reason='No IPython parallel installed')
+@pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
+def test_engine_with_mapper_ipyparallel(gendf):
+    import ipyparallel as ipp
+
+    c = ipp.Client()
+
+    engine = Engine(gendf(), mapper=c.map)
+    engine.init_models(4)
+    engine.run(2)
+
+    assert len(engine.models) == 4
 
 
 # test run
