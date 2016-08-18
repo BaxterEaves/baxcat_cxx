@@ -255,7 +255,7 @@ void GewekeTester::run(size_t num_times, size_t num_posterior_chains, size_t lag
 
 // Test results output and plotting
 //`````````````````````````````````````````````````````````````````````````````````````````````````
-void GewekeTester::outputResults()
+int GewekeTester::outputResults()
 {
     size_t num_pass = 0;
     size_t num_fail = 0;
@@ -411,8 +411,10 @@ void GewekeTester::outputResults()
 
     if(all_pass){
         std::cout << "**No failures detected." << std::endl;
+        return 0;
     }else{
         std::cout << "**" << num_fail << " failures." << std::endl;
+        return 1;
     }
 }
 
