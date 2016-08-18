@@ -121,7 +121,9 @@ void View::__gibbsInit()
 void View::transitionCRPAlpha()
 {
     double n = _num_rows;
+
     size_t burn = 50;
+
 
     // construct crp alpha posterior
     const auto cts = _cluster_counts;

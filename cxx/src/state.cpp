@@ -12,8 +12,9 @@ namespace baxcat{
 
 // todo: add more complete constructors (alphas)
 State::State(vector<vector<double>> X, vector<string> datatypes, vector<vector<double>> distargs,
-             unsigned int rng_seed )
-    : _rng(shared_ptr<PRNG>(new PRNG(rng_seed))), _crp_alpha_config({1, 1}), _view_alpha_marker(-1)
+             unsigned int rng_seed ):
+    _rng(shared_ptr<PRNG>(new PRNG(rng_seed))),
+    _crp_alpha_config({1, 1}), _view_alpha_marker(-1)
 {
     _num_columns = X.size();
     _num_rows = X[0].size();
@@ -410,7 +411,6 @@ void State::__transitionRowAssignments(vector<size_t> which_rows)
 
 void State::__transitionColumnAssignment(vector<size_t> which_cols, size_t which_kernel, size_t m)
 {
-
     // don't transition columns if there is only one
     if(_num_columns == 1) return;
 
