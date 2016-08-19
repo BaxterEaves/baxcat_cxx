@@ -32,7 +32,7 @@ public:
 
     void forwardSample(size_t num_times, bool do_init);
     void posteriorSample(size_t num_times, bool do_init, size_t lag);
-    void outputResults();
+    int outputResults();
 
     template <typename T>
     std::vector<std::string> __getMapKeys(std::map<std::string, T> map_in);

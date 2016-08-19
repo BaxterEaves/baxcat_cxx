@@ -10,7 +10,7 @@
 #include "distributions/categorical.hpp"
 #include "distributions/symmetric_dirichlet.hpp"
 
-#define TOL 10E-8
+#define ERRTOL 10E-8
 
 BOOST_AUTO_TEST_SUITE (categorical_symmetric_dirichlet_test)
 
@@ -70,7 +70,6 @@ BOOST_AUTO_TEST_CASE(log_likelihood_should_be_same_as_dist)
     std::vector<size_t> counts = {1 ,2, 1, 1};
     std::vector<double> P = {.25, .25, .25, .25};
 
-    size_t x = 2;
     double logpdf_categorical = baxcat::dist::categorical::logPdf(X, P);
     double logpdf_msd = CategoricalDirichlet<size_t>::logLikelihood(counts, P);
     double logpdf_categorical_suffstats = baxcat::dist::categorical::logPdfSuffstats(5, counts, P);
@@ -104,7 +103,7 @@ BOOST_AUTO_TEST_CASE(log_z_value_checks)
 
     double msd_value = CategoricalDirichlet<size_t>::logZ(n, counts, alpha);
 
-    BOOST_CHECK_CLOSE_FRACTION(msd_value, true_value, TOL);
+    BOOST_CHECK_CLOSE_FRACTION(msd_value, true_value, ERRTOL);
 }
 
 
@@ -115,11 +114,11 @@ BOOST_AUTO_TEST_CASE(logPrior_value_checks)
     double msd_value;
     msd_value = CategoricalDirichlet<size_t>::logPrior(p, 1.0);
 
-    BOOST_CHECK_CLOSE_FRACTION(0.693147180559945, msd_value, TOL);
+    BOOST_CHECK_CLOSE_FRACTION(0.693147180559945, msd_value, ERRTOL);
 
     msd_value = CategoricalDirichlet<size_t>::logPrior(p, 2.3);
 
-    BOOST_CHECK_CLOSE_FRACTION(1.37165082501073, msd_value, TOL);
+    BOOST_CHECK_CLOSE_FRACTION(1.37165082501073, msd_value, ERRTOL);
 }
 
 
@@ -130,7 +129,7 @@ BOOST_AUTO_TEST_CASE(logLikelihood_value_checks)
 
     double msd_value;
     msd_value =  CategoricalDirichlet<size_t>::logLikelihood(counts, p);
-    BOOST_CHECK_CLOSE_FRACTION(-11.277359393657463, msd_value, TOL);
+    BOOST_CHECK_CLOSE_FRACTION(-11.277359393657463, msd_value, ERRTOL);
 }
 
 
@@ -144,17 +143,17 @@ BOOST_AUTO_TEST_CASE(logMarginalLikelihood_value_checks)
     counts = {1, 4, 5};
 
     msd_value =  CategoricalDirichlet<size_t>::logMarginalLikelihood(n, counts, alpha);
-    BOOST_CHECK_CLOSE_FRACTION(-11.3285217419719, msd_value, TOL);
+    BOOST_CHECK_CLOSE_FRACTION(-11.3285217419719, msd_value, ERRTOL);
 
     n = 22;
     alpha = .8;
     counts = {2, 7, 13};
     msd_value =  CategoricalDirichlet<size_t>::logMarginalLikelihood(n, counts, alpha);
-    BOOST_CHECK_CLOSE_FRACTION(-22.4377193008552, msd_value, TOL);
+    BOOST_CHECK_CLOSE_FRACTION(-22.4377193008552, msd_value, ERRTOL);
 
     alpha = 4.5;
     msd_value =  CategoricalDirichlet<size_t>::logMarginalLikelihood(n, counts, alpha);
-    BOOST_CHECK_CLOSE_FRACTION(-22.4203863897293, msd_value, TOL);
+    BOOST_CHECK_CLOSE_FRACTION(-22.4203863897293, msd_value, ERRTOL);
 }
 
 
@@ -169,47 +168,47 @@ BOOST_AUTO_TEST_CASE(logPredictiveProbability_value_checks)
     log_z = CategoricalDirichlet<size_t>::logZ(n, counts, alpha);
 
     msd_value = CategoricalDirichlet<size_t>::logPredictiveProbability(0, counts, alpha, log_z);
-    BOOST_CHECK_CLOSE_FRACTION(-1.87180217690159, msd_value, TOL);
+    BOOST_CHECK_CLOSE_FRACTION(-1.87180217690159, msd_value, ERRTOL);
 
     msd_value = CategoricalDirichlet<size_t>::logPredictiveProbability(1, counts, alpha, log_z);
-    BOOST_CHECK_CLOSE_FRACTION(-0.95551144502744, msd_value, TOL);
+    BOOST_CHECK_CLOSE_FRACTION(-0.95551144502744, msd_value, ERRTOL);
 
     alpha = 2.5;
     log_z = CategoricalDirichlet<size_t>::logZ(n, counts, alpha);
     msd_value = CategoricalDirichlet<size_t>::logPredictiveProbability(0, counts, alpha, log_z);
-    BOOST_CHECK_CLOSE_FRACTION(-1.6094379124341, msd_value, TOL);
+    BOOST_CHECK_CLOSE_FRACTION(-1.6094379124341, msd_value, ERRTOL);
 
     alpha = .25;
     counts = {2, 7, 13};
     log_z = CategoricalDirichlet<size_t>::logZ(n, counts, alpha);
     msd_value = CategoricalDirichlet<size_t>::logPredictiveProbability(0, counts, alpha, log_z);
-    BOOST_CHECK_CLOSE_FRACTION(-2.31363492918062, msd_value, TOL);
+    BOOST_CHECK_CLOSE_FRACTION(-2.31363492918062, msd_value, ERRTOL);
 }
 
 
 BOOST_AUTO_TEST_CASE(logSingletonProbability_value_checks)
 {
-    double n, alpha, msd_value;
+    double alpha, msd_value;
 
     // singleton probability should be the same for any x (symmetric dirichlet only)
     alpha = 1;
     msd_value = CategoricalDirichlet<size_t>::logSingletonProbability(0, 3, alpha);
-    BOOST_CHECK_CLOSE_FRACTION(-1.09861228866811, msd_value, TOL);
+    BOOST_CHECK_CLOSE_FRACTION(-1.09861228866811, msd_value, ERRTOL);
 
     msd_value = CategoricalDirichlet<size_t>::logSingletonProbability(1, 3, alpha);
-    BOOST_CHECK_CLOSE_FRACTION(-1.09861228866811, msd_value, TOL);
+    BOOST_CHECK_CLOSE_FRACTION(-1.09861228866811, msd_value, ERRTOL);
 
     msd_value = CategoricalDirichlet<size_t>::logSingletonProbability(2, 3, alpha);
-    BOOST_CHECK_CLOSE_FRACTION(-1.09861228866811, msd_value, TOL);
+    BOOST_CHECK_CLOSE_FRACTION(-1.09861228866811, msd_value, ERRTOL);
 
     // check other alphas
     alpha = 2.5;
     msd_value = CategoricalDirichlet<size_t>::logSingletonProbability(0, 3, alpha);
-    BOOST_CHECK_CLOSE_FRACTION(-1.09861228866811, msd_value, TOL);
+    BOOST_CHECK_CLOSE_FRACTION(-1.09861228866811, msd_value, ERRTOL);
 
     alpha = .25;
     msd_value = CategoricalDirichlet<size_t>::logSingletonProbability(0, 3, alpha);
-    BOOST_CHECK_CLOSE_FRACTION(-1.09861228866811, msd_value, TOL);
+    BOOST_CHECK_CLOSE_FRACTION(-1.09861228866811, msd_value, ERRTOL);
 }
 
 

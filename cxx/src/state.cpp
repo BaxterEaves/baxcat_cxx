@@ -3,6 +3,7 @@
 
 using std::vector;
 using std::string;
+using std::function;
 using std::shared_ptr;
 
 
@@ -10,14 +11,21 @@ namespace baxcat{
 
 
 // todo: add more complete constructors (alphas)
-State::State(vector<vector<double>> X, vector<string> datatypes, vector<vector<double>> distargs,
-             unsigned int rng_seed )
-    : _rng(shared_ptr<PRNG>(new PRNG(rng_seed))), _crp_alpha_config({1, 1}), _view_alpha_marker(-1)
+State::State(vector<vector<double>> X, vector<string> datatypes,
+             vector<vector<double>> distargs, unsigned int rng_seed)
+    : _rng(shared_ptr<PRNG>(new PRNG(rng_seed))),
+    _crp_alpha_config(vector<double>()), _view_alpha_marker(-1)
 {
     _num_columns = X.size();
     _num_rows = X[0].size();
     _feature_types = helpers::getDatatypes(datatypes);
     _features = helpers::genFeatures(X, datatypes, distargs, _rng.get());
+
+    if (_crp_alpha_config.empty()){
+        _crp_alpha_config.resize(2);
+        _crp_alpha_config[0] = 1;
+        _crp_alpha_config[1] = 1;
+    }
 
     // generate alpha
     _crp_alpha = _rng->invgamrand(_crp_alpha_config[0], _crp_alpha_config[1]);
@@ -38,18 +46,25 @@ State::State(vector<vector<double>> X, vector<string> datatypes, vector<vector<d
 }
 
 
-State::State(vector<vector<double>> X, vector<string> datatypes, vector<vector<double>> distargs,
-             unsigned int rng_seed, vector<size_t> Zv, vector<vector<size_t>> Zrcv,
+State::State(vector<vector<double>> X, vector<string> datatypes,
+             vector<vector<double>> distargs, unsigned int rng_seed,
+             vector<size_t> Zv, vector<vector<size_t>> Zrcv,
              double state_alpha, vector<double> view_alphas,
              vector<map<string, double>> hypers_maps)
     : _column_assignment(Zv), _rng(shared_ptr<PRNG>(new PRNG(rng_seed))),
-      _crp_alpha_config({1, 1}), _view_alpha_marker(-1)
+      _crp_alpha_config(vector<double>()), _view_alpha_marker(-1)
 {
     _num_columns = X.size();
     _num_rows = X[0].size();
 
     _feature_types = helpers::getDatatypes(datatypes);
     _features = helpers::genFeatures(X, datatypes, distargs, _rng.get());
+
+    if (_crp_alpha_config.empty()){
+        _crp_alpha_config.resize(2);
+        _crp_alpha_config[0] = 1;
+        _crp_alpha_config[1] = 1;
+    }
 
     if (state_alpha <= 0){
         _crp_alpha = _rng->invgamrand(_crp_alpha_config[0], _crp_alpha_config[1]);
@@ -332,35 +347,33 @@ void State::__doTransition(transition_type t, vector<size_t> which_rows, vector<
 
 
 // Transitions
-//`````````````````````````````````````````````````````````````````````````````````````````````````
+// ---
 void State::__transitionStateCRPAlpha()
 {
     // don't worry about CRP alpha is there is only one column
     if(_num_columns == 1) return;
 
-    // construct crp alpha posterior
-    double k = _num_views;
     double n = _num_columns;
 
-    double alpha_shape = _crp_alpha_config[0];
-    double alpha_scale = _crp_alpha_config[1];
+    double shape = _crp_alpha_config[0];
+    double scale = _crp_alpha_config[1];
 
-    // auto log_crp_posterior = [alpha_shape, alpha_scale, k, n](double x){
-    //     return numerics::lcrpUNormPost(k, n, x) + dist::gamma::logPdf(x, alpha_shape, alpha_scale);
-    // };
+    auto cts = _view_counts;
 
-    auto counts = _view_counts;
-
-    auto log_crp_posterior = [alpha_shape, alpha_scale, counts, n](double x){
-        return numerics::lcrp(counts, n, x) + dist::inverse_gamma::logPdf(x, alpha_shape, alpha_scale);
-    };
-
-    double slice_width = alpha_shape*alpha_scale*alpha_scale/2;  // this is a guess
     size_t burn = 50;
 
-    // slice sample
-    _crp_alpha = samplers::mhSample(_crp_alpha, log_crp_posterior, {ALMOST_ZERO, INF},
-                                       slice_width, burn, _rng.get());
+    auto rng = _rng.get();
+
+    // construct crp alpha posterior
+    function<double(double)> loglike = [cts, n](double x){
+        return numerics::lcrp(cts, n, x);
+    };
+
+    function<double()> draw = [rng, shape, scale](){
+        return rng->invgamrand(shape, scale);
+    };
+
+    _crp_alpha = samplers::priormh(loglike, draw, burn, _rng.get());
 }
 
 

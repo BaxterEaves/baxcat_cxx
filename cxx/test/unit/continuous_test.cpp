@@ -409,8 +409,6 @@ BOOST_AUTO_TEST_CASE(test_m_conditional_values_multiple)
 	auto suffstats_0 = model_0.getSuffstatsMap();
 	auto suffstats_1 = model_1.getSuffstatsMap();
 
-	double m_std = config[1];
-
 	double f_m = 0;
 	f_m += baxcat::dist::gaussian::logPdf(x, config[0], 1/(config[1]*config[1]));
 	f_m += nng.logMarginalLikelihood(suffstats_0["n"], suffstats_0["sum_x"],

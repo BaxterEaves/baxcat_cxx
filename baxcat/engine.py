@@ -47,7 +47,7 @@ def _run(args):
     data = args[0]
     checkpoint = args[1]
     t_id = args[2]
-    quiet = args[3]
+    verbose = args[3]
     init_kwargs = args[4]
     trans_kwargs = args[5]
 
@@ -78,7 +78,7 @@ def _run(args):
             'time': t_iter}
         diagnostics.append(diagnostic)
 
-        if not quiet:
+        if verbose:
             msg = "Model {}:\n\t+ sweep {} of {} in {} sec."
             msg += "\n\t+ log score: {}"
             msg += "\n\t+ n_views: {}\n"
@@ -116,13 +116,17 @@ class Engine(object):
             to infer data types and create value maps.
         seed : integer
             Positive integer seed for the random number generators.
+        mapper : callable
+            A map function that returns a list. For example: `mp.Pool.map` or
+            `lambda f, args: list(map(f, args))`.
         use_mp : bool, optional
             If True (default), model-parallel tasts are run in parallel.
 
         Example
         -------
         Initialize with partial metadata
-        >>> data = pd.read_csv('example/zoo.csv', index_col=0)
+        >>> import pandas as pd
+        >>> df = pd.read_csv('examples/animals/animals.csv', index_col=0)
         >>> metadata = {
         ...     'stripes': {
         ...         'dtype': 'categorical',
@@ -131,6 +135,12 @@ class Engine(object):
         ... }
         >>> engine = Engine(df, metadata)
 
+        Initialize with IPython Parallel mapper
+        >>> import pandas as pd
+        >>> import ipyparallel as ipp
+        >>> df = pd.read_csv('examples/animals/animals.csv', index_col=0)
+        >>> c = ipp.Client()
+        >>> engine = Engine(df, mapper=c.map)
         """
 
         if df is None:
@@ -140,6 +150,7 @@ class Engine(object):
 
         guess_n_unique_cutoff = kwargs.get('guess_n_unique_cutoff', 20)
         use_mp = kwargs.get('use_mp', True)
+        mapper = kwargs.get('mapper', None)
 
         output = du.process_dataframe(df, metadata, guess_n_unique_cutoff)
         self._data, self._dtypes, self._distargs, self._converters = output
@@ -157,12 +168,15 @@ class Engine(object):
             np.random.seed(self._seed)
             random.seed(self._seed)
 
-        if use_mp:
-            self._pool = Pool()
-            self._mapper = self._pool.map
+        self._pool = None
+        if mapper is None:
+            if use_mp:
+                self._pool = Pool()
+                self._mapper = self._pool.map
+            else:
+                self._mapper = lambda func, args: list(map(func, args))
         else:
-            self._pool = None
-            self._mapper = lambda func, args: list(map(func, args))
+            self._mapper = mapper
 
         self._models = []
         self._n_models = 0
@@ -300,7 +314,7 @@ class Engine(object):
         return df
 
     def run(self, n_iter=1, checkpoint=None, model_idxs=None,
-            trans_kwargs=None, quiet=True):
+            trans_kwargs=None, verbose=False):
         """ Run the sampler.
 
         Parameters
@@ -314,6 +328,8 @@ class Engine(object):
             The indices of the models to run, if not all models.
         trans_kwargs : dict
             Keyword arguments sent to `BCState.transition`
+        verbose : bool
+            If True, print disagnostic info ate every checkpoint
         """
 
         if trans_kwargs is None:
@@ -336,7 +352,7 @@ class Engine(object):
                           'state_alpha': model['state_alpha'],
                           'view_alphas': model['view_alphas'],
                           'seed': sd}
-            args.append((self._data, checkpoint, idx, quiet, init_kwarg,
+            args.append((self._data, checkpoint, idx, verbose, init_kwarg,
                          trans_kwargs,))
 
         res = self._mapper(_run, args)

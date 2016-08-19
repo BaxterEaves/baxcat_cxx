@@ -35,12 +35,6 @@ int main(int argc, char** argv)
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc),  vm); // can throw
 
-
-    // if (vm.count("help")){
-    //     std::cout << "Basic Command Line Parameter App" << std::endl << desc << std::endl;
-    //     return 0;
-    // }
-
     po::notify(vm);
 
     std::cout << "=================================================" << std::endl;
@@ -67,7 +61,5 @@ int main(int argc, char** argv)
 
 	gwk.run(iters, chains, lag);
 
-	gwk.outputResults();
-
-	return 0;
+	return gwk.outputResults();
 }

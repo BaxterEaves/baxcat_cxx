@@ -208,7 +208,6 @@ void baxcat::Feature<DataType, T>::reassign(std::vector<size_t> assignment)
 {
     ASSERT_EQUAL(std::cout, _N, assignment.size());
 
-    size_t K_old = _clusters.size();
     size_t K_new = utils::vector_max(assignment) + 1;
 
     _clusters.resize(K_new, DataType(_distargs));

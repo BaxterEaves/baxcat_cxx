@@ -2,6 +2,7 @@
 #include "view.hpp"
 
 using std::vector;
+using std::function;
 using std::shared_ptr;
 
 namespace baxcat{
@@ -16,7 +17,8 @@ View::View(vector< shared_ptr<BaseFeature> > &feature_vec, PRNG *rng)
     _crp_alpha = _rng->invgamrand(1, 1);
 
     // construct Z, K, Nk from the prior
-    _rng->crpGen(_crp_alpha, _num_rows, _row_assignment, _num_clusters, _cluster_counts);
+    _rng->crpGen(_crp_alpha, _num_rows, _row_assignment, _num_clusters,
+                 _cluster_counts);
 
     // build features tree (insert and reassign)
     for(auto &f: feature_vec){
@@ -28,14 +30,17 @@ View::View(vector< shared_ptr<BaseFeature> > &feature_vec, PRNG *rng)
 }
 
 
-View::View(vector< shared_ptr<BaseFeature> > &feature_vec, PRNG *rng, double crp_alpha,
-           vector<size_t> row_assignment, bool gibbs_init)
+View::View(vector< shared_ptr<BaseFeature> > &feature_vec, PRNG *rng,
+           double crp_alpha, vector<size_t> row_assignment, bool gibbs_init)
     : _rng(rng), _row_assignment(row_assignment)
 {
     _num_rows = feature_vec[0].get()->getN();
 
-    // alpha is a semi-optional argument. If it is less than zero, we'll choose ourself
-    _crp_alpha = (crp_alpha <= 0) ? _rng->invgamrand(1, 1) : crp_alpha;
+    // alpha is a semi-optional argument. If it is less than zero, we'll choose
+    // ourself
+    _crp_alpha = crp_alpha;
+    if (crp_alpha <= 0)
+        _crp_alpha = _rng->invgamrand(1, 1);
 
     // build features tree (insert and reassign)
     for(auto &f: feature_vec)
@@ -44,7 +49,8 @@ View::View(vector< shared_ptr<BaseFeature> > &feature_vec, PRNG *rng, double crp
     if(gibbs_init){
         this->__gibbsInit();
     }else if(_row_assignment.empty()){
-        _rng->crpGen(_crp_alpha, _num_rows, _row_assignment, _num_clusters, _cluster_counts);
+        _rng->crpGen(_crp_alpha, _num_rows, _row_assignment, _num_clusters,
+                     _cluster_counts);
     }else{
         ASSERT_EQUAL(std::cout, _row_assignment.size(), _num_rows);
         // build partitions
@@ -116,20 +122,21 @@ void View::__gibbsInit()
 // crp alpha
 void View::transitionCRPAlpha()
 {
-    // construct crp alpha posterior
-    double k = _num_clusters;
     double n = _num_rows;
 
-    auto log_crp_posterior = [k, n](double x){
-        return numerics::lcrpUNormPost(k, n, x) + dist::inverse_gamma::logPdf(x, 1, 1);
-    };
-
-    double slice_width = 2.0; // this is a guess
     size_t burn = 50;
 
-    // slice sample
-    _crp_alpha = samplers::mhSample(_crp_alpha, log_crp_posterior, {0, INF},
-                                    slice_width, burn, _rng);
+    // construct crp alpha posterior
+    const auto cts = _cluster_counts;
+    function<double(double)> loglike = [cts, n](double x){
+        return numerics::lcrp(cts, n, x);
+    };
+
+    function<double()> draw = [this, n](){
+        return _rng->invgamrand(1, 1);
+    };
+
+    _crp_alpha = samplers::priormh(loglike, draw, burn, _rng);
 }
 
 

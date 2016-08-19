@@ -314,7 +314,7 @@ namespace test_utils{
     static void __output_ks_test_result(bool reject_null, double ks_stat, std::string test_name)
     {
         std::string pass_message = reject_null ? " __FAIL__" : " __PASS__";
-        std::cout << "KS-statistic (" << test_name << "): " << ks_stat;
+        std::cout << "\tKS-statistic (" << test_name << "): " << ks_stat;
         std::cout << pass_message << std::endl;
     }
 
