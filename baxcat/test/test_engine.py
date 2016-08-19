@@ -604,6 +604,7 @@ def test_impute_continuous_default():
 
     assert isinstance(impdata, pd.DataFrame)
     assert impdata.shape == (1, 2,)  # only one missing value
+    assert not np.any(np.isnan(impdata['x_1']))
 
 
 def test_impute_continuous_select_rows():
@@ -613,6 +614,7 @@ def test_impute_continuous_select_rows():
 
     assert isinstance(impdata, pd.DataFrame)
     assert impdata.shape == (3, 2,)
+    assert not np.any(np.isnan(impdata['x_1']))
 
 
 def test_impute_categorical():
@@ -622,6 +624,7 @@ def test_impute_categorical():
 
     assert isinstance(impdata, pd.DataFrame)
     assert impdata.shape == (1, 2,)  # only one missing value
+    assert not np.any(np.isnan(impdata['x_2']))
 
 
 def test_impute_categorical_select_rows():
@@ -631,6 +634,7 @@ def test_impute_categorical_select_rows():
 
     assert isinstance(impdata, pd.DataFrame)
     assert impdata.shape == (3, 2,)
+    assert not np.any(np.isnan(impdata['x_2']))
 
 
 # eval
