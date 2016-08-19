@@ -55,7 +55,7 @@ Optimizations and refactoring
 - [X] rename `msd` in `cxx` to `csd` (#3) 
 - [X] Remove stupid copyright boilerplate.
 - [ ] dial back the namespaces and better organize headers
-- [ ] Figure out better prior for CRP alpha. Maybe need prior MH to avoid numerical problems (#2)
+- [X] Figure out better prior for CRP alpha. Maybe need prior MH to avoid numerical problems (#2)
 - [X] Fix super-redundant code in `Engine.pairwise_func`
 
 # License
