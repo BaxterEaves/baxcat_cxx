@@ -11,15 +11,21 @@ namespace baxcat{
 
 
 // todo: add more complete constructors (alphas)
-State::State(vector<vector<double>> X, vector<string> datatypes, vector<vector<double>> distargs,
-             unsigned int rng_seed ):
-    _rng(shared_ptr<PRNG>(new PRNG(rng_seed))),
-    _crp_alpha_config({1, 1}), _view_alpha_marker(-1)
+State::State(vector<vector<double>> X, vector<string> datatypes,
+             vector<vector<double>> distargs, unsigned int rng_seed)
+    : _rng(shared_ptr<PRNG>(new PRNG(rng_seed))),
+    _crp_alpha_config(vector<double>()), _view_alpha_marker(-1)
 {
     _num_columns = X.size();
     _num_rows = X[0].size();
     _feature_types = helpers::getDatatypes(datatypes);
     _features = helpers::genFeatures(X, datatypes, distargs, _rng.get());
+
+    if (_crp_alpha_config.empty()){
+        _crp_alpha_config.resize(2);
+        _crp_alpha_config[0] = 1;
+        _crp_alpha_config[1] = 1;
+    }
 
     // generate alpha
     _crp_alpha = _rng->invgamrand(_crp_alpha_config[0], _crp_alpha_config[1]);
@@ -40,18 +46,25 @@ State::State(vector<vector<double>> X, vector<string> datatypes, vector<vector<d
 }
 
 
-State::State(vector<vector<double>> X, vector<string> datatypes, vector<vector<double>> distargs,
-             unsigned int rng_seed, vector<size_t> Zv, vector<vector<size_t>> Zrcv,
+State::State(vector<vector<double>> X, vector<string> datatypes,
+             vector<vector<double>> distargs, unsigned int rng_seed,
+             vector<size_t> Zv, vector<vector<size_t>> Zrcv,
              double state_alpha, vector<double> view_alphas,
              vector<map<string, double>> hypers_maps)
     : _column_assignment(Zv), _rng(shared_ptr<PRNG>(new PRNG(rng_seed))),
-      _crp_alpha_config({1, 1}), _view_alpha_marker(-1)
+      _crp_alpha_config(vector<double>()), _view_alpha_marker(-1)
 {
     _num_columns = X.size();
     _num_rows = X[0].size();
 
     _feature_types = helpers::getDatatypes(datatypes);
     _features = helpers::genFeatures(X, datatypes, distargs, _rng.get());
+
+    if (_crp_alpha_config.empty()){
+        _crp_alpha_config.resize(2);
+        _crp_alpha_config[0] = 1;
+        _crp_alpha_config[1] = 1;
+    }
 
     if (state_alpha <= 0){
         _crp_alpha = _rng->invgamrand(_crp_alpha_config[0], _crp_alpha_config[1]);
@@ -352,22 +365,15 @@ void State::__transitionStateCRPAlpha()
     auto rng = _rng.get();
 
     // construct crp alpha posterior
-    function<double(double)> log_crp_posterior = [shape, scale, cts, n](double x){
-        double a = numerics::lcrp(cts, n, x);
-        double b = dist::inverse_gamma::logPdf(x, shape, scale);
-        return a + b;
-    };
-
-    function<double(double)> q_lpdf = [shape, scale](double x){
-        return dist::inverse_gamma::logPdf(x, shape, scale);
+    function<double(double)> loglike = [cts, n](double x){
+        return numerics::lcrp(cts, n, x);
     };
 
     function<double()> draw = [rng, shape, scale](){
         return rng->invgamrand(shape, scale);
     };
 
-    _crp_alpha = samplers::priormh(log_crp_posterior, q_lpdf, draw, burn,
-                                   _rng.get());
+    _crp_alpha = samplers::priormh(loglike, draw, burn, _rng.get());
 }
 
 
@@ -411,6 +417,7 @@ void State::__transitionRowAssignments(vector<size_t> which_rows)
 
 void State::__transitionColumnAssignment(vector<size_t> which_cols, size_t which_kernel, size_t m)
 {
+
     // don't transition columns if there is only one
     if(_num_columns == 1) return;
 

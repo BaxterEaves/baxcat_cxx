@@ -51,18 +51,15 @@ namespace samplers{
         return x_0;
     };
 
-    static double priormh(std::function<double(double)> lpdf,
-                          std::function<double(double)> q_lpdf,
+    static double priormh(std::function<double(double)> loglike,
                           std::function<double()> draw, size_t burn,
                           baxcat::PRNG *rng)
     {
-        std::vector<double> out(500);
-        
         auto x = draw();
-        auto l = lpdf(x) - q_lpdf(x);
+        auto l = loglike(x);
         for (size_t i=0; i < burn; ++i){
             auto xp = draw();
-            auto lp = lpdf(xp) - q_lpdf(xp);
+            auto lp = loglike(xp);
             
             if (log(rng->rand()) < lp-l){
                 l = lp;

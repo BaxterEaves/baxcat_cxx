@@ -38,7 +38,9 @@ View::View(vector< shared_ptr<BaseFeature> > &feature_vec, PRNG *rng,
 
     // alpha is a semi-optional argument. If it is less than zero, we'll choose
     // ourself
-    _crp_alpha = (crp_alpha <= 0) ? _rng->invgamrand(1, 1) : crp_alpha;
+    _crp_alpha = crp_alpha;
+    if (crp_alpha <= 0)
+        _crp_alpha = _rng->invgamrand(1, 1);
 
     // build features tree (insert and reassign)
     for(auto &f: feature_vec)
@@ -124,25 +126,17 @@ void View::transitionCRPAlpha()
 
     size_t burn = 50;
 
-
     // construct crp alpha posterior
     const auto cts = _cluster_counts;
-    function<double(double)> log_crp_posterior = [cts, n](double x){
-        double a = numerics::lcrp(cts, n, x);
-        double b = dist::inverse_gamma::logPdf(x, 1, 1);
-        return a + b;
+    function<double(double)> loglike = [cts, n](double x){
+        return numerics::lcrp(cts, n, x);
     };
 
-    function<double(double)> q_lpdf = [](double x){
-        return baxcat::dist::inverse_gamma::logPdf(x, 1, 1);
-    };
-
-    function<double()> draw = [this](){
+    function<double()> draw = [this, n](){
         return _rng->invgamrand(1, 1);
     };
 
-    _crp_alpha = samplers::priormh(log_crp_posterior, q_lpdf, draw, burn,
-                                   _rng);
+    _crp_alpha = samplers::priormh(loglike, draw, burn, _rng);
 }
 
 
