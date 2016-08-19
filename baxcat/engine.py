@@ -412,8 +412,8 @@ class Engine(object):
         # optimization bounds for different dtypes. If statements are gross.
         dtype = self._dtypes[col_idx]
         if dtype == 'continuous':
-            lower = np.min(self._data[:, col_idx])
-            upper = np.max(self._data[:, col_idx])
+            lower = np.nanmin(self._data[:, col_idx])
+            upper = np.nanmax(self._data[:, col_idx])
             bounds = (lower, upper,)
         elif dtype == 'categorical':
             bounds = self._converters['valmaps'][col]['val2idx'].values()
