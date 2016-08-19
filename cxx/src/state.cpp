@@ -388,11 +388,11 @@ void State::__transitionViewCRPAlphas()
 void State::__transitionColumnHypers(vector<size_t> which_cols)
 {
     if(which_cols.empty()){
-        // #pragma omp parallel for schedule(static)
+        #pragma omp parallel for schedule(static)
         for(size_t i = 0; i < _num_columns; i++)
             _features[i].get()->updateHypers();
     }else{
-        // #pragma omp parallel for schedule(static)
+        #pragma omp parallel for schedule(static)
         for(size_t i = 0; i < which_cols.size(); ++i){
             auto col = which_cols[i];
             _features[col].get()->updateHypers();
@@ -403,7 +403,7 @@ void State::__transitionColumnHypers(vector<size_t> which_cols)
 
 void State::__transitionRowAssignments(vector<size_t> which_rows)
 {
-    // #pragma omp parallel for schedule(static)
+    #pragma omp parallel for schedule(static)
     for(size_t v = 0; v < _num_views; ++v){
         if( which_rows.empty() ){
             _views[v].transitionRows();

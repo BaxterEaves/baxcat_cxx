@@ -1,3 +1,4 @@
+import os
 import pytest
 import tempfile
 import pandas as pd
@@ -8,7 +9,22 @@ from multiprocessing.pool import Pool
 from baxcat.engine import Engine
 from baxcat.metrics import SquaredError
 
+NO_IPP = False
+try:
+    # XXX: As of IPython prallel version 5.2.0, the timeout kwarg in Client
+    # does not apply to __init__. That is, if there is no cluster running,
+    # client will always take at least 30 seconds to timeout. I have put in a
+    # pull request (https://github.com/ipython/ipyparallel/pull/185). We'll
+    # see how it goes. Sorry to make you wait.
+    import ipyparallel as ipp
+    c = ipp.Client(timeout=.5)
+    del c
+except Exception as e:
+    NO_IPP = True
 
+
+# fixtures
+# ---
 def smalldf():
     s1 = pd.Series(np.random.rand(30))
     s2 = pd.Series([0.0, 1.0]*15)
@@ -77,6 +93,8 @@ def test_engine_init_structureless(gendf):
         assert all([max(z) == 0 for z in m['row_assignments']])
 
 
+# test custom mappers
+# ---
 @pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
 def test_engine_with_mapper_stl(gendf):
     engine = Engine(gendf(), mapper=lambda f, args: list(map(f, args)))
@@ -86,6 +104,8 @@ def test_engine_with_mapper_stl(gendf):
     assert len(engine.models) == 4
 
 
+@pytest.mark.skipif(int(os.environ.get('OMP_NUM_THREADS', 2)) > 1,
+                    reason='pytest and setuptools break with nested mp.')
 @pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
 def test_engine_with_mapper_mp(gendf):
     pool = Pool()
@@ -98,18 +118,18 @@ def test_engine_with_mapper_mp(gendf):
         assert len(engine.models) == 4
 
 
-# @pytest.mark.skip(reason='No IPython parallel installed')
-# @pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
-# def test_engine_with_mapper_ipyparallel(gendf):
-#     import ipyparallel as ipp
+@pytest.mark.skipif(NO_IPP, reason='No IPython parallel installed, or '
+                    'no cluster')
+@pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
+def test_engine_with_mapper_ipyparallel(gendf):
+    c = ipp.Client()
+    v = c[:]
 
-#     c = ipp.Client()
+    engine = Engine(gendf(), mapper=v.map)
+    engine.init_models(4)
+    engine.run(2)
 
-#     engine = Engine(gendf(), mapper=c.map)
-#     engine.init_models(4)
-#     engine.run(2)
-
-#     assert len(engine.models) == 4
+    assert len(engine.models) == 4
 
 
 # test run

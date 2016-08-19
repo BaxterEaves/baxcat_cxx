@@ -4,17 +4,15 @@ dist: trusty
 
 python:
     - "3.4"
+    - "3.5"
+    - "3.3"
 
 before_install:
     - sudo apt-get update -qq
     - sudo apt-get install -qq libboost-all-dev liblapack-dev libblas-dev mathgl libmgl-dev
 
 install:
-    - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
-        wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh;
-      else
-        wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
-      fi
+    - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
     - bash miniconda.sh -b -p $HOME/miniconda
     - export PATH="$HOME/miniconda/bin:$PATH"
     - hash -r
@@ -23,11 +21,15 @@ install:
     - conda info -a
     - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION cython numpy scipy matplotlib seaborn pytest pandas
     - source activate test-environment
-    - pip install freeze
+    - pip install freeze ipython[all]
     - python setup.py develop
     - export PYTHONPATH=`pwd`/baxcat_cxx:$PYTHONPATH
 
+before_script:
+    - ipcluster start --daemonize=True
 
+# We need to run the tests twice with different numbers of OpenMP threads
 script:
     - make -C cxx unit
-    - py.test baxcat/
+    - py.test OMP_NUM_THREADS=1 baxcat/
+    - py.test OMP_NUM_THREADS=2 baxcat/
