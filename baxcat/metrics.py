@@ -4,6 +4,7 @@ Metrics must subclass baxcat.metrics.Metric and must have a __call__ method
 that takes two pandas Series.
 """
 import numpy as np
+from scipy.stats import pearsonr
 
 
 def confmat(obs, pred):
@@ -77,3 +78,9 @@ class Markedness(Metric):
         tp, tn, fp, fn = confmat(x, y)
 
         return tp/(tp+fp) + tn/(tn+fn) - 1.
+
+
+class Correlation(Metric):
+    """ Pearson correlation """
+    def __call__(self, obs, inf):
+        return pearsonr(obs, inf)[0]
