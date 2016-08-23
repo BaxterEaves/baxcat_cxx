@@ -53,7 +53,7 @@ def test_squared_error_numeric():
     obs, pred = gen_series_float()
     se = metrics.SquaredError()
 
-    assert se(obs, pred) == 0.3325
+    assert abs(se(obs, pred) - 0.3325) < 10E-8
 
 
 def test_relative_error():
