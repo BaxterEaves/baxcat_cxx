@@ -107,7 +107,7 @@ def test_corr_perfect_pos():
     assert abs(rho(obs, obs) - 1.) < 10E-8
 
 
-def test_corr_perfect_nwg():
+def test_corr_perfect_neg():
     obs = np.array([1, 2, 1, 2, 3], dtype=float)
     inf = -obs
 
