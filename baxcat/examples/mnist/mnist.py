@@ -23,7 +23,7 @@ df = df.sample(500)
 
 engine = Engine(df)
 engine.init_models(8)
-engine.run(200, checkpoint=4, quiet=False)
+engine.run(200, checkpoint=4, verbose=True)
 
 engine.convergence_plot()
 plt.show()
