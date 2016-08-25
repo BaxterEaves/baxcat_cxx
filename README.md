@@ -1,8 +1,11 @@
 # baxcat_cxx
 
+## A C++/python implementation of cross-cutting categorization.
+
 ![Travis-CI status](https://travis-ci.org/BaxterEaves/baxcat_cxx.svg?branch=master)
 
-A C++/python implementation of cross-cutting categorization.
+**baxcat is under rapid development. The modeling assumptions and API are subject to change.**
+
 
 # Installation
 C++ backend requires Boost and an OpenMP, C++11 capable compiler.

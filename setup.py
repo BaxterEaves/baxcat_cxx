@@ -40,7 +40,7 @@ extensions = [
 
 setup(
     name='baxcat',
-    version='0.0.1',
+    version='0.a1.dev1',
     author='Baxter S. Eaves Jr.',
     url='TBA',
     long_description='TBA.',
