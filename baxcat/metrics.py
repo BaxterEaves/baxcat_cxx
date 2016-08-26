@@ -15,6 +15,17 @@ def confmat(obs, pred):
     obs, inf : np.ndarray
         The observed (`obs`) and predicted (`pred`) data. Must contain only 0
         and 1.
+
+    Returns
+    -------
+    tp : int
+        The number of true positives
+    tn : int
+        The number of true negatives
+    fp : int
+        The number of false positives
+    fn : int
+        The number of false negatives
     """
     tp = np.sum(np.logical_and(obs == 1, pred == 1))
     tn = np.sum(np.logical_and(obs == 0, pred == 0))
@@ -35,14 +46,45 @@ class Metric(object):
 
 
 class SquaredError(Metric):
-    """ Sum of squarred (L2) error """
+    """ Sum of squarred (L2) error
+
+    The suqared error of predictions y given observations x is
+
+    .. math:: \sum_{i=1}^n (x_i - y_i)^2
+    """
     def __call__(self, obs, inf):
+        """
+        Examples
+        --------
+
+        >>> import pandas as pd
+        >>> pred = pd.Series([0.1, 1.2, .8, .7, .2])
+        >>> obs = pd.Series([0.25, 1.1, .3, .6, .4])
+        >>> sse = SquaredError()
+        >>> sse(obs, pred)
+        0.3325
+        """
         return np.sum((inf-obs)**2.)
 
 
 class RelativeError(Metric):
-    """ Realtive error """
+    """ Realtive error
+
+    The relative error of predictions y given observations x is
+
+    .. math:: \sum_{i=1}^n |y/x - 1|
+    """
     def __call__(self, obs, inf):
+        """
+        Examples
+        --------
+
+        >>> import pandas as pd
+        >>> pred = pd.Series([0.1, 1.2, .8, .7, .2])
+        >>> obs = pd.Series([0.25, 1.1, .3, .6, .4])
+        >>> re = RelativeError()
+        >>> re(obs, pred)
+        """
         if np.any(obs == 0):
             raise ZeroDivisionError('obs cannot contain zeros')
         return np.sum(np.abs(inf/obs - 1.))
@@ -51,6 +93,17 @@ class RelativeError(Metric):
 class Accuracy(Metric):
     """ Accuracy (proportion correctly classified) """
     def __call__(self, obs, inf):
+        """
+        Examples
+        --------
+
+        >>> import pandas as pd
+        >>> pred = pd.Series([0, 1, 1, 0, 1])
+        >>> obs = pd.Series([0, 1, 0, 1, 1])
+        >>> acc = Accuracy()
+        >>> acc(obs, pred)
+        0.6
+        """
         return np.sum(obs == inf)/float(len(obs))
 
 
@@ -60,6 +113,27 @@ class Informedness(Metric):
         self._threshold = threshold
 
     def __call__(self, obs, inf):
+        """
+        Examples
+        --------
+        Binary data do not require a threshold
+
+        >>> import pandas as pd
+        >>> pred = pd.Series([0, 1, 1, 0, 1])
+        >>> obs = pd.Series([0, 1, 0, 1, 1])
+        >>> infd = Informedness()
+        >>> infd(obs, pred)
+        4.666666666666667
+
+        Continuous data are binarized with the threshold. Datum larger than
+        `threshold` are assigned 1; values less than `threshold` are assigned 0.
+
+        >>> pred = pd.Series([0.1, 1.2, .8, .7, .2])
+        >>> obs = pd.Series([0.25, 1.1, .3, .6, .4])
+        >>> infd = Informedness(threshold=0.35)
+        >>> infd(obs, pred)
+        0.75
+        """
         x = obs
         y = inf
         if self._threshold is not None:
@@ -76,6 +150,27 @@ class Markedness(Metric):
         self._threshold = threshold
 
     def __call__(self, obs, inf):
+        """
+        Examples
+        --------
+        Binary data do not require a threshold
+
+        >>> import pandas as pd
+        >>> pred = pd.Series([0, 1, 1, 0, 1])
+        >>> obs = pd.Series([0, 1, 0, 1, 1])
+        >>> mkd = Markedness()
+        >>> mkd(obs, pred)
+        4.666666666666667
+
+        Continuous data are binarized with the threshold. Datum larger than
+        `threshold` are assigned 1; values less than `threshold` are assigned 0.
+
+        >>> pred = pd.Series([0.1, 1.2, .8, .7, .2])
+        >>> obs = pd.Series([0.25, 1.1, .3, .6, .4])
+        >>> mkd = Markedness(threshold=0.35)
+        >>> mkd(obs, pred)
+        0.5
+        """
         x = obs
         y = inf
         if self._threshold is not None:
@@ -89,4 +184,14 @@ class Markedness(Metric):
 class Correlation(Metric):
     """ Pearson correlation """
     def __call__(self, obs, inf):
+        """
+        Examples
+        --------
+
+        >>> import pandas as pd
+        >>> obs = pd.Series([1., 2., 1., 2., 3.])
+        >>> corr = Correlation()
+        >>> corr(obs, obs)
+        1.0
+        """
         return pearsonr(obs, inf)[0]
