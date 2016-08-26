@@ -125,9 +125,10 @@ class Engine(object):
             If `df` is a file name, index col is the integer index of the
             index column. Assumes the first columns (0) by default.
 
-        Example
-        -------
+        Examples
+        --------
         Initialize with partial metadata
+
         >>> import pandas as pd
         >>> df = pd.read_csv('examples/animals/animals.csv', index_col=0)
         >>> metadata = {
@@ -139,6 +140,7 @@ class Engine(object):
         >>> engine = Engine(df, metadata)
 
         Initialize with IPython Parallel mapper
+
         >>> import pandas as pd
         >>> import ipyparallel as ipp
         >>> df = pd.read_csv('examples/animals/animals.csv', index_col=0)
@@ -293,8 +295,9 @@ class Engine(object):
             iterations since the last checkpoint), and `time` (the number of
             seconds ellapsed since the last checkpoint).
 
-        Example
-        -------
+        Examples
+        --------
+
         >>> df = pd.read_csv('examples/zoo.csv')
         >>> engine = Engine(df, seed=1337)
         >>> engine.init_models(2)
@@ -378,9 +381,10 @@ class Engine(object):
         n : int
             The number of samples to draw
 
-        Example
-        -------
+        Examples
+        --------
         Draw whether an animal is fast and agile given that it is bulbous.
+
         >>> engine = Engine.load('examples/zoo.bcmodels')
         >>> engine.sample(['fast', 'agile'], given=[('bulbous': 1]))
         """
@@ -492,10 +496,11 @@ class Engine(object):
         -------
         logps : numpy.ndarray
 
-        Example
-        -------
+        Examples
+        --------
         The probability that an animal is fast and agile given that it is
         bulbous.
+
         >>> engine = Engine.load('examples/zoo.bcmodels')
         >>> engine.probability(np.array([[1, 1]]), ['fast', 'agile'],
         ...                    given=[('bulbous': 1]))
@@ -847,7 +852,10 @@ class Engine(object):
                 y = table['log_score'].values
                 xs.extend([x[t], x[-1]])
                 ax.plot(x[t:], y[t:])
-        ax.set_xlabel('time (sec)')
+        xlabel = 'time in seconds'
+        if log_x_axis:
+            xlabel += ' (log)'
+        ax.set_xlabel(xlabel)
         ax.set_ylabel('log score')
 
         if log_x_axis:
