@@ -48,6 +48,12 @@ class RelativeError(Metric):
         return np.sum(np.abs(inf/obs - 1.))
 
 
+class Accuracy(Metric):
+    """ Accuracy (proportion correctly classified) """
+    def __call__(self, obs, inf):
+        return np.sum(obs == inf)/float(len(obs))
+
+
 class Informedness(Metric):
     """ Informedness: sensitivity + specificity - 1 """
     def __init__(self, threshold=None):
