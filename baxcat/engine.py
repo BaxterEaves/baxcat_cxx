@@ -108,7 +108,7 @@ class Engine(object):
         """
         Parameters
         ----------
-        df : pandas.DataFrame
+        df : file name, pandas.DataFrame
             The data for inference.
         metadata : dict
             Column metadata to speed processing. Providing more data in
@@ -121,6 +121,9 @@ class Engine(object):
             `lambda f, args: list(map(f, args))`.
         use_mp : bool, optional
             If True (default), model-parallel tasts are run in parallel.
+        index_col : int or None
+            If `df` is a file name, index col is the integer index of the
+            index column. Assumes the first columns (0) by default.
 
         Example
         -------
@@ -145,6 +148,9 @@ class Engine(object):
 
         if df is None:
             raise ValueError('Give me some data (;-_-)')
+
+        if isinstance(df, str):
+            df = pd.read_csv(df, index_col=kwargs.get('index_col', 0))
 
         self._init_args = {'df': df, 'metadata': metadata, 'kwargs': kwargs}
 

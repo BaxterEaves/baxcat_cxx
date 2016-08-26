@@ -9,6 +9,8 @@ from multiprocessing.pool import Pool
 from baxcat.engine import Engine
 from baxcat.metrics import SquaredError
 
+from tempfile import NamedTemporaryFile
+
 NO_IPP = False
 try:
     # XXX: As of IPython prallel version 5.2.0, the timeout kwarg in Client
@@ -61,6 +63,15 @@ def test_engine_init_smoke_default(gendf):
     df = gendf()
     engine = Engine(df, use_mp=False)
     engine.init_models(1)
+
+
+@pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
+def test_engine_init_from_filename(gendf):
+    df = gendf()
+    with NamedTemporaryFile() as tf:
+        df.to_csv(tf.name)
+        engine = Engine(tf.name, use_mp=False)
+        engine.init_models(1)
 
 
 @pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
