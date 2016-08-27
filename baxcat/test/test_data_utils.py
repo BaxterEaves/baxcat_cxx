@@ -18,7 +18,7 @@ def smalldf():
 
 
 # Guess data types
-# `````````````````````````````````````````````````````````````````````````````
+# ---
 def test_guess_dtypes_should_guess_correct_types_continuous():
     df = pd.DataFrame(np.random.rand(30, 4))
     dtypes = du.guess_dtypes(df)
@@ -74,7 +74,7 @@ def test_guess_dtypes_mixed_types_missing_vals(smalldf):
 
 
 # valmaps
-# `````````````````````````````````````````````````````````````````````````````
+# ---
 def test_gen_valmaps_default(smalldf):
     dtypes = ['continuous', 'categorical', 'categorical', 'continuous']
     metadata = dict()
@@ -190,7 +190,7 @@ def test_gen_valmaps_default_missing_vals(smalldf):
 
 
 # dataframe_to_array
-# `````````````````````````````````````````````````````````````````````````````
+# ---
 def test_dataframe_to_array_all_continuous():
     n_cols = 5
     df = pd.DataFrame(np.random.rand(30, n_cols))
@@ -255,7 +255,7 @@ def test_dataframe_to_array_all_categorical_with_missing_vals():
 
 
 # test process_dataframe
-# `````````````````````````````````````````````````````````````````````````````
+# ---
 def test_process_dataframe_output_default(smalldf):
     data_array, dtypes, distargs, converters = du.process_dataframe(smalldf)
 
@@ -287,7 +287,7 @@ def test_process_dataframe_output_default(smalldf):
 
 
 # converters
-# `````````````````````````````````````````````````````````````````````````````
+# ---
 def test_convert_continuous_given_should_change_cols_not_vals():
     given_in = [('x', 1.2,), ('y', 3.4,), ('y', 2,)]
     dtypes = ['continuous']*2
@@ -455,43 +455,57 @@ def test_convert_categorical_data_single_column():
         assert data_in[i, j] == data_in_2[i, j]
 
 
-# `````````````````````````````````````````````````````````````````````````````
-def test_format_query_data_should_always_return_2d_numpy_array():
+# ---
+def test_format_query_data_should_return_2d_numpy_array_float():
     # single float data
     x = du.format_query_data(1.2)
     assert isinstance(x, np.ndarray)
     assert x.shape == (1, 1,)
 
+
+def test_format_query_data_should_return_2d_numpy_array_str():
     # single string data
     x = du.format_query_data('string')
     assert isinstance(x, np.ndarray)
     assert x.shape == (1, 1,)
 
+
+def test_format_query_data_should_return_2d_numpy_array_list():
     # single list
     x = du.format_query_data([1.2, 'string'])
     assert isinstance(x, np.ndarray)
     assert x.shape == (1, 2,)
 
+
+def test_format_query_data_should_return_2d_numpy_array_float_array():
     # single float64 array
     x = du.format_query_data(np.array([1.2, 2.1]))
     assert isinstance(x, np.ndarray)
     assert x.shape == (1, 2,)
 
+
+def test_format_query_data_should_return_2d_numpy_array_obj_array():
     # single object array
     x = du.format_query_data(np.array([.2, 'string']))
     assert isinstance(x, np.ndarray)
     assert x.shape == (1, 2,)
 
+
+def test_format_query_data_should_return_2d_numpy_array_list_of_lists():
     # list of lists
     x = du.format_query_data([[.2, 'string'], [.1, 'x']])
     assert isinstance(x, np.ndarray)
     assert x.shape == (2, 2,)
 
+
+def test_format_query_data_should_return_2d_numpy_array_list_of_array():
     # list of arrays
     x = du.format_query_data([np.array([.2, 'string']), np.array([.1, 'x'])])
     assert isinstance(x, np.ndarray)
     assert x.shape == (2, 2,)
 
+
+def test_format_query_data_should_return_2d_numpy_array_2d_array():
     # 2d array
     x = du.format_query_data(np.eye(2))
     assert isinstance(x, np.ndarray)

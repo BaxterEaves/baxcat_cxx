@@ -2,8 +2,7 @@ import pytest
 import numpy as np
 import baxcat.utils.model_utils as mu
 
-
-ERROR_TOL = 10E-8
+from pytest import approx
 
 
 @pytest.fixture
@@ -33,37 +32,41 @@ def model():
     return m
 
 
-def test_single_continuous_col_probability_values(model):
+def test_single_continuous_col_probability_values_1(model):
     # logp of 1 in column 1
     x = np.array([[1]], dtype=float)
     logp = mu.probability(x, [model], [1])
 
-    assert abs(-1.58025784097797 - logp) < ERROR_TOL
+    assert logp == approx(-1.58025784097797)
 
+
+def test_single_continuous_col_probability_values_2(model):
     x = np.array([[2]], dtype=float)
     logp = mu.probability(x, [model], [1])
 
-    assert abs(-2.01262102403666 - logp) < ERROR_TOL
+    assert logp == approx(-2.01262102403666)
 
 
-def test_single_categorical_col_probability_values(model):
+def test_single_categorical_col_probability_values_1(model):
     # logp of 1 in column 1
     x = np.array([[0]], dtype=int)
     logp = mu.probability(x, [model], [0])
 
-    assert abs(-0.848561284433976 - logp) < ERROR_TOL
+    assert logp == approx(-0.848561284433976)
 
+
+def test_single_categorical_col_probability_values_2(model):
     x = np.array([[2]], dtype=int)
     logp = mu.probability(x, [model], [0])
 
-    assert abs(-1.15710849534972 - logp) < ERROR_TOL
+    assert logp == approx(-1.15710849534972)
 
 
 def test_double_mixed_single_view_values(model):
     x = np.array([[0, 2.1]])
     logp = mu.probability(x, [model], [0, 1])
 
-    assert abs(-2.93134971834475 - logp) < ERROR_TOL
+    assert logp == approx(-2.93134971834475)
 
 
 def test_single_categorical_col_samples(model):
