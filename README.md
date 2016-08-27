@@ -19,6 +19,8 @@ The python front end requires python version 3.X and the following pacakges:
 - seaborn
 - pytest (for testing)
 - freeze (for testing)
+- sphinx (for docs)
+- numpydoc (for docs)
 
 To install:
 
