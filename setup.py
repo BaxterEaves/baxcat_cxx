@@ -2,13 +2,16 @@ from setuptools import setup
 from distutils.core import Extension
 from Cython.Build import cythonize
 from Cython.Distutils import build_ext
+from pip.req import parse_requirements
 
 import numpy as np
 import os
 
+reqfile = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                       'requirements.txt')
 
-requirements = ['setuptools>=18.0', 'cython', 'numpy', 'scipy', 'pandas',
-                'matplotlib', 'seaborn', 'pytest', 'freeze']
+install_reqs = parse_requirements(reqfile, session=False)
+reqs = [str(ir.req) for ir in install_reqs]
 
 SRC = os.path.join('cxx', 'src')
 INC = os.path.join('cxx', 'include')
@@ -45,7 +48,7 @@ setup(
     url='TBA',
     long_description='TBA.',
     package_dir={'baxcat': 'baxcat/'},
-    setup_requires=requirements,
+    setup_requires=reqs,
     ext_modules=cythonize(extensions),
     cmdclass={'build_ext': build_ext}
 )

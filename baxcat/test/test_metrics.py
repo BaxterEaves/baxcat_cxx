@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 
 from baxcat import metrics
+from pytest import approx
 
 
 def gen_arrays():
@@ -53,14 +54,14 @@ def test_squared_error_numeric():
     obs, pred = gen_series_float()
     se = metrics.SquaredError()
 
-    assert abs(se(obs, pred) - 0.3325) < 10E-8
+    assert se(obs, pred) == approx(0.3325)
 
 
 def test_relative_error():
     obs, pred = gen_series_float()
     re = metrics.RelativeError()
 
-    assert abs(re(obs, pred) - 3.0242424242424244) < 10E-8
+    assert re(obs, pred) == approx(3.0242424242424244)
 
 
 @pytest.mark.xfail(raises=ZeroDivisionError)
@@ -104,7 +105,7 @@ def test_corr_perfect_pos():
 
     rho = metrics.Correlation()
 
-    assert abs(rho(obs, obs) - 1.) < 10E-8
+    assert rho(obs, obs) == approx(1.)
 
 
 def test_corr_perfect_neg():
@@ -113,4 +114,4 @@ def test_corr_perfect_neg():
 
     rho = metrics.Correlation()
 
-    assert abs(rho(obs, inf) + 1.) < 10E-8
+    assert rho(obs, inf) == approx(-1.)

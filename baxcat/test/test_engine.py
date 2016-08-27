@@ -11,6 +11,7 @@ from baxcat.metrics import SquaredError
 
 from tempfile import NamedTemporaryFile
 
+
 NO_IPP = False
 try:
     # XXX: As of IPython prallel version 5.2.0, the timeout kwarg in Client
@@ -18,6 +19,8 @@ try:
     # client will always take at least 30 seconds to timeout. I have put in a
     # pull request (https://github.com/ipython/ipyparallel/pull/185). We'll
     # see how it goes. Sorry to make you wait.
+    # XXX: Updated 8/27/2016. Pull request accepted. Just waiting for it to
+    # make it to pipy
     import ipyparallel as ipp
     c = ipp.Client(timeout=.5)
     del c
@@ -367,7 +370,8 @@ def test_pairwise_dependence_probability():
     assert depprob.ix[1, 2] == depprob.ix[2, 1]
 
 
-# --- Row similarity
+# Row similarity
+# ---
 def test_row_similarity():
     x = np.random.randn(30)
 
