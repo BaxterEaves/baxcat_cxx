@@ -3,6 +3,7 @@
 ## A C++/python implementation of cross-cutting categorization.
 
 ![Travis-CI status](https://travis-ci.org/BaxterEaves/baxcat_cxx.svg?branch=master)
+![Documentation](https://readthedocs.org/projects/baxcat-cxx/badge/?version=latest)
 
 **baxcat is under rapid development. The modeling assumptions and API are subject to change.**
 
@@ -10,17 +11,7 @@
 # Installation
 C++ backend requires Boost and an OpenMP, C++11 capable compiler.
 
-The python front end requires python version 3.X and the following pacakges:
-- cython
-- numpy
-- scipy
-- pandas
-- matplotlib
-- seaborn
-- pytest (for testing)
-- freeze (for testing)
-- sphinx (for docs)
-- numpydoc (for docs)
+The python front end requires python version 3.X and the packages in `requirements.txt`:
 
 To install:
 
@@ -30,16 +21,11 @@ To run the python unit tests:
 
     $ py.test
 
+# Documentation
+The documentation is a work in progress. Nevertheless, you can find it [here](http://baxcat-cxx.readthedocs.io/en/latest/index.html).
+
 # Use
 Examples are stored in the `examples` directory. More coming soon.
-
-# Currently implemented data types
-
-## Continuous
-Uses Normal likelihood with Normal-Gamma prior.
-
-## Categorical
-Uses Categorical likelihood with symmetric Dirichlet prior.
 
 # Hacking
 
