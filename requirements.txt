@@ -1,0 +1,13 @@
+setuptools>=18.0
+cython
+numpy
+scipy
+pandas
+pytest>=3.0.0
+freeze
+sphinx
+autodoc
+numpydoc
+sphinx_rtd_theme
+matplotlib
+seaborn

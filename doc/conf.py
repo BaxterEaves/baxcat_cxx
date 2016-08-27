@@ -324,7 +324,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
     (master_doc, 'baxcat_cxx', 'baxcat_cxx Documentation',
-     author, 'baxcat_cxx', 'One line description of project.',
+     author, 'baxcat_cxx', 'Scaleable and correct cross-categorization',
      'Miscellaneous'),
 ]
 
