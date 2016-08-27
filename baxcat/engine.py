@@ -319,7 +319,7 @@ class Engine(object):
         df = pd.concat([s_dtypes, s_distargs], axis=1)
         df.columns = cols
 
-        df['cardinality'][df['dtype'] != 'categorical'] = None
+        df.loc[df['dtype'] != 'categorical', 'cardinality'] = None
         return df
 
     def run(self, n_iter=1, checkpoint=None, model_idxs=None,
