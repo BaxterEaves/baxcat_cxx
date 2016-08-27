@@ -46,6 +46,9 @@ Some things I need to do to make this more accessible and useful to non-bax huma
 - [ ] Spynx documentation
 - [ ] Real-world examples in `examples` directory
 - [ ] Interval probabilities in `Engine.probability`
+- [ ] Count data via Poisson
+- [ ] Cyclical data via VonMises
+- [ ] Magnitude data via Log-Normal
 - [X] Row similarity heatmap
 - [X] Row similarity WRT specific columns (#1)
 - [X] Way to evalute predictive power `Engine.eval`
