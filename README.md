@@ -1,6 +1,6 @@
 # baxcat_cxx
 
-## A C++/python implementation of cross-cutting categorization.
+A C++/python implementation of cross-cutting categorization.
 
 ![Travis-CI status](https://travis-ci.org/BaxterEaves/baxcat_cxx.svg?branch=master)
 ![Documentation](https://readthedocs.org/projects/baxcat-cxx/badge/?version=latest)
