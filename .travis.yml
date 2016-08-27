@@ -21,7 +21,7 @@ install:
     - conda info -a
     - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION cython numpy scipy matplotlib seaborn pytest pandas
     - source activate test-environment
-    - pip install freeze ipython[all]
+    - pip install freeze ipython[all] pytest-rerunfailures
     - pip install --upgrade pytest
     - python setup.py develop
     - export PYTHONPATH=`pwd`/baxcat_cxx:$PYTHONPATH
