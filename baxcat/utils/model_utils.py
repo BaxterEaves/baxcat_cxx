@@ -6,6 +6,7 @@ from baxcat.dist import csd
 from baxcat.misc import pflip
 
 from scipy.misc import logsumexp
+from scipy import optimize
 from math import log
 
 
@@ -227,6 +228,49 @@ def sample(models, col_idxs, given=None, n=1):
     return samples
 
 
+def surprisal(col_idx, queries, models):
+    """ The surprisal, or self-information, of a set of observations
+
+    Parameters
+    ----------
+    col_idx : int
+        column index
+    queries : list(tuple(int, float,))
+        list of (row_index, value,) tuples
+    models : list
+        list of baxcat models
+
+    Returns
+    -------
+    s : numpy.ndarray(float)
+       The surprisal of each observation in queries.
+
+
+    Example
+    -------
+    >>> col_idx = 1
+    >>> queries = [(0, 1.,), (2, .5,)]
+    >>> models = engine.models
+    >>> s = surprisal(col_idx, queries, models)
+    """
+
+    f = PROBFUNC[models[0]['dtypes'][col_idx]]
+    n_models = len(models)
+
+    s = np.zeros(len(queries))
+    for i, (row_idx, x,) in enumerate(queries):
+        s_row = np.zeros(n_models)
+        for j, model in enumerate(models):
+            view_idx = model['col_assignment'][col_idx]
+            component_idx = model['row_assignments'][view_idx][row_idx]
+
+            s_row[j] = f(x, model, col_idx, component_idx)
+
+        s[i] = -logsumexp(s_row) + log(n_models)
+
+    return s
+
+
 def probability(x, models, col_idxs, given=None):
     """ The average probability of x under the models
 
@@ -283,6 +327,48 @@ def probability(x, models, col_idxs, given=None):
         return logps[0]
     else:
         return logps
+
+
+def impute(row_idx, col_idx, models, bounds):
+    """ Impute (choose the max logp value) ad return confidence
+
+    Parameters
+    ----------
+    row_idx : int
+        The row index to impute
+    col_idx : int
+        The column index to impute
+    models : dict
+        The baxcat models
+    relvals : list(tuple(columns index, value))
+        List of column, value tuples that specify the values of all the columns
+        dependent with `col_idx` in `row_idx`.
+    bounds : list(float) or tuple(float, float)
+        A list of values to evaluate (if `col_idx` is categorical) or the lower
+        and upper bound for optimization (if `col_idx` is continuous).
+
+    Returns
+    -------
+    y : float
+        The imputed value
+    conf : float
+        The confidence
+    """
+    dtype = models[0]['dtypes'][col_idx]
+    if dtype == b'categorical':
+        queries = [(row_idx, val,) for val in bounds]
+        s = surprisal(col_idx, queries, models)
+        min_idx = np.argmin(s)
+        y = queries[min_idx][1]
+    else:
+        # XXX: Note that fmin function finds the local maxima
+        def func(x):
+            return surprisal(col_idx, [(row_idx, float(x),)], models)
+        resbrute = optimize.brute(func, (bounds,), finish=optimize.fmin)
+        y = resbrute[0]
+
+    # FIXME: Confidence not implemeted
+    return y, float('NaN')
 
 
 def joint_entropy(models, col_idxs, n_samples=1000):

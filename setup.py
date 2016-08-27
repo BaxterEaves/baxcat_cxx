@@ -4,41 +4,48 @@ from Cython.Build import cythonize
 from Cython.Distutils import build_ext
 
 import numpy as np
+import os
 
-cmdclass = dict()
-cmdclass['build_ext'] = build_ext
+
+requirements = ['setuptools>=18.0', 'cython', 'numpy', 'scipy', 'pandas',
+                'matplotlib', 'seaborn', 'pytest', 'freeze']
+
+SRC = os.path.join('cxx', 'src')
+INC = os.path.join('cxx', 'include')
 
 extensions = [
     Extension('baxcat.state',
-              sources=['baxcat/interface/state.pyx', 'src/state.cpp',
-                       'src/view.cpp', 'src/categorical.cpp',
-                       'src/continuous.cpp', 'src/feature_tree.cpp'],
-              extra_compile_args=['-std=c++11', '-Wno-comment'],
+              sources=[os.path.join('baxcat', 'interface', 'state.pyx'),
+                       os.path.join(SRC, 'state.cpp'),
+                       os.path.join(SRC, 'view.cpp'),
+                       os.path.join(SRC, 'categorical.cpp'),
+                       os.path.join(SRC, 'continuous.cpp'),
+                       os.path.join(SRC, 'feature_tree.cpp')],
+              extra_compile_args=['-std=c++11', '-Wno-comment', '-fopenmp'],
               extra_link_args=['-lstdc++', '-fopenmp'],
-              include_dirs=['src', 'include', np.get_include()],
+              include_dirs=[SRC, INC, np.get_include()],
               language="c++"),
     Extension('baxcat.dist.nng',
-              sources=['baxcat/dist/nng.pyx'],
-              extra_compile_args=['-std=c++11'],
+              sources=[os.path.join('baxcat', 'dist', 'nng.pyx')],
+              extra_compile_args=['-std=c++11', '-fopenmp'],
               extra_link_args=['-lstdc++', '-fopenmp'],
-              include_dirs=['include', np.get_include()],
+              include_dirs=[INC, np.get_include()],
               language="c++"),
     Extension('baxcat.dist.csd',
-              sources=['baxcat/dist/csd.pyx'],
-              extra_compile_args=['-std=c++11'],
+              sources=[os.path.join('baxcat', 'dist', 'csd.pyx')],
+              extra_compile_args=['-std=c++11', '-fopenmp'],
               extra_link_args=['-lstdc++', '-fopenmp'],
-              include_dirs=['include', np.get_include()],
+              include_dirs=[INC, np.get_include()],
               language="c++")]
-
-extensions = cythonize(extensions)
 
 setup(
     name='baxcat',
-    version='0.0.1',
+    version='0.2a1.dev1',
     author='Baxter S. Eaves Jr.',
     url='TBA',
     long_description='TBA.',
     package_dir={'baxcat': 'baxcat/'},
-    ext_modules=extensions,
-    cmdclass=cmdclass
+    setup_requires=requirements,
+    ext_modules=cythonize(extensions),
+    cmdclass={'build_ext': build_ext}
 )

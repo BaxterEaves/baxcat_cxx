@@ -23,9 +23,10 @@ def miner_df():
     return df
 
 
+# ---
 def test_miner_init_smoke(miner_df):
     logcf = lambda row, x: mvn.logpdf(x, np.zeros(2), np.eye(len(x)))
-    miner = MInER(miner_df, logcf, ['x_2', 'x_3'])
+    miner = MInER(miner_df, logcf, ['x_2', 'x_3'], use_mp=False)
     miner.init_models(2)
     assert hasattr(miner, '_logcf')
     assert hasattr(miner, '_miner_cols')
@@ -35,7 +36,7 @@ def test_miner_init_smoke(miner_df):
 
 def test_fit_smoke(miner_df):
     logcf = lambda row, x: mvn.logpdf(x, np.zeros(2), np.eye(len(x)))
-    miner = MInER(miner_df, logcf, ['x_2', 'x_3'])
+    miner = MInER(miner_df, logcf, ['x_2', 'x_3'], use_mp=False)
     miner.init_models(2)
     miner.fit(1, 5)
 
@@ -46,7 +47,7 @@ def test_fit_smoke(miner_df):
 def test_fit_changes_data_sometimes(miner_df):
     df = copy.deepcopy(miner_df)
     logcf = lambda row, x: 0.0
-    miner = MInER(miner_df, logcf, ['x_2', 'x_3'])
+    miner = MInER(miner_df, logcf, ['x_2', 'x_3'], use_mp=False)
     miner.init_models(2)
     miner.fit(1, 5)
 
@@ -62,7 +63,7 @@ def test_fit_changes_data_sometimes(miner_df):
 def test_fit_changes_data_sometimes_one_col(miner_df):
     df = copy.deepcopy(miner_df)
     logcf = lambda row, x: 0.0
-    miner = MInER(miner_df, logcf, ['x_2'])
+    miner = MInER(miner_df, logcf, ['x_2'], use_mp=False)
     miner.init_models(2)
     miner.fit(1, 5)
 
@@ -78,7 +79,7 @@ def test_fit_changes_data_sometimes_one_col(miner_df):
 def test_fit_changes_data_sometimes_one_col_categorical(miner_df):
     df = copy.deepcopy(miner_df)
     logcf = lambda row, x: 0.0
-    miner = MInER(miner_df, logcf, ['x_1'])
+    miner = MInER(miner_df, logcf, ['x_1'], use_mp=False)
     miner.init_models(2)
     miner.fit(1, 5)
 
@@ -97,7 +98,7 @@ def test_fit_changes_data_sometimes_one_col_categorical(miner_df):
 def test_fit_doesnt_change_data_sometimes(miner_df):
     df = copy.deepcopy(miner_df)
     logcf = lambda row, x: float('-Inf')
-    miner = MInER(miner_df, logcf, ['x_2', 'x_3'])
+    miner = MInER(miner_df, logcf, ['x_2', 'x_3'], use_mp=False)
     miner.init_models(2)
     miner.fit(1, 5)
 
@@ -112,7 +113,7 @@ def test_fit_doesnt_change_data_sometimes(miner_df):
 
 def test_convert_uniform_column_to_normal(miner_df):
     logcf = lambda row, x: norm.logpdf(x[0], 0, 1)
-    miner = MInER(miner_df, logcf, ['x_2'])
+    miner = MInER(miner_df, logcf, ['x_2'], use_mp=False)
     miner.init_models(2)
     miner.fit(20, 10)
 

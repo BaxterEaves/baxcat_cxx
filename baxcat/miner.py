@@ -28,7 +28,6 @@ class MInER(baxcat.engine.Engine):
         entry in `cols`.
     """
     def __init__(self, df, logcf, cols, metadata=None, **kwargs):
-        # TODO: superclass constructor
         super().__init__(df, metadata=metadata, **kwargs)
 
         self._miner_cols = cols
