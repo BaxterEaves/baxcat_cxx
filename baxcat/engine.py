@@ -515,7 +515,7 @@ class Engine(object):
         if given is not None:
             given = du.convert_given(given, self._dtypes, self._converters)
 
-        return mu.probability(x_cnv, self._models, col_idxs)
+        return mu.probability(x_cnv, self._models, col_idxs, given=given)
 
     def predict(self, cols, given=None):
         """ Predict the value of columns given hypothetical values of other
