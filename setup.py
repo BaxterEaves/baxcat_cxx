@@ -1,5 +1,6 @@
 from setuptools import setup
-from distutils.core import Extension
+from setuptools import Extension
+from setuptools.command.install import install
 from Cython.Build import cythonize
 from Cython.Distutils import build_ext
 from pip.req import parse_requirements
@@ -19,17 +20,21 @@ INC = os.path.join('cxx', 'include')
 baxcat_compile_args = ['-std=c++11', '-Wno-comment', '-fopenmp']
 readthedocs = os.environ.get('READTHEDOCS', None) == 'True'
 
-if readthedocs:
-    print("Getting BOOST")
-    import urllib
-    urllib.request.urlretrieve(
-        "https://sourceforge.net/projects/boost/files/boost/1.61.0/boost_1_61_0.tar.gz",
-        "boost_1_61_0.tar.gz")
-    print("Extracting BOOST to %s" % (here,))
-    os.system("tar -zxf boost_1_61_0.tar.gz")
-    print("Adding to compile args")
-    baxcat_compile_args.append('-I' + os.path.join(here, 'boost_1_61_0'))
+boost_url = "https://sourceforge.net/projects/boost/files/boost/1.61.0/"\
+            "boost_1_61_0.tar.gz"
 
+
+class BaxcatInstall(install):
+    def run(self):
+        if readthedocs:
+            import urllib
+            print("Downloading boost")
+            urllib.request.urlretrieve(boost_url, "boost_1_61_0.tar.gz")
+            print("Extracting BOOST to %s" % (here,))
+            os.system("tar -zxf boost_1_61_0.tar.gz")
+            print("Adding to compile args")
+            baxcat_compile_args.append('-I' + os.path.join(here, 'boost_1_61_0'))
+        install.run(self)
 
 extensions = [
     Extension('baxcat.state',
