@@ -1,6 +1,5 @@
 from setuptools import setup
 from setuptools import Extension
-from setuptools.command.install import install
 from Cython.Build import cythonize
 from Cython.Distutils import build_ext
 from pip.req import parse_requirements
@@ -24,8 +23,9 @@ boost_url = "https://sourceforge.net/projects/boost/files/boost/1.61.0/"\
             "boost_1_61_0.tar.gz"
 
 
-class BaxcatInstall(install):
+class BaxcatInstall(build_ext):
     def run(self):
+        print("Yo.")
         if readthedocs:
             import urllib
             print("Downloading boost")
@@ -34,7 +34,7 @@ class BaxcatInstall(install):
             os.system("tar -zxf boost_1_61_0.tar.gz")
             print("Adding to compile args")
             baxcat_compile_args.append('-I' + os.path.join(here, 'boost_1_61_0'))
-        install.run(self)
+        build_ext.run(self)
 
 extensions = [
     Extension('baxcat.state',
@@ -70,5 +70,5 @@ setup(
     package_dir={'baxcat': 'baxcat/'},
     setup_requires=reqs,
     ext_modules=cythonize(extensions),
-    cmdclass={'build_ext': build_ext}
+    cmdclass={'build_ext': BaxcatInstall}
 )
