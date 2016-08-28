@@ -45,7 +45,6 @@ def test_fit_smoke(miner_df):
     assert(not np.any(np.isnan(miner._df['x_3'].values)))
 
 
-@pytest.mark.slow
 def test_fit_changes_data_sometimes(miner_df):
     df = copy.deepcopy(miner_df)
     logcf = lambda row, x: 0.0
@@ -62,7 +61,6 @@ def test_fit_changes_data_sometimes(miner_df):
         assert(miner._df['x_3'].ix[i] != df['x_3'].ix[i])
 
 
-@pytest.mark.slow
 def test_fit_changes_data_sometimes_one_col(miner_df):
     df = copy.deepcopy(miner_df)
     logcf = lambda row, x: 0.0
@@ -79,7 +77,6 @@ def test_fit_changes_data_sometimes_one_col(miner_df):
         assert(miner._df['x_3'].ix[i] == df['x_3'].ix[i])
 
 
-@pytest.mark.slow
 def test_fit_changes_data_sometimes_one_col_categorical(miner_df):
     df = copy.deepcopy(miner_df)
     logcf = lambda row, x: 0.0
@@ -99,7 +96,23 @@ def test_fit_changes_data_sometimes_one_col_categorical(miner_df):
     assert(n_changed > 0)
 
 
-@pytest.mark.slow
+def test_miner_changes_columns_differently(miner_df):
+    df = copy.deepcopy(miner_df)
+    logcf = lambda row, x: 0.0
+
+    x_02 = df.loc[0, 'x_2']
+    x_03 = df.loc[0, 'x_3']
+
+    miner = MInER(miner_df, logcf, ['x_2', 'x_3'], use_mp=False)
+    miner.init_models(2)
+    miner.fit(1, 5)
+
+    assert miner._df.loc[0, 'x_2'] != x_02
+    assert miner._df.loc[0, 'x_3'] != x_03
+    for i in range(df.shape[0]):
+        assert miner._df.loc[i, 'x_2'] != miner._df.loc[i, 'x_3']
+
+
 def test_fit_doesnt_change_data_sometimes(miner_df):
     df = copy.deepcopy(miner_df)
     logcf = lambda row, x: float('-Inf')

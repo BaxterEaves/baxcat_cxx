@@ -1,3 +1,4 @@
+import sys
 import baxcat.engine
 import random
 import numpy as np
@@ -6,8 +7,9 @@ from baxcat.state import BCState
 from math import log
 
 
-def _do_miner_row_resample(args):
-    pass
+def printnow(msg):
+    sys.stdout.write(msg)
+    sys.stdout.flush()
 
 
 class MInER(baxcat.engine.Engine):
@@ -16,7 +18,7 @@ class MInER(baxcat.engine.Engine):
 
     Atributes
     ---------
-    df : pandas.DataFrame
+    df : csv file name or pandas.DataFrame
         The input data
     logcf : function(row_index, data)
         Function that takes a row index and a list of data and calculates the
@@ -36,13 +38,16 @@ class MInER(baxcat.engine.Engine):
 
     def fit(self, n_iter=1, n_samples=10):
         rowlst = [i for i in range(self._n_rows)]
-        for _ in range(n_iter):
+        for i in range(n_iter):
+            printnow('+')
             self._init_bcstates()
             random.shuffle(rowlst)
             for row_idx in rowlst:
                 self.resample_row(row_idx, n_samples)
+                printnow('.')
             self._teardown_bcstates()
             self.run(1)
+            printnow('%d of %d\n' % (i+1, n_iter,))
 
     def resample_row(self, row_idx, n_samples=1):
         assert(self._bcstates is not None)
@@ -87,11 +92,13 @@ class MInER(baxcat.engine.Engine):
             self._bcstates.append(BCState(self._data.T, **init_kwarg))
 
     def _teardown_bcstates(self):
+        self._model = [bcs.get_metadata() for bcs in self._bcstates]
         self._bcstates = None
 
     def _converter_logcf(self, func):
-        """ Make logcf convert data to a format BCState understands. """
+        """ Convert data sent to logcf to its values in df """
         def func_out(row_idx, data):
+            row = self._converters['idx2row'][row_idx]
             data_cnv = []
             for col_idx, x in zip(self._miner_col_idxs, data):
                 if self._dtypes[col_idx] == 'categorical':
@@ -100,7 +107,7 @@ class MInER(baxcat.engine.Engine):
                     data_cnv.append(y)
                 else:
                     data_cnv.append(x)
-            return func(row_idx, data_cnv)
+            return func(row, data_cnv)
 
         return lambda row_idx, data: func_out(row_idx, data)
 
@@ -117,4 +124,4 @@ class MInER(baxcat.engine.Engine):
             else:
                 y = x
 
-            self._df[col].ix[row] = y
+            self._df.loc[row, col] = y
