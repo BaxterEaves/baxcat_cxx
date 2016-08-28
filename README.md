@@ -3,7 +3,6 @@
 A C++/python implementation of cross-cutting categorization.
 
 ![Travis-CI status](https://travis-ci.org/BaxterEaves/baxcat_cxx.svg?branch=master)
-![Documentation](https://readthedocs.org/projects/baxcat-cxx/badge/?version=latest)
 
 **baxcat is under rapid development. The modeling assumptions and API are subject to change.**
 
@@ -22,7 +21,7 @@ To run the python unit tests:
     $ py.test
 
 # Documentation
-The documentation is a work in progress. Nevertheless, you can find it [here](http://baxcat-cxx.readthedocs.io/en/latest/index.html).
+The documentation is a work in progress. Nevertheless, you can find it [here](http://baxcat.baxtereaves.com/).
 
 # Use
 Examples are stored in the `examples` directory. More coming soon.
