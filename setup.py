@@ -27,7 +27,7 @@ if readthedocs:
         "boost_1_61_0.tar.gz")
     print("Extracting BOOST to %s" % (here,))
     os.system("tar -zxf boost_1_61_0.tar.gz")
-    print("Adding to comppand args")
+    print("Adding to compile args")
     baxcat_compile_args.append('-I' + os.path.join(here, 'boost_1_61_0'))
 
 
