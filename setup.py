@@ -16,7 +16,8 @@ reqs = [str(ir.req) for ir in install_reqs]
 SRC = os.path.join('cxx', 'src')
 INC = os.path.join('cxx', 'include')
 
-baxcat_compile_args = ['-std=c++11', '-Wno-comment', '-fopenmp']
+baxcat_include_dirs = [SRC, INC, np.get_include()]
+
 readthedocs = os.environ.get('READTHEDOCS', None) == 'True'
 
 boost_url = "https://sourceforge.net/projects/boost/files/boost/1.61.0/"\
@@ -32,8 +33,9 @@ class BaxcatInstall(build_ext):
             urllib.request.urlretrieve(boost_url, "boost_1_61_0.tar.gz")
             print("Extracting BOOST to %s" % (here,))
             os.system("tar -zxf boost_1_61_0.tar.gz")
-            print("Adding to compile args")
-            baxcat_compile_args.append('-I ' + os.path.join(here, 'boost_1_61_0/'))
+            boost_dir = os.path.join(here, 'boost_1_61_0/')
+            print("Adding %s" % (boost_dir,))
+            baxcat_include_dirs.append(boost_dir)
         build_ext.run(self)
 
 extensions = [
@@ -44,9 +46,9 @@ extensions = [
                        os.path.join(SRC, 'categorical.cpp'),
                        os.path.join(SRC, 'continuous.cpp'),
                        os.path.join(SRC, 'feature_tree.cpp')],
-              extra_compile_args=baxcat_compile_args,
+              extra_compile_args=['-std=c++11', '-Wno-comment', '-fopenmp'],
               extra_link_args=['-lstdc++', '-fopenmp'],
-              include_dirs=[SRC, INC, np.get_include()],
+              include_dirs=baxcat_include_dirs,
               language="c++"),
     Extension('baxcat.dist.nng',
               sources=[os.path.join('baxcat', 'dist', 'nng.pyx')],
