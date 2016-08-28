@@ -7,43 +7,13 @@ from pip.req import parse_requirements
 import numpy as np
 import os
 
-here = os.path.dirname(os.path.realpath(__file__))
-reqfile = os.path.join(here, 'requirements.txt')
-boost_url = "https://sourceforge.net/projects/boost/files/boost/1.61.0/"\
-            "boost_1_61_0.tar.gz"
-
-install_reqs = parse_requirements(reqfile, session=False)
-reqs = [str(ir.req) for ir in install_reqs]
+HERE = os.path.dirname(os.path.realpath(__file__))
+REQFILE = os.path.join(HERE, 'requirements.txt')
+INSTALL_REQS = parse_requirements(REQFILE, session=False)
+REQS = [str(ir.req) for ir in INSTALL_REQS]
 
 SRC = os.path.join('cxx', 'src')
 INC = os.path.join('cxx', 'include')
-
-baxcat_include_dirs = [SRC, INC, np.get_include()]
-
-readthedocs = os.environ.get('READTHEDOCS', None) == 'True'
-
-if readthedocs:
-    boost_dir = os.path.join(here, 'boost_1_61_0/')
-    print("Adding %s" % (boost_dir,))
-    baxcat_include_dirs.append(boost_dir)
-
-
-class BaxcatInstall(build_ext):
-    def run(self):
-        print("Yo.")
-        if readthedocs:
-            import urllib
-            import tarfile
-            print("Downloading boost")
-            urllib.request.urlretrieve(boost_url, "boost_1_61_0.tar.gz")
-            assert os.path.isfile('boost_1_61_0.tar.gz')
-            print("Extracting BOOST to %s" % (here,))
-            tf = tarfile.open(os.path.join(here, 'boost_1_61_0.tar.gz'))
-            tf.extractall()
-            tf.close()
-            # os.system("tar -zxf boost_1_61_0.tar.gz")
-            os.path.isdir('boost_1_61_0')
-        build_ext.run(self)
 
 extensions = [
     Extension('baxcat.state',
@@ -55,7 +25,7 @@ extensions = [
                        os.path.join(SRC, 'feature_tree.cpp')],
               extra_compile_args=['-std=c++11', '-Wno-comment', '-fopenmp'],
               extra_link_args=['-lstdc++', '-fopenmp'],
-              include_dirs=baxcat_include_dirs,
+              include_dirs=[SRC, INC, np.get_include()],
               language="c++"),
     Extension('baxcat.dist.nng',
               sources=[os.path.join('baxcat', 'dist', 'nng.pyx')],
@@ -77,7 +47,7 @@ setup(
     url='TBA',
     long_description='TBA.',
     package_dir={'baxcat': 'baxcat/'},
-    setup_requires=reqs,
+    setup_requires=REQS,
     ext_modules=cythonize(extensions),
-    cmdclass={'build_ext': BaxcatInstall}
+    cmdclass={'build_ext': build_ext}
 )
