@@ -58,7 +58,7 @@ To run the c++ unit tests
 
 ::
 
-    $ cd cxx && py.test
+    $ cd cxx && make unit
 
 Inference tests
 ~~~~~~~~~~~~~~~
