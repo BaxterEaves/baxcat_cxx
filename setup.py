@@ -17,13 +17,17 @@ SRC = os.path.join('cxx', 'src')
 INC = os.path.join('cxx', 'include')
 
 baxcat_compile_args = ['-std=c++11', '-Wno-comment', '-fopenmp']
+readthedocs = os.environ.get('READTHEDOCS', None) == 'True'
 
-if os.environ.get('READTHEDOCS', None) == 'True':
+if readthedocs:
+    print("Getting BOOST")
     import urllib
     urllib.request.urlretrieve(
         "https://sourceforge.net/projects/boost/files/boost/1.61.0/boost_1_61_0.tar.gz",
         "boost_1_61_0.tar.gz")
+    print("Extracting BOOST to %s" % (here,))
     os.system("tar -zxf boost_1_61_0.tar.gz")
+    print("Adding to comppand args")
     baxcat_compile_args.append('-I' + os.path.join(here, 'boost_1_61_0'))
 
 
