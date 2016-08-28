@@ -33,7 +33,7 @@ class BaxcatInstall(build_ext):
             print("Extracting BOOST to %s" % (here,))
             os.system("tar -zxf boost_1_61_0.tar.gz")
             print("Adding to compile args")
-            baxcat_compile_args.append('-I' + os.path.join(here, 'boost_1_61_0'))
+            baxcat_compile_args.append('-I ' + os.path.join(here, 'boost_1_61_0/'))
         build_ext.run(self)
 
 extensions = [
