@@ -20,7 +20,7 @@ baxcat_compile_args = ['-std=c++11', '-Wno-comment', '-fopenmp']
 
 if os.environ.get('READTHEDOCS', None) == 'True':
     import urllib
-    urllib.urlretrieve(
+    urllib.request.urlretrieve(
         "https://sourceforge.net/projects/boost/files/boost/1.61.0/boost_1_61_0.tar.gz",
         "boost_1_61_0.tar.gz")
     os.system("tar -zxf boost_1_61_0.tar.gz")
