@@ -86,7 +86,6 @@ def _get_given_view_weights(model, col_idx, given, return_log=False):
             f = PROBFUNC[model['dtypes'][c]]
             weights[k] += f(x, model, c, k)
 
-    # import pdb; pdb.set_trace()
     if return_log:
         return weights
     else:
@@ -154,6 +153,9 @@ def _probability_single_col(x, model, col_idx, given=None):
         f = PROBFUNC[model['dtypes'][col_idx]]
         logps[component_idx] = f(x, model, col_idx, component_idx) + log_weight
 
+    if given is not None:
+        logps -= logsumexp(log_weights)
+
     return logsumexp(logps)
 
 
@@ -184,7 +186,11 @@ def _probability_multi_col(x, model, col_idxs, given=None):
             y = x[col2pos[col_idx]]
             f = PROBFUNC[model['dtypes'][col_idx]]
             for k, log_weight in enumerate(log_weights):
-                lp_view[k] += f(y, model, col_idx, k)
+                lp_view[k] += f(y, model, col_idx, k) + log_weight
+
+            if given is not None:
+                lp_view[k] -= logsumexp(log_weights)
+
         logp += logsumexp(lp_view)
 
     return logp
