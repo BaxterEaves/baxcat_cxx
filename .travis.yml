@@ -32,5 +32,5 @@ before_script:
 # We need to run the tests twice with different numbers of OpenMP threads
 script:
     - make -C cxx unit
-    - OMP_NUM_THREADS=1 py.test baxcat/
-    - OMP_NUM_THREADS=2 py.test baxcat/
+    - OMP_NUM_THREADS=1 py.test -m "not inference" baxcat/
+    - OMP_NUM_THREADS=2 py.test -m "not inference" baxcat/
