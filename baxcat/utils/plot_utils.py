@@ -101,3 +101,33 @@ def plot_cc_model(data, model, model_logps, row_labels, col_labels,
         data_mats.append(data_mats_view)
 
         c_start = c_end + 1
+
+
+def pp_plot(f, p, nbins=31, ax=None):
+    """ P-P plot of the empirical CDFs of values in two lists, f and p. """
+    if ax is None:
+        ax = plt.gca()
+
+    uniqe_vals_f = list(set(f))
+    uniqe_vals_p = list(set(p))
+
+    combine = uniqe_vals_f
+    combine.extend(uniqe_vals_p)
+    combine = list(set(combine))
+
+    if len(uniqe_vals_f) > nbins:
+        bins = nbins
+    else:
+        bins = sorted(combine)
+        bins.append(bins[-1]+bins[-1]-bins[-2])
+
+    ff, edges = np.histogram(f, bins=bins, density=True)
+    fp, _ = np.histogram(p, bins=edges, density=True)
+
+    Ff = np.cumsum(ff*(edges[1:]-edges[:-1]))
+    Fp = np.cumsum(fp*(edges[1:]-edges[:-1]))
+
+    plt.plot([0, 1], [0, 1], c='dodgerblue', lw=2, alpha=.8)
+    plt.plot(Ff, Fp, c='black', lw=2, alpha=.9)
+    plt.xlim([0, 1])
+    plt.ylim([0, 1])
