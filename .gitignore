@@ -37,5 +37,5 @@
 .DS_Store
 
 # python junk
-*.py
+*.pyc
 __pycache__
