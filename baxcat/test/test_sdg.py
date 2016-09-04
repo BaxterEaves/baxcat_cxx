@@ -1,5 +1,7 @@
 from baxcat.utils.test_utils import DataGenerator
 
+import pytest
+
 
 def test_sdg_init_single_categorical():
     sdg = DataGenerator(10, ['categorical'])
@@ -53,3 +55,31 @@ def test_sdg_init_dual_mixed():
     assert len(sdg._params) == 2
     assert len(sdg._params[0]) == 3
     assert len(sdg._params[1]) == 3
+
+
+# ---
+@pytest.mark.parametrize('dtype', ['categorical', 'continuous'])
+def test_sdg_init_dual_mixed_one_view(dtype):
+    sdg = DataGenerator(10, [dtype]*3, view_weights=1)
+
+    assert sdg.df.shape == (10, 3,)
+    assert min(sdg._colpart) == 0
+    assert max(sdg._colpart) == 0
+
+
+@pytest.mark.parametrize('dtype', ['categorical', 'continuous'])
+def test_sdg_init_dual_mixed_two_view(dtype):
+    sdg = DataGenerator(10, [dtype]*3, view_weights=2)
+
+    assert sdg.df.shape == (10, 3,)
+    assert min(sdg._colpart) == 0
+    assert max(sdg._colpart) == 1
+
+
+@pytest.mark.parametrize('dtype', ['categorical', 'continuous'])
+def test_sdg_init_dual_mixed_three_view(dtype):
+    sdg = DataGenerator(10, [dtype]*3, view_weights=3)
+
+    assert sdg.df.shape == (10, 3,)
+    assert min(sdg._colpart) == 0
+    assert max(sdg._colpart) == 2

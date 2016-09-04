@@ -32,9 +32,21 @@ def _gen_partition(weights, n):
         msg = "{} is not valid type for weights".format(type(weights))
         raise ValueError(msg)
 
-    z = pflip(weights, n=n)
+    k = len(weights)
+
     if n == 1:
-        z = [z]
+        return [0], weights
+
+    # there should be at least one instance of each of the components in
+    # weights
+    z = list(range(k))
+    if n-k == 1:
+        z += [pflip(weights, n=1)]
+    elif n-k > 1:
+        z += pflip(weights, n=n-k).tolist()
+
+    assert min(z) == 0
+    assert max(z) == k-1
 
     return z, weights
 
