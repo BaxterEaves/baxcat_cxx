@@ -16,7 +16,6 @@
 #include "samplers/slice.hpp"
 #include "helpers/constants.hpp"
 #include "helpers/state_helper.hpp"
-#include "helpers/synthetic_data_generator.hpp"
 
 using baxcat::helpers::getDatatypes;
 
