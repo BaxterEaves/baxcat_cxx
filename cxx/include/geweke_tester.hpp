@@ -12,7 +12,6 @@
 #include "state.hpp"
 #include "utils.hpp"
 #include "test_utils.hpp"
-#include "helpers/synthetic_data_generator.hpp"
 #include "template_helpers.hpp"
 
 namespace baxcat{

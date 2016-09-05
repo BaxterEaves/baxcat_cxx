@@ -10,7 +10,7 @@ DEPFILES := $(patsubst %.cpp,%.d,$(SRCFILES))
 
 WARNINGS := -Wall -Wno-unused-function -Wno-unused-local-typedefs \
 			-Wno-comment -Wno-reorder
-CFLAGS   := -I$(INCLUDE) -std=c++11 -fopenmp -lmgl -DDEBUG $(WARNINGS)
+CFLAGS   := -I$(INCLUDE) -std=c++11 -fopenmp -DDEBUG $(WARNINGS)
 
 .PHONY: all clean todolist geweke
 
