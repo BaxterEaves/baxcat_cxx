@@ -9,7 +9,7 @@ def test_sdg_init_single_categorical():
     assert sdg.df.shape == (10, 1,)
     assert sdg.df[0].dtype == 'int'
     assert len(sdg._params) == 1
-    assert len(sdg._params[0]) == 3
+    assert len(sdg._params[0]) == 2
 
 
 def test_sdg_init_single_continuous():
@@ -18,7 +18,7 @@ def test_sdg_init_single_continuous():
     assert sdg.df.shape == (10, 1,)
     assert sdg.df[0].dtype == 'float'
     assert len(sdg._params) == 1
-    assert len(sdg._params[0]) == 3
+    assert len(sdg._params[0]) == 2
 
 
 def test_sdg_init_dual_categorical():
@@ -29,8 +29,8 @@ def test_sdg_init_dual_categorical():
     assert sdg.df[1].dtype == 'int'
 
     assert len(sdg._params) == 2
-    assert len(sdg._params[0]) == 3
-    assert len(sdg._params[1]) == 3
+    assert len(sdg._params[0]) == 2
+    assert len(sdg._params[1]) == 2
 
 
 def test_sdg_init_dual_continuous():
@@ -41,8 +41,8 @@ def test_sdg_init_dual_continuous():
     assert sdg.df[1].dtype == 'float'
 
     assert len(sdg._params) == 2
-    assert len(sdg._params[0]) == 3
-    assert len(sdg._params[1]) == 3
+    assert len(sdg._params[0]) == 2
+    assert len(sdg._params[1]) == 2
 
 
 def test_sdg_init_dual_mixed():
@@ -53,8 +53,8 @@ def test_sdg_init_dual_mixed():
     assert sdg.df[1].dtype == 'int'
 
     assert len(sdg._params) == 2
-    assert len(sdg._params[0]) == 3
-    assert len(sdg._params[1]) == 3
+    assert len(sdg._params[0]) == 2
+    assert len(sdg._params[1]) == 2
 
 
 # ---
