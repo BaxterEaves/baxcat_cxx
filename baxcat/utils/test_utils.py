@@ -63,7 +63,7 @@ PARAM_FUNCS = {
     'categorical': _categorical_params}
 
 LOGPDFS = {
-    'categorical': lambda x, p: log(p[x]),
+    'categorical': lambda x, alpha: np.log([alpha[xi] for xi in x]),
     'continuous': norm.logpdf}
 
 DRAW = {
@@ -157,8 +157,8 @@ class DataGenerator(object):
 
         Parameters
         ----------
-        x : float or int
-            A single datum
+        x : float or int or 1-D list
+            data
         col : int
             The column index of `x`
 
@@ -168,13 +168,15 @@ class DataGenerator(object):
             The loglikelihood
         """
         dtype = self._dtypes[col]
-        lls = []
-        for k, (w, params,) in enumerate(zip(self._cat_weights, self._params)):
-            lls.append(log(w) + LOGPDFS[dtype](x, *params))
+        vidx = self._colpart[col]
+        weights = self._cat_weights[vidx]
+        n_cats = len(weights)
+        n = len(x)
+        lls = np.zeros((n, n_cats,))
+        for j, (w, params,) in enumerate(zip(weights, self._params[col])):
+            lls[:, j] = log(w) + LOGPDFS[dtype](x, **params)
 
-        ll = logsumexp(lls)
-
-        return ll
+        return logsumexp(lls, axis=1)
 
     @property
     def dtypes(self):
