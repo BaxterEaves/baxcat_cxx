@@ -47,8 +47,10 @@ cdef class Geweke:
     def __init__(self, n_rows, n_cols, dtypes, seed, m=1,
                  do_hypers=True, do_row_alpha=True, do_row_z=True,
                  do_col_z=True, ct_kernel=0):
+        if len(dtypes) != n_cols:
+            raise ValueError('Must be a dtype for each column')
         if not all(dt in valid_dtypes for dt in dtypes):
-            raise ValueError
+            raise ValueError('Invalid dtype in dtypes')
         dtypes = [dt.encode('utf-8') for dt in dtypes]
 
         self.n_cols = n_cols
@@ -99,21 +101,21 @@ cdef class Geweke:
 
                 print("\tKS-test on %s = %f (p=%f) [%s]" % (key, d, p, pstxt,))
     
-                plt.subplot(3, n_stats, j+1)
-                plt.hist(stat_fi, normed=True)
-                plt.xlabel('%s (forward)' % (key,))
-                plt.title('%s' % (key,))
+                ax1 = plt.subplot(3, n_stats, j+1)
+                ax1.hist(stat_fi, normed=True)
+                ax1.set_xlabel('%s (forward)' % (key,))
+                ax1.set_title('%s [%s]' % (key, pstxt))
 
-                plt.subplot(3, n_stats, n_stats+j+1)
-                plt.hist(stat_pi, normed=True)
-                plt.xlabel('%s (posterior)' % (key,))
+                ax2 = plt.subplot(3, n_stats, n_stats+j+1)
+                ax2.hist(stat_pi, normed=True)
+                ax2.set_xlabel('%s (posterior)' % (key,))
+                ax2.set_xlim(ax1.get_xlim())
 
-                plt.subplot(3, n_stats, 2*n_stats+j+1)
-                pu.pp_plot(stat_fi, stat_pi)
-                plt.xlabel('forward')
-                plt.ylabel('posterior')
+                ax3 = plt.subplot(3, n_stats, 2*n_stats+j+1)
+                pu.pp_plot(stat_fi, stat_pi, ax=ax3)
+                ax3.set_xlabel('forward')
+                ax3.set_ylabel('posterior')
 
-            plt.suptitle('column %d statistics' % (i,))
             fig.tight_layout()
             plt.savefig(os.path.join(resdir, '%s.png' % fnames[i]), dpi=150)
 
