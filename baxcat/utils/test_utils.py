@@ -14,7 +14,9 @@ import numpy as np
 def _categorical_params(n_cats, sep):
     sep = min(.95, sep)
     # use 5 as an arbitrary cardinality
-    return [{'alpha': p} for p in dirichlet.rvs([1.-sep]*5, n_cats)]
+    # add .01 to probability to make sure there are no zeros
+    ps = (dirichlet.rvs([1.-sep]*5, n_cats)+.01)/1.05
+    return [{'alpha': p} for p in ps]
 
 
 def _continuous_params(n_cats, sep):
