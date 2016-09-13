@@ -88,7 +88,7 @@ def _get_given_view_weights(model, col_idx, given, return_log=False):
 
     # import pdb; pdb.set_trace()
     if return_log:
-        return weights
+        return weights-logsumexp(weights)
     else:
         return np.exp(weights-logsumexp(weights))
 
