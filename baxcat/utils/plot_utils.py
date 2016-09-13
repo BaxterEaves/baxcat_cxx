@@ -1,7 +1,9 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.patches as patches
+import seaborn as sns
 
 
 def _normalize_data_table(data):
@@ -131,3 +133,34 @@ def pp_plot(f, p, nbins=31, ax=None):
     plt.plot(Ff, Fp, c='black', lw=2, alpha=.9)
     plt.xlim([0, 1])
     plt.ylim([0, 1])
+
+
+def inftest_plot(x, y_true, y_net, title, path):
+    f = plt.figure()
+    plt.plot(x, y_true, label='True')
+    plt.plot(x, y_net, label='baxcat')
+    plt.legend(loc=0)
+    plt.title(title)
+    f.savefig(os.path.join(path, title+'.png'), dpi=150)
+    f.clf()
+
+
+def inftest_bar(x_true, x_net, title, path):
+    f = plt.figure()
+    x = np.arange(len(x_true))
+    plt.bar(x, x_true, fc=sns.xkcd_rgb["denim blue"], label='True')
+    plt.bar(x, x_net, fc=sns.xkcd_rgb["pale red"], label='baxcat', alpha=.7)
+    plt.legend(loc=0)
+    plt.title(title)
+    f.savefig(os.path.join(path, title+'.png'), dpi=150)
+    f.clf()
+
+
+def inftest_hist(x_true, x_net, title, path):
+    f = plt.figure()
+    sns.distplot(x_true, kde=True, label='True')
+    sns.distplot(x_net, kde=True, label='baxcat')
+    plt.legend(loc=0)
+    plt.title(title)
+    f.savefig(os.path.join(path, title+'.png'), dpi=150)
+    f.clf()
