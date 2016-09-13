@@ -1,10 +1,19 @@
-from baxcat.engine import Engine
-from baxcat.utils.test_utils import DataGenerator
-from scipy.stats import ks_2samp
-from scipy.stats import pearsonr
-
+import os
 import numpy as np
 import pytest
+
+from scipy.stats import ks_2samp, pearsonr 
+
+from baxcat.engine import Engine
+from baxcat.utils.test_utils import DataGenerator
+from baxcat.utils.plot_utils import inftest_plot, inftest_hist
+
+
+DIR = os.path.dirname(os.path.abspath(__file__))
+RESDIR = os.path.join(DIR, 'result', 'nng')
+
+if not os.path.exists(RESDIR):
+    os.makedirs(RESDIR)
 
 
 def gen_data_and_engine(n_rows, n_cols, n_cats, cat_sep, n_models, n_iter):
@@ -32,16 +41,21 @@ def test_ks(n_rows, n_cols, n_cats, cat_sep, n_models, n_iter):
 
     df_sim = engine.sample(cols, n=n_rows)
 
+    ttl_base = "NNG_KS-r%d-c%d-k%d-s%1.2f-m%d-i%d_" \
+        % (n_rows, n_cols, n_cats, cat_sep, n_models, n_iter,)
+
     if n_cols == 1:
         x = dg.df[0].values
         y = np.array(df_sim[:, 0], dtype=float)
         d, p = ks_2samp(x, y)
+        inftest_hist(y, x, ttl_base + 'COL-0', RESDIR)
         assert p > .05
     else:
         for col in cols:
             x = dg.df[col].values
             y = np.array(df_sim[:, col], dtype=float)
             d, p = ks_2samp(x, y)
+            inftest_hist(y, x, ttl_base + 'COL-%d' % col, RESDIR)
             assert p > .05
 
 
@@ -58,6 +72,9 @@ def test_likelihood(n_rows, n_cols, n_cats, cat_sep, n_models, n_iter):
                                      n_iter)
     cols = list(range(n_cols))
 
+    ttl_base = "NNG_LK-r%d-c%d-k%d-s%1.2f-m%d-i%d_" \
+        % (n_rows, n_cols, n_cats, cat_sep, n_models, n_iter,)
+
     for col in cols:
         xmin = dg.df[col].min()
         xmax = dg.df[col].max()
@@ -67,5 +84,6 @@ def test_likelihood(n_rows, n_cols, n_cats, cat_sep, n_models, n_iter):
         l_eng = engine.probability(x[:, np.newaxis], [col])
 
         r, _ = pearsonr(l_dg, l_eng)
+        inftest_plot(x, l_dg, l_eng, ttl_base + 'COL-%d' % col, RESDIR)
 
         assert abs(r-1) < .05
