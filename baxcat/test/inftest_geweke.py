@@ -3,7 +3,11 @@ from baxcat.geweke import Geweke
 
 import pytest
 
-resdir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'result')
+DIR = os.path.dirname(os.path.abspath(__file__))
+RESDIR = os.path.join(DIR, 'result', 'geweke')
+
+if not os.path.exists(RESDIR):
+    os.makedirs(RESDIR)
 
 
 @pytest.mark.inference
@@ -12,4 +16,4 @@ def test_geweke(seed):
     dtypes = ['categorical']*5 + ['continuous']*5
     gwk = Geweke(10, 10, dtypes, seed, ct_kernel=0, m=1)
     gwk.run(5000, 5, 1)
-    assert not gwk.output(resdir)
+    assert not gwk.output(RESDIR)
