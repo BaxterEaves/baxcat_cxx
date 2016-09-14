@@ -1,7 +1,9 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.patches as patches
+import seaborn as sns
 
 
 def _normalize_data_table(data):
@@ -101,3 +103,64 @@ def plot_cc_model(data, model, model_logps, row_labels, col_labels,
         data_mats.append(data_mats_view)
 
         c_start = c_end + 1
+
+
+def pp_plot(f, p, nbins=31, ax=None):
+    """ P-P plot of the empirical CDFs of values in two lists, f and p. """
+    if ax is None:
+        ax = plt.gca()
+
+    uniqe_vals_f = list(set(f))
+    uniqe_vals_p = list(set(p))
+
+    combine = uniqe_vals_f
+    combine.extend(uniqe_vals_p)
+    combine = list(set(combine))
+
+    if len(uniqe_vals_f) > nbins:
+        bins = nbins
+    else:
+        bins = sorted(combine)
+        bins.append(bins[-1]+bins[-1]-bins[-2])
+
+    ff, edges = np.histogram(f, bins=bins, density=True)
+    fp, _ = np.histogram(p, bins=edges, density=True)
+
+    Ff = np.cumsum(ff*(edges[1:]-edges[:-1]))
+    Fp = np.cumsum(fp*(edges[1:]-edges[:-1]))
+
+    plt.plot([0, 1], [0, 1], c='dodgerblue', lw=2, alpha=.8)
+    plt.plot(Ff, Fp, c='black', lw=2, alpha=.9)
+    plt.xlim([0, 1])
+    plt.ylim([0, 1])
+
+
+def inftest_plot(x, y_true, y_net, title, path):
+    f = plt.figure()
+    plt.plot(x, y_true, label='True')
+    plt.plot(x, y_net, label='baxcat')
+    plt.legend(loc=0)
+    plt.title(title)
+    f.savefig(os.path.join(path, title+'.png'), dpi=150)
+    f.clf()
+
+
+def inftest_bar(x_true, x_net, title, path):
+    f = plt.figure()
+    x = np.arange(len(x_true))
+    plt.bar(x, x_true, fc=sns.xkcd_rgb["denim blue"], label='True')
+    plt.bar(x, x_net, fc=sns.xkcd_rgb["pale red"], label='baxcat', alpha=.7)
+    plt.legend(loc=0)
+    plt.title(title)
+    f.savefig(os.path.join(path, title+'.png'), dpi=150)
+    f.clf()
+
+
+def inftest_hist(x_true, x_net, title, path):
+    f = plt.figure()
+    sns.distplot(x_true, kde=True, label='True')
+    sns.distplot(x_net, kde=True, label='baxcat')
+    plt.legend(loc=0)
+    plt.title(title)
+    f.savefig(os.path.join(path, title+'.png'), dpi=150)
+    f.clf()

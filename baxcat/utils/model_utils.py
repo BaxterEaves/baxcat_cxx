@@ -87,7 +87,7 @@ def _get_given_view_weights(model, col_idx, given, return_log=False):
             weights[k] += f(x, model, c, k)
 
     if return_log:
-        return weights
+        return weights-logsumexp(weights)
     else:
         return np.exp(weights-logsumexp(weights))
 
