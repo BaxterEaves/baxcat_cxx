@@ -420,7 +420,7 @@ class Engine(object):
               assigned.
             * mu is the set of the means on M
             * a -> min(mu), b -> max(mu)
-            * conf := is one minus the integral of the probability of observing
+            * conf is one minus the integral of the probability of observing
               a values between `a` and `b`.
 
         The confidence is higher the narrower the imputation region and is 1 if
