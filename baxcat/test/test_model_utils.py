@@ -1,4 +1,5 @@
 import pytest
+import copy
 import numpy as np
 import baxcat.utils.model_utils as mu
 
@@ -76,3 +77,81 @@ def test_single_categorical_col_samples(model):
 
     assert cts[2] > cts[1]
     assert cts[0] > cts[2]
+
+
+def test_interval_intersection_a():
+    itvl_a = (0., 1.)
+    itvl_b = (.5, 2.)
+
+    itvl = mu.interval_intersection(itvl_a, itvl_b)
+
+    assert itvl == (.5, 1.)
+
+
+def test_interval_intersection_b():
+    itvl_a = (0., 3.)
+    itvl_b = (.5, 2.)
+
+    itvl = mu.interval_intersection(itvl_a, itvl_b)
+
+    assert itvl == (.5, 2.)
+
+
+def test_interval_intersection_c():
+    itvl_a = (0., .2)
+    itvl_b = (.5, 2.)
+
+    itvl = mu.interval_intersection(itvl_a, itvl_b)
+
+    assert itvl is None
+
+
+# --- continuous impute confidence
+def test_continuous_impute_confidence_identical():
+    # this is not a full model, it's just enough to test confidence
+    m = {
+        'col_assignment': [0, 0],
+        'row_assignments': [[0, 0, 0, 1, 1]],
+        'col_suffstats': [
+            [],
+            [
+                {},
+                {'n': 5, 'sum_x': 4.9492, 'sum_x_sq': 22.4901}
+            ]
+        ],
+        'col_hypers': [
+            {'dirichlet_alpha': 1.},
+            {'m': 0, 'r': 1, 's': 1, 'nu': 1}
+        ]
+    }
+
+    conf = mu._continuous_impute_conf([m]*3, 1, 4)
+
+    assert conf == pytest.approx(1.)
+
+
+def test_continuous_impute_confidence_disjoint():
+    # this is not a full model, it's just enough to test confidence
+    m1 = {
+        'col_assignment': [0, 0],
+        'row_assignments': [[0, 0, 0, 1, 1]],
+        'col_suffstats': [
+            [],
+            [
+                {},
+                {'n': 5,
+                 'sum_x': 16.851501644605559,
+                 'sum_x_sq': 57.47631023607466}
+            ]
+        ],
+        'col_hypers': [
+            {'dirichlet_alpha': 1.},
+            {'m': 0, 'r': 1, 's': 1, 'nu': 1}
+        ]
+    }
+    m2 = copy.deepcopy(m1)
+    m2['col_suffstats'][1][1]['sum_x'] *= -1
+
+    conf = mu._continuous_impute_conf([m1, m2], 1, 4)
+
+    assert conf < .01

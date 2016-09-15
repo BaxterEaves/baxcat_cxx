@@ -6,6 +6,7 @@ from baxcat.dist import csd
 from baxcat.misc import pflip
 
 from scipy.misc import logsumexp
+from scipy.integrate import quad
 from scipy import optimize
 from math import log
 
@@ -190,6 +191,66 @@ def _probability_multi_col(x, model, col_idxs, given=None):
     return logp
 
 
+# private confidence utils
+# ````````````````````````````````````````````````````````````````````````````
+def _get_hypers_and_suffstats(model, col_idx, row_idx):
+    hypers = model['col_hypers'][col_idx]
+    view_idx = int(model['col_assignment'][col_idx])
+    cat_idx = model['row_assignments'][view_idx][row_idx]
+    suffstats = model['col_suffstats'][col_idx][cat_idx]
+
+    return hypers, suffstats
+
+
+def interval_intersection(itvl_a, itvl_b):
+    assert itvl_a[0] <= itvl_b[0]
+
+    if itvl_a[1] < itvl_b[0]:
+        return None
+    else:
+        if itvl_a[1] > itvl_b[1]:
+            return itvl_b
+        else:
+            return (itvl_b[0], itvl_a[1])
+
+
+def _cont_conf_pair(model_a, model_b, col_idx, row_idx, ci=.9):
+    hypers_a, suffstats_a = _get_hypers_and_suffstats(
+        model_a, col_idx, row_idx)
+    hypers_b, suffstats_b = _get_hypers_and_suffstats(
+        model_b, col_idx, row_idx)
+
+    ci_a = nng.interval(suffstats_a, hypers_a, ci=ci)
+    ci_b = nng.interval(suffstats_b, hypers_b, ci=ci)
+
+    if ci_a[0] < ci_b[0]:
+        interval = interval_intersection(ci_a, ci_b)
+    else:
+        interval = interval_intersection(ci_b, ci_a)
+
+    if interval is None:
+        return 0
+
+    p_a = nng.predictive_cdf(interval[1], suffstats_a, hypers_a)\
+        - nng.predictive_cdf(interval[0], suffstats_a, hypers_a)
+
+    p_b = nng.predictive_cdf(interval[1], suffstats_b, hypers_b)\
+        - nng.predictive_cdf(interval[0], suffstats_b, hypers_b)
+
+    return (p_a + p_b)/(2*ci)
+
+
+def _continuous_impute_conf(models, col_idx, row_idx, ci=.9):
+    if len(models) == 1:
+        return float('NaN')
+
+    confs = []
+    for model_a, model_b in it.combinations(models, 2):
+        confs.append(_cont_conf_pair(model_a, model_b, col_idx, row_idx, ci))
+
+    return np.mean(confs)
+
+
 # Main interface
 # `````````````````````````````````````````````````````````````````````````````
 def sample(models, col_idxs, given=None, n=1):
@@ -358,6 +419,7 @@ def impute(row_idx, col_idx, models, bounds):
     if dtype == b'categorical':
         queries = [(row_idx, val,) for val in bounds]
         s = surprisal(col_idx, queries, models)
+        conf = _continuous_impute_conf(models, col_idx, row_idx)
         min_idx = np.argmin(s)
         y = queries[min_idx][1]
     else:
@@ -366,9 +428,10 @@ def impute(row_idx, col_idx, models, bounds):
             return surprisal(col_idx, [(row_idx, float(x),)], models)
         resbrute = optimize.brute(func, (bounds,), finish=optimize.fmin)
         y = resbrute[0]
+        conf = float('NaN')
 
     # FIXME: Confidence not implemeted
-    return y, float('NaN')
+    return y, conf
 
 
 def joint_entropy(models, col_idxs, n_samples=1000):
