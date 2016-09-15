@@ -160,3 +160,85 @@ def test_continuous_impute_confidence_touching():
 
     assert conf > .2
     assert conf < .9
+
+
+# --- categorical impute confidence
+def test_categorical_impute_confidence_identical():
+    # this is not a full model, it's just enough to test confidence
+    m = {
+        'dtypes': [b'continuous', b'categorical'],
+        'col_assignment': [0, 0],
+        'row_assignments': [[0, 0, 0, 1, 1]],
+        'col_suffstats': [
+            [],
+            [
+                {},
+                {'n': 5, 'k': 3, '0': 1, '1': 2, '2': 2}
+            ]
+        ],
+        'col_hypers': [
+            {'m': 0, 'r': 1, 's': 1, 'nu': 1},
+            {'dirichlet_alpha': 1.}
+        ]
+    }
+
+    conf = mu._categorical_impute_conf([m]*3, 1, 4)
+
+    assert conf == pytest.approx(1.)
+
+
+def test_categorical_impute_confidence_disjoint():
+    # this is not a full model, it's just enough to test confidence
+    m1 = {
+        'dtypes': [b'continuous', b'categorical'],
+        'col_assignment': [0, 0],
+        'row_assignments': [[0, 0, 0, 1, 1]],
+        'col_suffstats': [
+            [],
+            [
+                {},
+                {'n': 5, 'k': 3, '0': 0, '1': 1, '2': 4}
+            ]
+        ],
+        'col_hypers': [
+            {'m': 0, 'r': 1, 's': 1, 'nu': 1},
+            {'dirichlet_alpha': 1.}
+        ]
+    }
+    m2 = copy.deepcopy(m1)
+    m2['col_suffstats'][1][1]['0'] = 4
+    m2['col_suffstats'][1][1]['1'] = 1
+    m2['col_suffstats'][1][1]['2'] = 0
+
+    conf = mu._categorical_impute_conf([m1, m2], 1, 4)
+
+    assert conf < .01
+
+
+def test_categorical_impute_confidence_touching():
+    # this is not a full model, it's just enough to test confidence
+    m1 = {
+        'dtypes': [b'continuous', b'categorical'],
+        'col_assignment': [0, 0],
+        'row_assignments': [[0, 0, 0, 1, 1]],
+        'col_suffstats': [
+            [],
+            [
+                {},
+                {'n': 5, 'k': 3, '0': 1, '1': 2, '2': 2}
+            ]
+        ],
+        'col_hypers': [
+            {'m': 0, 'r': 1, 's': 1, 'nu': 1},
+            {'dirichlet_alpha': 1.}
+        ]
+    }
+    m2 = copy.deepcopy(m1)
+    m2['col_suffstats'][1][1]['0'] = 0
+    m2['col_suffstats'][1][1]['1'] = 2
+    m2['col_suffstats'][1][1]['2'] = 3
+
+    conf = mu._categorical_impute_conf([m1, m2], 1, 4)
+
+    assert conf > .2
+    assert conf < .9

@@ -231,8 +231,9 @@ def _continuous_impute_conf(models, col_idx, row_idx, ci=.9):
 # private categorical confidence utils
 # ````````````````````````````````````````````````````````````````````````````
 def categorical_pmf(model, col_idx, row_idx):
-    suffstats, hypers = _get_hypers_and_suffstats(model, col_idx, row_idx)
-    ps = np.exp([csd.probability(i) for i in range(len(suffstats)-1)])
+    hypers, suffstats = _get_hypers_and_suffstats(model, col_idx, row_idx)
+    ps = np.exp([csd.probability(i, suffstats, hypers) for i in
+                 range(len(suffstats)-2)])
 
     return ps
 
