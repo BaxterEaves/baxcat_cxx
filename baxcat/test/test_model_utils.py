@@ -129,7 +129,7 @@ def test_continuous_impute_confidence_disjoint():
 
     conf = mu._continuous_impute_conf([m1, m2], 1, 4)
 
-    assert conf < .01
+    assert conf < .6
 
 
 def test_continuous_impute_confidence_touching():
@@ -158,8 +158,7 @@ def test_continuous_impute_confidence_touching():
 
     conf = mu._continuous_impute_conf([m1, m2], 1, 4)
 
-    assert conf > .2
-    assert conf < .9
+    assert conf > .9
 
 
 # --- categorical impute confidence
@@ -212,7 +211,7 @@ def test_categorical_impute_confidence_disjoint():
 
     conf = mu._categorical_impute_conf([m1, m2], 1, 4)
 
-    assert conf < .01
+    assert conf <= .5
 
 
 def test_categorical_impute_confidence_touching():
@@ -240,5 +239,5 @@ def test_categorical_impute_confidence_touching():
 
     conf = mu._categorical_impute_conf([m1, m2], 1, 4)
 
-    assert conf > .2
+    assert conf > .5
     assert conf < .9

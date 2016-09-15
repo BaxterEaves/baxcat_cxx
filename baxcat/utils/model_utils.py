@@ -221,9 +221,11 @@ def _continuous_impute_conf(models, col_idx, row_idx, ci=.9):
         return 1.
 
     def f(x):
-        return surprisal(col_idx, [(row_idx, x)], models)
+        return np.exp(-surprisal(col_idx, [(row_idx, x)], models)[0])
 
     d, _ = quad(f, a, b)
+
+    assert d >= 0. and d <= 1.
 
     return 1.-d
 
@@ -246,9 +248,20 @@ def _categorical_impute_conf(models, col_idx, row_idx):
     pmf = np.sum(np.array(pmfs), axis=0)/len(models)
 
     idx = np.argmax(pmf)
-    ps = [p[idx] for p in pmfs]
-    d = max(ps) - min(ps)
-    d *= len(pmf)
+
+    # check if there are entries that are the same
+    dups = np.nonzero(pmf == pmf[idx])[0]
+    if len(dups) > 1:
+        idxs = dups
+    else:
+        idxs = [idx]
+
+    d = 0.
+    for idx in idxs:
+        ps = [p[idx] for p in pmfs]
+        d += max(ps) - min(ps)
+
+    assert d >= 0. and d <= 1.
 
     return 1.-d
 
