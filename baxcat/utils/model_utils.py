@@ -6,7 +6,6 @@ from baxcat.dist import csd
 from baxcat.misc import pflip
 
 from scipy.misc import logsumexp
-from scipy.integrate import quad
 from scipy import optimize
 from math import log
 
