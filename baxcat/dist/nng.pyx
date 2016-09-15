@@ -44,19 +44,3 @@ def probability(x, suffstats, hypers, seed=None):
     cdef NormalNormalGamma nng
 
     return nng.logPredictiveProbability(x, n, sum_x, sum_x_sq, m, r, s, nu)
-
-
-def interval(suffstats, hypers, ci=.90):
-    mn, rn, sn, nun = update_params(suffstats, hypers)
-
-    scale = (sn*(rn+1)/(nun*rn))**.5
-
-    return t.interval(ci, nun, loc=mn, scale=scale)
-
-
-def predictive_cdf(x, suffstats, hypers):
-    mn, rn, sn, nun = update_params(suffstats, hypers)
-
-    scale = (sn*(rn+1)/(nun*rn))**.5
-
-    return t.cdf(x, nun, loc=mn, scale=scale)
