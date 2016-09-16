@@ -25,8 +25,7 @@ To run the python unit tests:
 # Documentation
 The documentation is a work in progress. Nevertheless, you can find it
 [here](http://baxcat.baxtereaves.com/). Or you can build it by `cd doc && make
-html`. You may need to create `_templates` and `_build` directories. The docs
-will be in _build/html.
+html`. The docs will be in _build/html.
 
 # Use
 Examples are stored in the `examples` directory. More coming soon.
