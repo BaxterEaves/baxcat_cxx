@@ -209,8 +209,9 @@ def _nng_t_mean(model, col_idx, row_idx):
     return mn
 
 
-def _continuous_impute_conf(models, col_idx, row_idx, ci=.9):
-    if len(models) == 1:
+def _continuous_impute_conf(models, col_idx, row_idx):
+    n_models = len(models)
+    if n_models == 1:
         return float('NaN')
     means = [_nng_t_mean(model, col_idx, row_idx) for model in models]
 
@@ -227,7 +228,8 @@ def _continuous_impute_conf(models, col_idx, row_idx, ci=.9):
 
     assert d >= 0. and d <= 1.
 
-    return 1.-d
+    conf = 1.-d
+    return (conf-1./n_models)/(1.-1./n_models)
 
 
 # private categorical confidence utils
