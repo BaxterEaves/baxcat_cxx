@@ -222,14 +222,11 @@ def _continuous_impute_conf(models, col_idx, row_idx):
         return 1.
 
     def f(x):
-        return np.exp(-surprisal(col_idx, [(row_idx, x)], models)[0])
+        return np.exp(surprisal(col_idx, [(row_idx, x)], models)[0])
 
     d, _ = quad(f, a, b)
 
-    assert d >= 0. and d <= 1.
-
-    conf = 1.-d
-    return (conf-1./n_models)/(1.-1./n_models)
+    return np.exp(-d/2.)
 
 
 # private categorical confidence utils

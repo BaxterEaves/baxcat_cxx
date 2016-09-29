@@ -35,7 +35,7 @@ def impute_conf_ax(means, stds, ns, ax=None):
     sns.distplot(np.hstack(xs), hist=False, ax=ax, norm_hist=False,
                  kde_kws={'color': 'crimson', 'lw': 3}, label='combined')
 
-    conf = mu._continuous_impute_conf(models, 0, 0)
+    _, conf = mu.impute(0, 0, models, (-20, 10))
     ax.set_title('Confidence = %f' % conf)
 
 
@@ -43,8 +43,8 @@ if __name__ == "__main__":
     n = 1000
     f, axes = plt.subplots(4, 2, figsize=(8, 10))
 
-    means = [(-2, 2), (-1, 1), (-.25, .25), (0, 0), (-4, 0, 4), (-1, 0, 1),
-             (-.1, 0, .1, .05, 4), (-.1, 0, .1, 4.1, 4)]
+    means = [(0, 0), (-1, 1), (-.25, .25), (0, 0), (-4, 0, 4), (-1, 0, 1),
+             (-.1, 0, .1, .05, 4), (-.1, 0, .1, 4.1, 6)]
     stds = [(1, 1), (1, 1), (1, 1), (1, 10), (1, 1, 1), (1, 1, 1),
             (1, 1, 1, 1, 1), (1, 1, 1, 1, 1)]
     ns = [(n, n)]*4 + [(n, n, n)]*2 + [(n, n, n, n, n)]*2
