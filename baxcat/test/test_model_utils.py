@@ -158,7 +158,7 @@ def test_continuous_impute_confidence_touching():
 
     conf = mu._continuous_impute_conf([m1, m2], 1, 4)
 
-    assert conf > .8
+    assert conf > .5
 
 
 # --- categorical impute confidence
