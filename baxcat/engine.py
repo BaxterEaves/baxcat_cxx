@@ -338,7 +338,7 @@ class Engine(object):
         trans_kwargs : dict
             Keyword arguments sent to `BCState.transition`
         verbose : bool
-            If True, print disagnostic info ate every checkpoint
+            If True, print disagnostic info at every checkpoint
         """
 
         if trans_kwargs is None:
