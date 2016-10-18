@@ -226,10 +226,20 @@ class Engine(object):
         if self._initialized:
             raise NotImplementedError("Cannot re-initialize or add models")
 
-        row2idx, idx2row = du.gen_row_idx_converters(
+        if subsample_size is not None:
+            self._subsampled = True
+        else:
+            self._subsampled = False
+
+        row_converters = du.gen_row_idx_converters(
             self._df.index, self._n_models, subsample_size)
-        self._converters['row2idx'] = row2idx
-        self._converters['idx2row'] = idx2row
+
+        row2idx_df, idx2row_df, row2idx_sf, idx2row_sf = row_converters
+
+        self._converters['row2idx_df'] = row2idx_df
+        self._converters['idx2row_df'] = idx2row_df
+        self._converters['row2idx_sf'] = row2idx_sf
+        self._converters['idx2row_sf'] = idx2row_sf
 
         args = []
         for m_ix in range(self._n_models):
@@ -241,7 +251,7 @@ class Engine(object):
                 kwarg['Zv'] = [0]*self._n_cols
                 kwarg['Zrcv'] = [[0]*self._n_rows]
             
-            rows = sorted(self._converters['idx2row'][m_ix].keys())
+            rows = sorted(self._converters['idx2row_df'][m_ix].keys())
             data_i = self._data[rows, :]
             args.append((data_i, kwarg,))
 
@@ -389,7 +399,7 @@ class Engine(object):
                           'view_alphas': model['view_alphas'],
                           'seed': sd}
 
-            rows = sorted(self._converters['idx2row'][m_ix].keys())
+            rows = sorted(self._converters['idx2row_df'][m_ix].keys())
             data_i = self._data[rows, :]
 
             args.append((data_i, checkpoint, m_ix, verbose, init_kwarg,
@@ -483,7 +493,7 @@ class Engine(object):
             rows = self._df[pd.isnull(self._df[col])].index
 
         col_idx = self._converters['col2idx'][col]
-        row2idx = self._converters['row2idx']
+        row2idx = self._converters['row2idx_sf']
 
         # FIXME: In the future we'll want a better way to determine
         # optimization bounds for different dtypes. If statements are gross.
@@ -591,7 +601,7 @@ class Engine(object):
             colums for 'column', 'row', 'value', and 'surprisal'
         """
         col_idx = self._converters['col2idx'][col]
-        row2idx = self._converters['row2idx']
+        row2idx = self._converters['row2idx_sf']
 
         if rows is None:
             rows = self._df.index.tolist()
@@ -642,8 +652,8 @@ class Engine(object):
 
         sim = np.zeros(self._n_models)
         for midx, model in enumerate(self._models):
-            idx_a = self._converters['row2idx'][midx][row_a]
-            idx_b = self._converters['row2idx'][midx][row_b]
+            idx_a = self._converters['row2idx_sf'][midx][row_a]
+            idx_b = self._converters['row2idx_sf'][midx][row_b]
             if wrt is not None:
                 relviews = set([model['col_assignment'][c] for c in colidxs])
             else:
@@ -922,6 +932,9 @@ class Engine(object):
             with singleton views and categories having negative size or
             appearing as lines. Lots to fix.
         """
+        if self._subsampled:
+            raise NotImplementedError("Not implemented for sub-sampled states")
+
         if hl_rows != ():
             if not isinstance(hl_rows, (list, np.ndarray,)):
                 hl_rows = [hl_rows]

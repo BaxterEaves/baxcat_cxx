@@ -93,18 +93,36 @@ def process_dataframe(df, n_models, metadata=None, n_unique_cutoff=20,
     return data_array, dtypes, distargs, converters
 
 
+# XXX: This is the ugliest, hackiest piece of crap I've ever written.
 def gen_row_idx_converters(df_index, n_models, subset_size=None):
-
     if subset_size is None:
-        row2idx = [dict((r, ix) for ix, r in enumerate(df_index))]*n_models
-        idx2row = [dict((ix, r) for ix, r in enumerate(df_index))]*n_models
+        row2idx_df = [dict((r, ix) for ix, r in enumerate(df_index))]*n_models
+        idx2row_df = [dict((ix, r) for ix, r in enumerate(df_index))]*n_models
+        row2idx_sf = row2idx_df
+        idx2row_sf = idx2row_df
     else:
         n_rows = len(df_index)
         row_subsets = gen_subset_indices(n_rows, subset_size, n_models)
-        row2idx = [dict((r, df_index[r]) for r in rs) for rs in row_subsets]
-        idx2row = [dict((df_index[r], r) for r in rs) for rs in row_subsets]
+        row2idx_df = []
+        idx2row_df = []
+        row2idx_sf = []
+        idx2row_sf = []
+        for subset in row_subsets:
+            row2idx_df_i = []
+            idx2row_df_i = []
+            row2idx_sf_i = []
+            idx2row_sf_i = []
+            for row_idx_sf, row_idx_df in enumerate(subset):
+                row2idx_df_i.append((df_index[row_idx_df], row_idx_df))
+                idx2row_df_i.append((row_idx_df, df_index[row_idx_df]))
+                row2idx_sf_i.append((df_index[row_idx_df], row_idx_sf))
+                idx2row_sf_i.append((row_idx_sf, df_index[row_idx_df]))
+            row2idx_df.append(dict(row2idx_df_i))
+            idx2row_df.append(dict(idx2row_df_i))
+            row2idx_sf.append(dict(row2idx_sf_i))
+            idx2row_sf.append(dict(idx2row_sf_i))
 
-    return row2idx, idx2row
+    return row2idx_df, idx2row_df, row2idx_sf, idx2row_sf 
 
 
 def dataframe_to_array(df, valmaps):
@@ -227,7 +245,9 @@ def gen_subset_indices(n_rows, subset_size, n_sets):
         for i in range(0, len(l), n):
             yield l[i:i + n]
 
-    subsets = list(chunks(row_idxs, int(n_rows/n_sets)))
+    subsets = list(chunks(row_idxs, math.ceil(n_rows/n_sets)))
+
+    assert len(subsets) == n_sets
 
     for subset in subsets:
         if len(subset) < n_subset:
@@ -239,5 +259,5 @@ def gen_subset_indices(n_rows, subset_size, n_sets):
         assert len(subset) == n_subset
 
         subset.sort()
-
+    
     return subsets

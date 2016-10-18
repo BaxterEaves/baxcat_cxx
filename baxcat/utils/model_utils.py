@@ -320,16 +320,16 @@ def sample(models, col_idxs, given=None, n=1):
 
 
 # FIXME: Update docstring example
-def surprisal(col_idx, queries, row2idxs, models):
+def surprisal(col_idx, queries, row2idx, models):
     """ The surprisal, or self-information, of a set of observations
-,
+
     Parameters
     ----------
     col_idx : int
         column index
     queries : list(tuple(int, float,))
         list of (row_index, value,) tuples
-    row2idxs : list(dict(row index, int))
+    row2idx : list(dict(row index, int))
         Converts the user-facing row indices to model-specific row indices
     models : list
         list of baxcat models
@@ -351,17 +351,15 @@ def surprisal(col_idx, queries, row2idxs, models):
 
     s = np.zeros(len(queries))
     for i, (row, x,) in enumerate(queries):
-        modrow_idxs = get_model_and_row_idxs(row2idxs, row)
+        modrow_idxs = get_model_and_row_idxs(row2idx, row)
         n_models = len(modrow_idxs)
         
         assert n_models > 0
 
         s_row = np.zeros(n_models)
         for j, (midx, row_idx) in enumerate(modrow_idxs):
-            try:
-                model = models[midx]
-            except:
-                import pdb; pdb.set_trace()
+            model = models[midx]
+
             assert row_idx is not None
 
             view_idx = model['col_assignment'][col_idx]
