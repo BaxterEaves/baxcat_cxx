@@ -463,7 +463,7 @@ def impute(row, col_idx, row2idx, models, bounds):
     dtype = models[0]['dtypes'][col_idx]
     if dtype == b'categorical':
         queries = [(row, val,) for val in bounds]
-        s = surprisal(col_idx, queries, row2idxs, models)
+        s = surprisal(col_idx, queries, row2idx, models)
         conf = _categorical_impute_conf(models, row2idx, col_idx, row)
         min_idx = np.argmin(s)
         y = queries[min_idx][1]

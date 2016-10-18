@@ -20,6 +20,7 @@ Example
 
 import numpy as np
 import pandas as pd
+import math
 
 
 def convert_given(given, dtypes, converters):
@@ -59,14 +60,12 @@ def convert_data(data, cols, dtypes, converters, to_val=False):
     return data_out
 
 
-def process_dataframe(df, metadata=None, n_unique_cutoff=20):
+def process_dataframe(df, n_models, metadata=None, n_unique_cutoff=20,
+                      subset_size=None):
     """ Process data and generate metadata for use with c++ backend """
 
-    col2idx = dict((col, idx) for idx, col in enumerate(df.columns))
-    idx2col = dict((idx, col) for idx, col in enumerate(df.columns))
-
-    row2idx = dict((row, idx) for idx, row in enumerate(df.index))
-    idx2row = dict((idx, row) for idx, row in enumerate(df.index))
+    col2idx = dict((c, ix) for ix, c in enumerate(df.columns))
+    idx2col = dict((ix, c) for ix, c in enumerate(df.columns))
 
     dtypes = guess_dtypes(df, n_unique_cutoff=n_unique_cutoff,
                           metadata=metadata)
@@ -89,11 +88,23 @@ def process_dataframe(df, metadata=None, n_unique_cutoff=20):
     converters = {
         'col2idx': col2idx,
         'idx2col': idx2col,
-        'row2idx': row2idx,
-        'idx2row': idx2row,
         'valmaps': valmaps}
 
     return data_array, dtypes, distargs, converters
+
+
+def gen_row_idx_converters(df_index, n_models, subset_size=None):
+
+    if subset_size is None:
+        row2idx = [dict((r, ix) for ix, r in enumerate(df_index))]*n_models
+        idx2row = [dict((ix, r) for ix, r in enumerate(df_index))]*n_models
+    else:
+        n_rows = len(df_index)
+        row_subsets = gen_subset_indices(n_rows, subset_size, n_models)
+        row2idx = [dict((r, df_index[r]) for r in rs) for rs in row_subsets]
+        idx2row = [dict((df_index[r], r) for r in rs) for rs in row_subsets]
+
+    return row2idx, idx2row
 
 
 def dataframe_to_array(df, valmaps):
@@ -198,3 +209,35 @@ def format_query_data(data):
     assert len(data_out.shape) == 2
 
     return data_out
+
+
+def gen_subset_indices(n_rows, subset_size, n_sets):
+    """ Generate subset indices and converters """
+    if subset_size > 1.0:
+        raise ValueError('subset_size must be no greater than 1.0')
+
+    if subset_size < 1.0/n_sets:
+        raise ValueError("subset_size too small, must cover entire dataset")
+
+    n_subset = math.ceil(n_rows*subset_size)
+    row_idxs = list(range(n_rows))
+    np.random.shuffle(row_idxs)
+
+    def chunks(l, n):
+        for i in range(0, len(l), n):
+            yield l[i:i + n]
+
+    subsets = list(chunks(row_idxs, int(n_rows/n_sets)))
+
+    for subset in subsets:
+        if len(subset) < n_subset:
+            other_rows = [i for i in range(n_rows) if i not in subset]
+            np.random.shuffle(other_rows)
+            k = n_subset - len(subset)
+            subset.extend(other_rows[:k])
+
+        assert len(subset) == n_subset
+
+        subset.sort()
+
+    return subsets
