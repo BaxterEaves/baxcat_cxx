@@ -528,6 +528,11 @@ def test_gen_subset_indices():
     assert len(set(allidxs)) == 20
 
 
+def test_gen_subset_indices_handles_oddly_divisible_sizes():
+    subsets = du.gen_subset_indices(23, .5, 5)
+    assert len(subsets) == 5
+
+
 def test_gen_subset_indices_raises_value_error_with_low_set_size():
     with pytest.raises(ValueError):
         du.gen_subset_indices(20, .1, 5)

@@ -241,11 +241,17 @@ def gen_subset_indices(n_rows, subset_size, n_sets):
     row_idxs = list(range(n_rows))
     np.random.shuffle(row_idxs)
 
-    def chunks(l, n):
-        for i in range(0, len(l), n):
-            yield l[i:i + n]
-
-    subsets = list(chunks(row_idxs, math.ceil(n_rows/n_sets)))
+    def chunks(lst, n_chunks):
+        n = len(lst)
+        n_per_chunk = int(n/n_chunks)
+        for i in range(n_chunks):
+            idx = i*n_per_chunk
+            if i == n_chunks - 1:
+                yield lst[idx:]
+            else:
+                yield lst[idx:idx+n_per_chunk]
+    
+    subsets = list(chunks(row_idxs, n_sets))
 
     assert len(subsets) == n_sets
 
@@ -259,5 +265,4 @@ def gen_subset_indices(n_rows, subset_size, n_sets):
         assert len(subset) == n_subset
 
         subset.sort()
-    
     return subsets
