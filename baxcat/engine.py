@@ -650,20 +650,25 @@ class Engine(object):
             return 1.0
 
 
-        sim = np.zeros(self._n_models)
+        sim = [] 
         for midx, model in enumerate(self._models):
-            idx_a = self._converters['row2idx_sf'][midx][row_a]
-            idx_b = self._converters['row2idx_sf'][midx][row_b]
+            idx_a = self._converters['row2idx_sf'][midx].get(row_a, None)
+            idx_b = self._converters['row2idx_sf'][midx].get(row_b, None)
+            
+            if idx_a is None or idx_b is None:
+                continue
+
             if wrt is not None:
                 relviews = set([model['col_assignment'][c] for c in colidxs])
             else:
                 relviews = list(range(len(model['row_assignments'])))
 
+            sim.append(0.0)
             for vidx in relviews:
                 asgn = model['row_assignments'][vidx]
-                sim[midx] += (asgn[idx_a] == asgn[idx_b])
+                sim[-1] += (asgn[idx_a] == asgn[idx_b])
 
-            sim[midx] /= float(len(relviews))
+            sim[-1] /= float(len(relviews))
 
         return np.mean(sim)
 
