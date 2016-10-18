@@ -16,6 +16,8 @@ MODEL_SCHEMA = {
     'col_hypers': [{'m': 0, 'r': 1, 's': 1, 'nu': 1}]
 }
 
+ROW2IDX = [dict((i, i) for i in range(10))]
+
 
 def impute_conf_ax(means, stds, ns, ax=None):
     models = []
@@ -35,7 +37,7 @@ def impute_conf_ax(means, stds, ns, ax=None):
     sns.distplot(np.hstack(xs), hist=False, ax=ax, norm_hist=False,
                  kde_kws={'color': 'crimson', 'lw': 3}, label='combined')
 
-    _, conf = mu.impute(0, 0, models, (-20, 10))
+    _, conf = mu.impute(0, 0, ROW2IDX*len(models), models, (-20, 10))
     ax.set_title('Confidence = %f' % conf)
 
 
