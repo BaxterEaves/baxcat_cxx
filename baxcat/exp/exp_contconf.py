@@ -37,7 +37,8 @@ def impute_conf_ax(means, stds, ns, ax=None):
     sns.distplot(np.hstack(xs), hist=False, ax=ax, norm_hist=False,
                  kde_kws={'color': 'crimson', 'lw': 3}, label='combined')
 
-    _, conf = mu.impute(0, 0, ROW2IDX*len(models), models, (-20, 10))
+    x, conf = mu.impute(0, 0, ROW2IDX*len(models), models, (-20, 10))
+    ax.plot([x, x], [0, ax.get_ylim()[1]], lw=2, ls='--', c='black')
     ax.set_title('Confidence = %f' % conf)
 
 
