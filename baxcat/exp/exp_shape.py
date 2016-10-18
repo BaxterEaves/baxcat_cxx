@@ -71,8 +71,8 @@ def onerun(shapefunc, n=250, n_iter=100, n_models=8):
     df = pd.concat([s1, s2], axis=1)
     df.columns = ['x', 'y']
 
-    engine = Engine(df, use_mp=True)
-    engine.init_models(n_models)
+    engine = Engine(df, n_models=n_models, use_mp=True)
+    engine.init_models()
     engine.run(n_iter)
 
     xy = engine.sample(['x', 'y'], n=n)
@@ -108,8 +108,8 @@ if __name__ == "__main__":
         ax.set_ylim(axes[0, i].get_ylim())
 
     df = pd.concat(dfs, ignore_index=True)
-    engine = Engine(df)
-    engine.init_models(8)
+    engine = Engine(df, n_models=8)
+    engine.init_models()
     engine.run(1000, checkpoint=20)
 
     dfs = []
