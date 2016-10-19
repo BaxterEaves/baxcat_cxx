@@ -10,14 +10,15 @@ table is an animal and each column is a binary variable indicating
 whether a given attribute is observed in that animal. You can find the
 ``animals.csv`` datafile in the ``examples`` directory.
 
-First things first: let's create our ``Engine``. Well just pass in the
-csv filename and let baxcat decide how to model each column.
+First things first: let's create our ``Engine``. Well just pass in the csv
+filename and let baxcat decide how to model each column. We also specify how
+many models we want crosscat to use (more on that later).
 
 .. code:: python
 
     from baxcat.engine import Engine
     
-    engine = Engine('animals.csv')
+    engine = Engine('animals.csv', n_models=32)
 
 We can see how baxcat decided to model each column by checking
 ``col_info``
@@ -362,12 +363,12 @@ to hedge the inferences we make. Every model is a draw from the
 posterior. We want to make inference about the data given the posterior
 distribution of states, so we take several models.
 
-Let's initialize 32 models and run them for 500 iterations, taking
-diagnostic information every 5th iteration.
+Let's initialize the 32 models we specified above and run them for 500
+iterations, taking diagnostic information every 5th iteration.
 
 .. code:: python
 
-    engine.init_models(32)
+    engine.init_models()
     engine.run(500, checkpoint=5)
 
 Let's use that diagnostic information to check whether inference has

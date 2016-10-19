@@ -26,7 +26,7 @@ df = pd.read_csv(os.path.join(exdir, 'animals.csv'), index_col=0)
 
 # Let's create out engine. Well just pass in the data and let baxcat decide
 # how to model each column.
-engine = Engine(df)
+engine = Engine(df, n_models=32)
 
 # We can see how baxcat decided to model each column by checking `col_info`
 col_info = engine.col_info()
@@ -37,8 +37,8 @@ print(col_info)
 # the inferences we make. Every model is a draw from the posterior. We want to
 # make inference about the data given the posterior distribution of states, so
 # we take several models.
-print('Initializing 16 models...')
-engine.init_models(32)
+print('Initializing 32 models...')
+engine.init_models()
 print('Running models for 200 iterations...')
 engine.run(200, checkpoint=5)
 

@@ -6,13 +6,13 @@ About baxcat
 ------------
 
 baxcat is a scaleable and correct implementation of cross-categoization.
-Cross-categoization [Crosscat2011]_ assigns a joint probability distribution to a table
-of data by grouping columns into *views* and, within views, grouping
-rows into *categories*. The user does not need to supply the number of
-view or catgories, and data to need not obey any assunptions of
-linearity or the like. baxcat allows you to find outliers, simulate and
-calulate the probabilites of hypothetical events, impute missing data,
-identify and charachterize the dependencies between variables, and more.
+Cross-categoization [Crosscat2011]_ assigns a joint probability distribution to
+a table of data by grouping columns into *views* and, within views, grouping
+rows into *categories*. The user does not need to supply the number of view or
+catgories, and data to need not obey any assunptions of linearity or the like.
+baxcat allows you to find outliers, simulate and calulate the probabilites of
+hypothetical events, impute missing data, identify and charachterize the
+dependencies between variables, and more.
 
 Installation
 ------------
@@ -114,7 +114,7 @@ currently supports continuous and categorical variables.
 
     from baxcat.engine import Engine
     
-    engine = Engine(df)
+    engine = Engine(df, n_models=8)
     engine.col_info()
 
 
@@ -179,20 +179,20 @@ currently supports continuous and categorical variables.
 
 
 baxcat uses approximate inference method to collect samples from a
-distribution of cross-categorization models. It averages its answer over
+distribution of cross-categorization model. It averages its answer over
 these models. The more baxcat uses, the more likely our answers are not
 to be skewed by weird modes in the distribution, and the finer
 resolution we get when asking about things like the probability of
 dependence between columns.
 
-Since we don't have much data, we initialize just a few models. We then
-run sampling algorithm on models for a predetermined number of steps.
-We'll also tell baxcat to take diagnostic information every five sampler
-iterations by specifying ``checkpoint=5``.
+Since we don't have much data, we initialized just a few models
+(``n_models=8``). We then run the sampling algorithm on the models for a
+predetermined number of steps.  We'll also tell baxcat to take diagnostic
+information every five sampler iterations by specifying ``checkpoint=5``.
 
 .. code:: python
 
-    engine.init_models(8)
+    engine.init_models()
     engine.run(400, checkpoint=5)
 
 Let's see if our sampler has converged. If it hasn't, we'll need to run

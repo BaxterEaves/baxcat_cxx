@@ -52,8 +52,8 @@ def smalldf_mssg():
 
 
 def gen_engine(df):
-    engine = Engine(df, use_mp=False)
-    engine.init_models(2)
+    engine = Engine(df, n_models=2, use_mp=False)
+    engine.init_models()
     engine.run(10)
     # print(engine.col_info())
     return engine
@@ -64,8 +64,8 @@ def gen_engine(df):
 @pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
 def test_engine_init_smoke_default(gendf):
     df = gendf()
-    engine = Engine(df, use_mp=False)
-    engine.init_models(1)
+    engine = Engine(df, n_models=1, use_mp=False)
+    engine.init_models()
 
 
 @pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
@@ -73,8 +73,8 @@ def test_engine_init_from_filename(gendf):
     df = gendf()
     with NamedTemporaryFile() as tf:
         df.to_csv(tf.name)
-        engine = Engine(tf.name, use_mp=False)
-        engine.init_models(1)
+        engine = Engine(tf.name, n_models=1, use_mp=False)
+        engine.init_models()
 
 
 @pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
@@ -89,16 +89,16 @@ def test_engine_init_smoke_metadata(gendf):
         'dtype': 'categorical',
         'values': ['zero', 'one', 'two', 'three', 'four']}
 
-    engine = Engine(df, metadata=metadata, use_mp=False)
-    engine.init_models(1)
+    engine = Engine(df, n_models=1, metadata=metadata, use_mp=False)
+    engine.init_models()
 
 
 @pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
 def test_engine_init_structureless(gendf):
     df = gendf()
 
-    engine = Engine(df, use_mp=False)
-    engine.init_models(4, structureless=True)
+    engine = Engine(df, n_models=4, use_mp=False)
+    engine.init_models(structureless=True)
 
     assert len(engine._models) == 4
     assert all([max(m['col_assignment']) == 0 for m in engine._models])
@@ -111,8 +111,9 @@ def test_engine_init_structureless(gendf):
 # ---
 @pytest.mark.parametrize('gendf', [smalldf, smalldf_mssg])
 def test_engine_with_mapper_stl(gendf):
-    engine = Engine(gendf(), mapper=lambda f, args: list(map(f, args)))
-    engine.init_models(4)
+    engine = Engine(gendf(), n_models=4,
+                    mapper=lambda f, args: list(map(f, args)))
+    engine.init_models()
     engine.run(2)
 
     assert len(engine.models) == 4
@@ -125,8 +126,8 @@ def test_engine_with_mapper_mp(gendf):
     pool = Pool()
 
     with Pool() as pool:
-        engine = Engine(gendf(), mapper=pool.map)
-        engine.init_models(4)
+        engine = Engine(gendf(), n_models=4, mapper=pool.map)
+        engine.init_models()
         engine.run(2)
 
         assert len(engine.models) == 4
@@ -139,8 +140,8 @@ def test_engine_with_mapper_ipyparallel(gendf):
     c = ipp.Client()
     v = c[:]
 
-    engine = Engine(gendf(), mapper=v.map)
-    engine.init_models(4)
+    engine = Engine(gendf(), n_models=4, mapper=v.map)
+    engine.init_models()
     engine.run(2)
 
     assert len(engine.models) == 4
@@ -152,8 +153,8 @@ def test_engine_with_mapper_ipyparallel(gendf):
 def test_engine_run_smoke_default(gendf):
     df = gendf()
 
-    engine = Engine(df, use_mp=False)
-    engine.init_models(1)
+    engine = Engine(df, n_models=1, use_mp=False)
+    engine.init_models()
     engine.run()
     engine.run(10)
 
@@ -164,8 +165,8 @@ def test_engine_run_smoke_default(gendf):
 def test_engine_run_smoke_multiple(gendf):
     df = gendf()
 
-    engine = Engine(df, use_mp=False)
-    engine.init_models(10)
+    engine = Engine(df, n_models=10, use_mp=False)
+    engine.init_models()
     engine.run()
     engine.run(10)
 
@@ -176,8 +177,8 @@ def test_engine_run_smoke_multiple(gendf):
 def test_run_with_checkpoint_valid_diagnostic_output(gendf):
     df = gendf()
 
-    engine = Engine(df, use_mp=False)
-    engine.init_models(5)
+    engine = Engine(df, n_models=5, use_mp=False)
+    engine.init_models()
     engine.run(10, checkpoint=5)
 
     tables = engine._diagnostic_tables
@@ -196,8 +197,8 @@ def test_run_with_checkpoint_valid_diagnostic_output(gendf):
 def test_run_on_model_subset_should_only_run_those_models(gendf):
     df = gendf()
 
-    engine = Engine(df, use_mp=False)
-    engine.init_models(5)
+    engine = Engine(df, n_models=5, use_mp=False)
+    engine.init_models()
     engine.run(10, checkpoint=5)
     engine.run(10, checkpoint=5, model_idxs=[1, 2])
 
@@ -216,8 +217,8 @@ def test_run_on_model_subset_should_only_run_those_models(gendf):
 def test_state_alpha_should_not_change_if_no_transition(gendf):
     df = gendf()
 
-    engine = Engine(df, use_mp=False)
-    engine.init_models(1)
+    engine = Engine(df, n_models=1, use_mp=False)
+    engine.init_models()
 
     state_alpha_start = engine._models[0]['state_alpha']
 
@@ -233,8 +234,8 @@ def test_state_alpha_should_not_change_if_no_transition(gendf):
 def test_state_alpha_should_change_if_transition(gendf):
     df = gendf()
 
-    engine = Engine(df, use_mp=False)
-    engine.init_models(1)
+    engine = Engine(df, n_models=1, use_mp=False)
+    engine.init_models()
 
     state_alpha_start = engine._models[0]['state_alpha']
 
@@ -249,8 +250,8 @@ def test_state_alpha_should_change_if_transition(gendf):
 def test_view_alpha_should_not_change_if_no_transition(gendf):
     df = gendf()
 
-    engine = Engine(df, use_mp=False)
-    engine.init_models(1)
+    engine = Engine(df, n_models=1, use_mp=False)
+    engine.init_models()
 
     view_alpha_start = engine._models[0]['view_alphas']
 
@@ -266,8 +267,8 @@ def test_view_alpha_should_not_change_if_no_transition(gendf):
 def test_view_alpha_should_change_if_transition(gendf):
     df = gendf()
 
-    engine = Engine(df, use_mp=False)
-    engine.init_models(1)
+    engine = Engine(df, n_models=1, use_mp=False)
+    engine.init_models()
 
     view_alpha_start = engine._models[0]['view_alphas']
 
@@ -284,8 +285,8 @@ def test_view_alpha_should_change_if_transition(gendf):
 def test_save_smoke(gendf):
     df = gendf()
 
-    engine = Engine(df, use_mp=False)
-    engine.init_models(5)
+    engine = Engine(df, n_models=5, use_mp=False)
+    engine.init_models()
 
     with tempfile.NamedTemporaryFile('wb') as tf:
         engine.save(tf.name)
@@ -295,8 +296,8 @@ def test_save_smoke(gendf):
 def test_load_smoke(gendf):
     df = gendf()
 
-    engine = Engine(df, use_mp=False)
-    engine.init_models(5)
+    engine = Engine(df, n_models=5, use_mp=False)
+    engine.init_models()
 
     with tempfile.NamedTemporaryFile('wb') as tf:
         engine.save(tf.name)
@@ -307,8 +308,8 @@ def test_load_smoke(gendf):
 def test_save_and_load_equivalence(gendf):
     df = gendf()
 
-    engine = Engine(df, use_mp=False)
-    engine.init_models(5)
+    engine = Engine(df, n_models=5, use_mp=False)
+    engine.init_models()
 
     with tempfile.NamedTemporaryFile('wb') as tf:
         engine.save(tf.name)
@@ -335,8 +336,8 @@ def test_dependence_probability():
     df = pd.concat([s1, s2, s3], axis=1)
     df.columns = ['c0', 'c1', 'c2']
 
-    engine = Engine(df, use_mp=False)
-    engine.init_models(20)
+    engine = Engine(df, n_models=20, use_mp=False)
+    engine.init_models()
     engine.run(10)
     depprob_01 = engine.dependence_probability('c0', 'c1')
     depprob_02 = engine.dependence_probability('c0', 'c2')
@@ -356,8 +357,8 @@ def test_pairwise_dependence_probability():
     df = pd.concat([s1, s2, s3], axis=1)
     df.columns = ['c0', 'c1', 'c2']
 
-    engine = Engine(df, use_mp=False)
-    engine.init_models(10)
+    engine = Engine(df, n_models=10, use_mp=False)
+    engine.init_models()
     engine.run(5)
 
     depprob = engine.pairwise_func('dependence_probability')
@@ -382,8 +383,8 @@ def test_row_similarity():
     df = pd.concat([s1, s2, s3], axis=1)
     df.columns = ['c0', 'c1', 'c2']
 
-    engine = Engine(df, use_mp=False)
-    engine.init_models(4)
+    engine = Engine(df, n_models=4, use_mp=False)
+    engine.init_models()
 
     engine._models[0]['col_assignment'] = [0, 0, 1]
     engine._models[1]['col_assignment'] = [0, 0, 1]
@@ -409,8 +410,8 @@ def test_row_similarity_wrt():
     df = pd.concat([s1, s2, s3], axis=1)
     df.columns = ['c0', 'c1', 'c2']
 
-    engine = Engine(df, use_mp=False)
-    engine.init_models(4)
+    engine = Engine(df, n_models=4, use_mp=False)
+    engine.init_models()
 
     engine._models[0]['col_assignment'] = [0, 0, 1]
     engine._models[1]['col_assignment'] = [0, 0, 1]

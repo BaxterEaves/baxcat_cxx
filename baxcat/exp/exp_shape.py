@@ -63,7 +63,7 @@ def gen_dots(n):
     return xy[:, 0], xy[:, 1]
 
 
-def onerun(shapefunc, n=250, n_iter=100, n_models=8):
+def onerun(shapefunc, n=250, n_iter=100, n_models=8, subsample_size=None):
     xo, yo = shapefunc(n)
 
     s1 = pd.Series(xo)
@@ -71,8 +71,8 @@ def onerun(shapefunc, n=250, n_iter=100, n_models=8):
     df = pd.concat([s1, s2], axis=1)
     df.columns = ['x', 'y']
 
-    engine = Engine(df, use_mp=True)
-    engine.init_models(n_models)
+    engine = Engine(df, n_models=n_models, use_mp=True)
+    engine.init_models(subsample_size=subsample_size)
     engine.run(n_iter)
 
     xy = engine.sample(['x', 'y'], n=n)
@@ -84,6 +84,7 @@ def onerun(shapefunc, n=250, n_iter=100, n_models=8):
 
 if __name__ == "__main__":
     n = 1000
+    subsample_size = .5
     funcs = [gen_ring, gen_diamond, gen_u, gen_wave, gen_dots]
     n_funcs = len(funcs)
     f, axes = plt.subplots(3, n_funcs)
@@ -91,7 +92,8 @@ if __name__ == "__main__":
 
     dfs = []
     for i, func in enumerate(funcs):
-        xo, yo, xe, ye = onerun(func, n=n, n_iter=200, n_models=8)
+        xo, yo, xe, ye = onerun(func, n=n, n_iter=200, n_models=8,
+                                subsample_size=subsample_size)
 
         fname = func.__name__
         s = pd.Series([fname]*n)
@@ -108,8 +110,8 @@ if __name__ == "__main__":
         ax.set_ylim(axes[0, i].get_ylim())
 
     df = pd.concat(dfs, ignore_index=True)
-    engine = Engine(df)
-    engine.init_models(8)
+    engine = Engine(df, n_models=8)
+    engine.init_models()
     engine.run(1000, checkpoint=20)
 
     dfs = []

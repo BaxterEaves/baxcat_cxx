@@ -209,11 +209,14 @@ def _nng_t_mean(model, col_idx, row_idx):
     return mn
 
 
-def _continuous_impute_conf(models, col_idx, row_idx):
+def _continuous_impute_conf(models, row2idx, col_idx, row):
     n_models = len(models)
     if n_models == 1:
         return float('NaN')
-    means = [_nng_t_mean(model, col_idx, row_idx) for model in models]
+
+    modrow_idxs = get_model_and_row_idxs(row2idx, row)
+    means = [_nng_t_mean(models[midx], col_idx, row_idx)
+             for midx, row_idx in modrow_idxs]
 
     a = min(means)
     b = max(means)
@@ -222,7 +225,7 @@ def _continuous_impute_conf(models, col_idx, row_idx):
         return 1.
 
     def f(x):
-        return np.exp(surprisal(col_idx, [(row_idx, x)], models)[0])
+        return np.exp(surprisal(col_idx, [(row, x)], row2idx, models)[0])
 
     d, _ = quad(f, a, b)
 
@@ -239,11 +242,13 @@ def categorical_pmf(model, col_idx, row_idx):
     return ps
 
 
-def _categorical_impute_conf(models, col_idx, row_idx):
+def _categorical_impute_conf(models, row2idx, col_idx, row):
     if len(models) == 1:
         return float('NaN')
 
-    pmfs = [categorical_pmf(model, col_idx, row_idx) for model in models]
+    modrow_idxs = get_model_and_row_idxs(row2idx, row)
+    pmfs = [categorical_pmf(models[midx], col_idx, row_idx)
+            for midx, row_idx in modrow_idxs]
     pmf = np.sum(np.array(pmfs), axis=0)/len(models)
 
     idx = np.argmax(pmf)
@@ -263,6 +268,17 @@ def _categorical_impute_conf(models, col_idx, row_idx):
     assert d >= 0. and d <= 1.
 
     return 1.-d
+
+
+# `````````````````````````````````````````````````````````````````````````````
+def get_model_and_row_idxs(row2idxs, row):
+    ixs = []
+    for m_ix, cvtr in enumerate(row2idxs):
+        ix = cvtr.get(row, None)
+        if ix is not None:
+            ixs.append((m_ix, ix,))
+
+    return ixs
 
 
 # Main interface
@@ -303,7 +319,8 @@ def sample(models, col_idxs, given=None, n=1):
     return samples
 
 
-def surprisal(col_idx, queries, models):
+# FIXME: Update docstring example
+def surprisal(col_idx, queries, row2idx, models):
     """ The surprisal, or self-information, of a set of observations
 
     Parameters
@@ -312,6 +329,8 @@ def surprisal(col_idx, queries, models):
         column index
     queries : list(tuple(int, float,))
         list of (row_index, value,) tuples
+    row2idx : list(dict(row index, int))
+        Converts the user-facing row indices to model-specific row indices
     models : list
         list of baxcat models
 
@@ -319,7 +338,6 @@ def surprisal(col_idx, queries, models):
     -------
     s : numpy.ndarray(float)
        The surprisal of each observation in queries.
-
 
     Example
     -------
@@ -330,12 +348,20 @@ def surprisal(col_idx, queries, models):
     """
 
     f = PROBFUNC[models[0]['dtypes'][col_idx]]
-    n_models = len(models)
 
     s = np.zeros(len(queries))
-    for i, (row_idx, x,) in enumerate(queries):
+    for i, (row, x,) in enumerate(queries):
+        modrow_idxs = get_model_and_row_idxs(row2idx, row)
+        n_models = len(modrow_idxs)
+        
+        assert n_models > 0
+
         s_row = np.zeros(n_models)
-        for j, model in enumerate(models):
+        for j, (midx, row_idx) in enumerate(modrow_idxs):
+            model = models[midx]
+
+            assert row_idx is not None
+
             view_idx = model['col_assignment'][col_idx]
             component_idx = model['row_assignments'][view_idx][row_idx]
 
@@ -404,15 +430,18 @@ def probability(x, models, col_idxs, given=None):
         return logps
 
 
-def impute(row_idx, col_idx, models, bounds):
+# FIXME: Update docstring example
+def impute(row, col_idx, row2idx, models, bounds):
     """ Impute (choose the max logp value) ad return confidence
 
     Parameters
     ----------
-    row_idx : int
-        The row index to impute
+    row_idx : row index
+        The row user-facing index to impute 
     col_idx : int
         The column index to impute
+    row2idxs : list(dict(row index, int))
+        Converts the user-facing row indices to model-specific row indices
     models : dict
         The baxcat models
     relvals : list(tuple(columns index, value))
@@ -431,18 +460,18 @@ def impute(row_idx, col_idx, models, bounds):
     """
     dtype = models[0]['dtypes'][col_idx]
     if dtype == b'categorical':
-        queries = [(row_idx, val,) for val in bounds]
-        s = surprisal(col_idx, queries, models)
-        conf = _categorical_impute_conf(models, col_idx, row_idx)
+        queries = [(row, val,) for val in bounds]
+        s = surprisal(col_idx, queries, row2idx, models)
+        conf = _categorical_impute_conf(models, row2idx, col_idx, row)
         min_idx = np.argmin(s)
         y = queries[min_idx][1]
     else:
         # XXX: Note that fmin function finds the local maxima
         def func(x):
-            return surprisal(col_idx, [(row_idx, float(x),)], models)
+            return surprisal(col_idx, [(row, float(x),)], row2idx, models)
         resbrute = optimize.brute(func, (bounds,), finish=optimize.fmin)
         y = resbrute[0]
-        conf = _continuous_impute_conf(models, col_idx, row_idx)
+        conf = _continuous_impute_conf(models, row2idx, col_idx, row)
 
     # FIXME: Confidence not implemeted
     return y, conf
