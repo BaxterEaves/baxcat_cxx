@@ -33,19 +33,20 @@ def smalldf_mssg():
     return df
 
 
-def unimodal_df():
-    s1 = pd.Series(np.random.randn(200))
-    s2 = pd.Series(np.random.randn(200))
+def unimodal_df(n=200):
+    s1 = pd.Series(np.random.randn(n))
+    s2 = pd.Series(np.random.randn(n))
     df = pd.concat([s1, s2], axis=1)
     df.columns = ['x_1', 'x_2']
 
     return df
 
-def multimodal_df():
-    s1 = pd.Series(np.hstack((np.random.randn(100)-3,
-                              np.hstack(np.random.randn(100)+3))))
-    s2 = pd.Series(np.hstack((np.random.randn(100)-3,
-                              np.hstack(np.random.randn(100)+3))))
+
+def multimodal_df(n=200):
+    s1 = pd.Series(np.hstack((np.random.randn(n/2)-3,
+                              np.hstack(np.random.randn(n/2)+3))))
+    s2 = pd.Series(np.hstack((np.random.randn(n/2)-3,
+                              np.hstack(np.random.randn(n/2)+3))))
     df = pd.concat([s1, s2], axis=1)
     df.columns = ['x_1', 'x_2']
 
@@ -152,3 +153,25 @@ def test_surprisal_equivalence(gendf, subsample_size):
     s_mod = engine_mod.surprisal('x_1', [150]).iloc[0, 1]
 
     assert s_mod == pytest.approx(s_full, rel=0.05)
+
+
+# -- Impute
+@pytest.mark.parametrize('gendf', [unimodal_df, multimodal_df])
+@pytest.mark.parametrize('subsample_size', [None, 1.0, 0.5])
+def test_impute_equivalence(gendf, subsample_size):
+    df = gendf(200)
+
+    engine_full, engine_mod = gen_comp_engines(df, subsample_size)
+
+    i_full = engine_full.impute('x_1', [2]).iloc[0, 1]
+    i_mod = engine_mod.impute('x_1', [2]).iloc[0, 1]
+
+    # XXX: The distance btween imputed values should be no greater than 1.
+    # That is kind of a lot of distance, but impute is pretty unstable for
+    # model/run numbers that permet reasonably fast tests.
+    assert i_mod == pytest.approx(i_full, abs=1.0)
+
+    i_full = engine_full.impute('x_1', [150]).iloc[0, 1]
+    i_mod = engine_mod.impute('x_1', [150]).iloc[0, 1]
+
+    assert i_mod == pytest.approx(i_full, abs=1.0)
