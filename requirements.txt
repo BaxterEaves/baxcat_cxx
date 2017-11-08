@@ -4,6 +4,7 @@ numpy
 scipy
 pandas
 pytest>=3.0.0
+pytest-rerunfailures
 freeze
 sphinx
 autodoc

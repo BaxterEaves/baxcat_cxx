@@ -17,7 +17,7 @@ def _unwrap_hypers(m=None, r=None, s=None, nu=None):
     return m, r, s, nu
 
 
-def sample(suffstats, hypers):
+def update_params(suffstats, hypers):
     n, sum_x, sum_x_sq = _unwrap_suffstats(**suffstats)
     m, r, s, nu = _unwrap_hypers(**hypers)
 
@@ -25,6 +25,12 @@ def sample(suffstats, hypers):
     nun = nu + n
     mn = (r*m + sum_x)/(rn)
     sn = s + sum_x_sq + r*(m*m) - rn*(mn*mn)
+
+    return mn, rn, sn, nun
+
+
+def sample(suffstats, hypers):
+    mn, rn, sn, nun = update_params(suffstats, hypers)
 
     scale = (sn*(rn+1)/(nun*rn))**.5
 

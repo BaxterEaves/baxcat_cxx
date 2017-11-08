@@ -6,8 +6,18 @@ from baxcat.dist import csd
 from baxcat.misc import pflip
 
 from scipy.misc import logsumexp
+from scipy.integrate import quad
 from scipy import optimize
 from math import log
+
+
+def _get_hypers_and_suffstats(model, col_idx, row_idx):
+    hypers = model['col_hypers'][col_idx]
+    view_idx = int(model['col_assignment'][col_idx])
+    cat_idx = model['row_assignments'][view_idx][row_idx]
+    suffstats = model['col_suffstats'][col_idx][cat_idx]
+
+    return hypers, suffstats
 
 
 # TODO: make these non-private function that we can unit test
@@ -86,9 +96,8 @@ def _get_given_view_weights(model, col_idx, given, return_log=False):
             f = PROBFUNC[model['dtypes'][c]]
             weights[k] += f(x, model, c, k)
 
-    # import pdb; pdb.set_trace()
     if return_log:
-        return weights
+        return weights-logsumexp(weights)
     else:
         return np.exp(weights-logsumexp(weights))
 
@@ -154,6 +163,9 @@ def _probability_single_col(x, model, col_idx, given=None):
         f = PROBFUNC[model['dtypes'][col_idx]]
         logps[component_idx] = f(x, model, col_idx, component_idx) + log_weight
 
+    if given is not None:
+        logps -= logsumexp(log_weights)
+
     return logsumexp(logps)
 
 
@@ -184,10 +196,80 @@ def _probability_multi_col(x, model, col_idxs, given=None):
             y = x[col2pos[col_idx]]
             f = PROBFUNC[model['dtypes'][col_idx]]
             for k, log_weight in enumerate(log_weights):
-                lp_view[k] += f(y, model, col_idx, k)
+                lp_view[k] += f(y, model, col_idx, k) + log_weight
+
+            if given is not None:
+                lp_view[k] -= logsumexp(log_weights)
+
         logp += logsumexp(lp_view)
 
     return logp
+
+
+# private continuous confidence utils
+# ````````````````````````````````````````````````````````````````````````````
+def _nng_t_mean(model, col_idx, row_idx):
+    hypers, suffstats = _get_hypers_and_suffstats(model, col_idx, row_idx)
+    mn, _, _, _ = nng.update_params(suffstats, hypers)
+
+    return mn
+
+
+def _continuous_impute_conf(models, col_idx, row_idx, ci=.9):
+    if len(models) == 1:
+        return float('NaN')
+    means = [_nng_t_mean(model, col_idx, row_idx) for model in models]
+
+    a = min(means)
+    b = max(means)
+
+    if a == b:
+        return 1.
+
+    def f(x):
+        return np.exp(-surprisal(col_idx, [(row_idx, x)], models)[0])
+
+    d, _ = quad(f, a, b)
+
+    assert d >= 0. and d <= 1.
+
+    return 1.-d
+
+
+# private categorical confidence utils
+# ````````````````````````````````````````````````````````````````````````````
+def categorical_pmf(model, col_idx, row_idx):
+    hypers, suffstats = _get_hypers_and_suffstats(model, col_idx, row_idx)
+    ps = np.exp([csd.probability(i, suffstats, hypers) for i in
+                 range(len(suffstats)-2)])
+
+    return ps
+
+
+def _categorical_impute_conf(models, col_idx, row_idx):
+    if len(models) == 1:
+        return float('NaN')
+
+    pmfs = [categorical_pmf(model, col_idx, row_idx) for model in models]
+    pmf = np.sum(np.array(pmfs), axis=0)/len(models)
+
+    idx = np.argmax(pmf)
+
+    # check if there are entries that are the same
+    dups = np.nonzero(pmf == pmf[idx])[0]
+    if len(dups) > 1:
+        idxs = dups
+    else:
+        idxs = [idx]
+
+    d = 0.
+    for idx in idxs:
+        ps = [p[idx] for p in pmfs]
+        d += max(ps) - min(ps)
+
+    assert d >= 0. and d <= 1.
+
+    return 1.-d
 
 
 # Main interface
@@ -358,6 +440,7 @@ def impute(row_idx, col_idx, models, bounds):
     if dtype == b'categorical':
         queries = [(row_idx, val,) for val in bounds]
         s = surprisal(col_idx, queries, models)
+        conf = _categorical_impute_conf(models, col_idx, row_idx)
         min_idx = np.argmin(s)
         y = queries[min_idx][1]
     else:
@@ -366,9 +449,10 @@ def impute(row_idx, col_idx, models, bounds):
             return surprisal(col_idx, [(row_idx, float(x),)], models)
         resbrute = optimize.brute(func, (bounds,), finish=optimize.fmin)
         y = resbrute[0]
+        conf = _continuous_impute_conf(models, col_idx, row_idx)
 
     # FIXME: Confidence not implemeted
-    return y, float('NaN')
+    return y, conf
 
 
 def joint_entropy(models, col_idxs, n_samples=1000):

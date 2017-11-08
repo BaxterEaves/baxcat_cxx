@@ -30,7 +30,7 @@ Examples are stored in the `examples` directory. More coming soon.
 
 Some things I need to do to make this more accessible and useful to non-bax humans.
 
-- [ ] Spynx documentation
+- [X] Sphinx documentation
 - [ ] Real-world examples in `examples` directory
 - [ ] Interval probabilities in `Engine.probability`
 - [ ] Count data via Poisson
@@ -50,6 +50,7 @@ Optimizations and refactoring
 - [ ] dial back the namespaces and better organize headers
 - [X] Figure out better prior for CRP alpha. Maybe need prior MH to avoid numerical problems (#2)
 - [X] Fix super-redundant code in `Engine.pairwise_func`
+- [ ] Refactor DataContainer
 
 # License
 BaxCat: an extensible cross-catigorization engine.

@@ -409,10 +409,30 @@ class Engine(object):
             return x
 
     def impute(self, col, rows=None):
-        """ Infer the most likely value
+        """ Infer the most likely value and reuturn a measure of the
+        confidence.
 
-        Note that confidence is not currently implemented and, for the time
-        being, will always be `NaN`.
+        The imputed value is simply the most likely value.
+
+        Confidence is a meausure of the agreement between models; not an
+        interval. For example, the continuous confidence of row `r` in column
+        `c` is calculated like so:
+
+            * M is the set of all component models to which which `r` in `c` is
+              assigned.
+            * mu is the set of the means on M
+            * a -> min(mu), b -> max(mu)
+            * conf is one minus the integral of the probability of observing
+              a values between `a` and `b`.
+
+        The confidence is higher the narrower the imputation region and is 1 if
+        `x`'s component models are have the same mean.
+
+        Notes
+        -----
+        I'm not sure that categorical confidence behaves intuitively in the
+        event that the predictve PMF has multiple maximum-probability values.
+        For example if :code:`PMF = [.4, .4, .2]`.
 
         Parameters
         ----------
