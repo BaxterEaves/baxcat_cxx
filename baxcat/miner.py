@@ -2,6 +2,7 @@ import sys
 import baxcat.engine
 import random
 import numpy as np
+import warnings
 
 from baxcat.state import BCState
 from math import log
@@ -31,6 +32,9 @@ class MInER(baxcat.engine.Engine):
     """
     def __init__(self, df, logcf, cols, metadata=None, **kwargs):
         super().__init__(df, metadata=metadata, **kwargs)
+        msg = ("BE WARNED: MInER is probably doing something wrong. When I "
+               "fix the wrongnesses, things will probably break.")
+        warnings.warn(msg, UserWarning)
 
         self._miner_cols = cols
         self._miner_col_idxs = [self._converters['col2idx'][c] for c in cols]
