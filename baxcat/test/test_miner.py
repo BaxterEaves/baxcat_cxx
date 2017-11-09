@@ -1,4 +1,5 @@
 import pytest
+from flaky import flaky
 import copy
 import numpy as np
 import pandas as pd
@@ -77,7 +78,7 @@ def test_fit_changes_data_sometimes_one_col(miner_df):
         assert(miner._df['x_3'].ix[i] == df['x_3'].ix[i])
 
 
-@pytest.mark.flaky(reruns=5)
+@flaky(max_runs=5, min_passes=1)
 def test_fit_changes_data_sometimes_one_col_categorical(miner_df):
     df = copy.deepcopy(miner_df)
     logcf = lambda row, x: 0.0
@@ -131,7 +132,7 @@ def test_fit_doesnt_change_data_sometimes(miner_df):
 
 
 @pytest.mark.slow
-@pytest.mark.flaky(reruns=5)
+@flaky(max_runs=5, min_passes=1)
 def test_convert_uniform_column_to_normal(miner_df):
     logcf = lambda row, x: norm.logpdf(x[0], 0, 1)
     miner = MInER(miner_df, logcf, ['x_2'], n_models=2, use_mp=False)

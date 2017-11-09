@@ -98,7 +98,7 @@ def test_continuous_impute_confidence_identical():
             {'m': 0, 'r': 1, 's': 1, 'nu': 1}
         ]
     }
-    row2idx = [dict((i,i) for i in range(5))]
+    row2idx = [dict((i, i) for i in range(5))]
 
     conf = mu._continuous_impute_conf([m]*3, row2idx*3, 1, 4)
 
@@ -128,7 +128,7 @@ def test_continuous_impute_confidence_disjoint():
     m2 = copy.deepcopy(m1)
     m2['col_suffstats'][1][1]['sum_x'] *= -1
 
-    row2idx = [dict((i,i) for i in range(5))]
+    row2idx = [dict((i, i) for i in range(5))]
 
     conf = mu._continuous_impute_conf([m1, m2], row2idx*2, 1, 4)
 
@@ -159,7 +159,7 @@ def test_continuous_impute_confidence_touching():
     m2['col_suffstats'][1][1]['sum_x'] = 15.04834099047909
     m2['col_suffstats'][1][1]['sum_x_sq'] = 49.493741705631635
 
-    row2idx = [dict((i,i) for i in range(5))]
+    row2idx = [dict((i, i) for i in range(5))]
 
     conf = mu._continuous_impute_conf([m1, m2], row2idx*2, 1, 4)
 
@@ -185,7 +185,7 @@ def test_categorical_impute_confidence_identical():
             {'dirichlet_alpha': 1.}
         ]
     }
-    row2idx = [dict((i,i) for i in range(5))]
+    row2idx = [dict((i, i) for i in range(5))]
 
     conf = mu._categorical_impute_conf([m]*3, row2idx*3, 1, 4)
 
@@ -215,7 +215,7 @@ def test_categorical_impute_confidence_disjoint():
     m2['col_suffstats'][1][1]['1'] = 1
     m2['col_suffstats'][1][1]['2'] = 0
 
-    row2idx = [dict((i,i) for i in range(5))]
+    row2idx = [dict((i, i) for i in range(5))]
 
     conf = mu._categorical_impute_conf([m1, m2], row2idx*2, 1, 4)
 
@@ -245,7 +245,7 @@ def test_categorical_impute_confidence_touching():
     m2['col_suffstats'][1][1]['1'] = 2
     m2['col_suffstats'][1][1]['2'] = 3
 
-    row2idx = [dict((i,i) for i in range(5))]
+    row2idx = [dict((i, i) for i in range(5))]
 
     conf = mu._categorical_impute_conf([m1, m2], row2idx*2, 1, 4)
 
