@@ -26,8 +26,8 @@ def miner_df():
 # ---
 def test_miner_init_smoke(miner_df):
     logcf = lambda row, x: mvn.logpdf(x, np.zeros(2), np.eye(len(x)))
-    miner = MInER(miner_df, logcf, ['x_2', 'x_3'], use_mp=False)
-    miner.init_models(2)
+    miner = MInER(miner_df, logcf, ['x_2', 'x_3'], n_models=2, use_mp=False)
+    miner.init_models()
     assert hasattr(miner, '_logcf')
     assert hasattr(miner, '_miner_cols')
     assert hasattr(miner, '_miner_col_idxs')
@@ -37,8 +37,8 @@ def test_miner_init_smoke(miner_df):
 @pytest.mark.slow
 def test_fit_smoke(miner_df):
     logcf = lambda row, x: mvn.logpdf(x, np.zeros(2), np.eye(len(x)))
-    miner = MInER(miner_df, logcf, ['x_2', 'x_3'], use_mp=False)
-    miner.init_models(2)
+    miner = MInER(miner_df, logcf, ['x_2', 'x_3'], n_models=2, use_mp=False)
+    miner.init_models()
     miner.fit(1, 5)
 
     assert(not np.any(np.isnan(miner._df['x_2'].values)))
@@ -48,8 +48,8 @@ def test_fit_smoke(miner_df):
 def test_fit_changes_data_sometimes(miner_df):
     df = copy.deepcopy(miner_df)
     logcf = lambda row, x: 0.0
-    miner = MInER(miner_df, logcf, ['x_2', 'x_3'], use_mp=False)
-    miner.init_models(2)
+    miner = MInER(miner_df, logcf, ['x_2', 'x_3'], n_models=2, use_mp=False)
+    miner.init_models()
     miner.fit(1, 5)
 
     assert(not np.any(np.isnan(miner._df['x_2'].values)))
@@ -64,8 +64,8 @@ def test_fit_changes_data_sometimes(miner_df):
 def test_fit_changes_data_sometimes_one_col(miner_df):
     df = copy.deepcopy(miner_df)
     logcf = lambda row, x: 0.0
-    miner = MInER(miner_df, logcf, ['x_2'], use_mp=False)
-    miner.init_models(2)
+    miner = MInER(miner_df, logcf, ['x_2'], n_models=2, use_mp=False)
+    miner.init_models()
     miner.fit(1, 5)
 
     assert(not np.any(np.isnan(miner._df['x_2'].values)))
@@ -81,8 +81,8 @@ def test_fit_changes_data_sometimes_one_col(miner_df):
 def test_fit_changes_data_sometimes_one_col_categorical(miner_df):
     df = copy.deepcopy(miner_df)
     logcf = lambda row, x: 0.0
-    miner = MInER(miner_df, logcf, ['x_1'], use_mp=False)
-    miner.init_models(2)
+    miner = MInER(miner_df, logcf, ['x_1'], n_models=2, use_mp=False)
+    miner.init_models()
     miner.fit(1, 5)
 
     assert(not np.any(np.isnan(miner._df['x_2'].values)))
@@ -104,8 +104,8 @@ def test_miner_changes_columns_differently(miner_df):
     x_02 = df.loc[0, 'x_2']
     x_03 = df.loc[0, 'x_3']
 
-    miner = MInER(miner_df, logcf, ['x_2', 'x_3'], use_mp=False)
-    miner.init_models(2)
+    miner = MInER(miner_df, logcf, ['x_2', 'x_3'], n_models=2, use_mp=False)
+    miner.init_models()
     miner.fit(1, 5)
 
     assert miner._df.loc[0, 'x_2'] != x_02
@@ -117,8 +117,8 @@ def test_miner_changes_columns_differently(miner_df):
 def test_fit_doesnt_change_data_sometimes(miner_df):
     df = copy.deepcopy(miner_df)
     logcf = lambda row, x: float('-Inf')
-    miner = MInER(miner_df, logcf, ['x_2', 'x_3'], use_mp=False)
-    miner.init_models(2)
+    miner = MInER(miner_df, logcf, ['x_2', 'x_3'], n_models=2, use_mp=False)
+    miner.init_models()
     miner.fit(1, 5)
 
     assert(not np.any(np.isnan(miner._df['x_2'].values)))
@@ -134,8 +134,8 @@ def test_fit_doesnt_change_data_sometimes(miner_df):
 @pytest.mark.flaky(reruns=5)
 def test_convert_uniform_column_to_normal(miner_df):
     logcf = lambda row, x: norm.logpdf(x[0], 0, 1)
-    miner = MInER(miner_df, logcf, ['x_2'], use_mp=False)
-    miner.init_models(2)
+    miner = MInER(miner_df, logcf, ['x_2'], n_models=2, use_mp=False)
+    miner.init_models()
     miner.fit(20, 10)
 
     assert(not np.any(np.isnan(miner._df['x_2'].values)))

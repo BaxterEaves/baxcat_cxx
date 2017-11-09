@@ -30,8 +30,8 @@ class MInER(baxcat.engine.Engine):
         over. Each entry in the data array passed to `logcf` corresponds to a
         entry in `cols`.
     """
-    def __init__(self, df, logcf, cols, metadata=None, **kwargs):
-        super().__init__(df, metadata=metadata, **kwargs)
+    def __init__(self, df, logcf, cols, metadata=None, n_models=8, **kwargs):
+        super().__init__(df, metadata=metadata, n_models=n_models, **kwargs)
         msg = ("BE WARNED: MInER is probably doing something wrong. When I "
                "fix the wrongnesses, things will probably break.")
         warnings.warn(msg, UserWarning)
@@ -102,7 +102,9 @@ class MInER(baxcat.engine.Engine):
     def _converter_logcf(self, func):
         """ Convert data sent to logcf to its values in df """
         def func_out(row_idx, data):
-            row = self._converters['idx2row'][row_idx]
+            # XXX take 1st subset converter because we don't subsample in
+            # MiNer
+            row = self._converters['idx2row_df'][0][row_idx]
             data_cnv = []
             for col_idx, x in zip(self._miner_col_idxs, data):
                 if self._dtypes[col_idx] == 'categorical':
@@ -116,12 +118,14 @@ class MInER(baxcat.engine.Engine):
         return lambda row_idx, data: func_out(row_idx, data)
 
     def _update_data(self, idxs, data):
+        row_converter = self._converters['idx2row_df'][0]
+        col_converter = self._converters['idx2col']
         for (row_idx, col_idx,), x in zip(idxs, data):
             assert not np.isnan(x)
             self._data[row_idx, col_idx] = x
 
-            col = self._converters['idx2col'][col_idx]
-            row = self._converters['idx2row'][row_idx]
+            col = col_converter[col_idx]
+            row = row_converter[row_idx]
             # TODO: Converter functions for each column instead of hacky crap!
             if self._dtypes[col_idx] == 'categorical':
                 y = self._converters['valmaps'][col]['idx2val'][x]
