@@ -198,8 +198,8 @@ def _probability_multi_col(x, model, col_idxs, given=None):
             for k, log_weight in enumerate(log_weights):
                 lp_view[k] += f(y, model, col_idx, k)
 
-            if given is not None:
-                lp_view[k] -= logsumexp(log_weights)
+            # if given is not None:
+            #     lp_view[k] -= logsumexp(log_weights)
 
         logp += logsumexp(lp_view)
 
@@ -359,7 +359,7 @@ def surprisal(col_idx, queries, row2idx, models):
     for i, (row, x,) in enumerate(queries):
         modrow_idxs = get_model_and_row_idxs(row2idx, row)
         n_models = len(modrow_idxs)
-        
+
         assert n_models > 0
 
         s_row = np.zeros(n_models)
@@ -443,7 +443,7 @@ def impute(row, col_idx, row2idx, models, bounds):
     Parameters
     ----------
     row_idx : row index
-        The row user-facing index to impute 
+        The row user-facing index to impute
     col_idx : int
         The column index to impute
     row2idxs : list(dict(row index, int))

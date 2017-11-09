@@ -122,7 +122,7 @@ def gen_row_idx_converters(df_index, n_models, subset_size=None):
             row2idx_sf.append(dict(row2idx_sf_i))
             idx2row_sf.append(dict(idx2row_sf_i))
 
-    return row2idx_df, idx2row_df, row2idx_sf, idx2row_sf 
+    return row2idx_df, idx2row_df, row2idx_sf, idx2row_sf
 
 
 def dataframe_to_array(df, valmaps):
@@ -250,7 +250,7 @@ def gen_subset_indices(n_rows, subset_size, n_sets):
                 yield lst[idx:]
             else:
                 yield lst[idx:idx+n_per_chunk]
-    
+
     subsets = list(chunks(row_idxs, n_sets))
 
     assert len(subsets) == n_sets

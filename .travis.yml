@@ -3,9 +3,7 @@ language: python
 dist: trusty
 
 python:
-    - "3.3"
-    # - "3.4"
-    # - "3.5"
+    - "3.5"
 
 before_install:
     - sudo apt-get update -qq
@@ -21,13 +19,13 @@ install:
     - conda info -a
     - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION cython numpy scipy matplotlib seaborn pytest pandas
     - source activate test-environment
-    - pip install freeze ipython[all] pytest-rerunfailures
-    - pip install --upgrade pytest
+    - pip install freeze ipython[all]
+    - pip install --upgrade --ignore-installed pytest
     - python setup.py develop
     - export PYTHONPATH=`pwd`/baxcat_cxx:$PYTHONPATH
 
-before_script:
-    - ipcluster start --daemonize=True
+# before_script:
+#   - ipcluster start -n 4 --daemonize=True
 
 # We need to run the tests twice with different numbers of OpenMP threads
 script:
