@@ -196,7 +196,7 @@ def _probability_multi_col(x, model, col_idxs, given=None):
             y = x[col2pos[col_idx]]
             f = PROBFUNC[model['dtypes'][col_idx]]
             for k, log_weight in enumerate(log_weights):
-                lp_view[k] += f(y, model, col_idx, k) + log_weight
+                lp_view[k] += f(y, model, col_idx, k)
 
             if given is not None:
                 lp_view[k] -= logsumexp(log_weights)
