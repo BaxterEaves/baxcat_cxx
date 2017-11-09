@@ -92,8 +92,8 @@ def run(n_times=5, n_grid=5, n=200, n_iter=200, vartype='continuous', ax=None):
 
             df = pd.DataFrame(x, columns=['x_1', 'x_2'])
 
-            engine = Engine(df, metadata=metadata, use_mp=False)
-            engine.init_models(1)
+            engine = Engine(df, n_models=1, metadata=metadata, use_mp=False)
+            engine.init_models()
             engine.run(n_iter)
 
             true_mis[i] = true_mi
@@ -107,6 +107,7 @@ def run(n_times=5, n_grid=5, n=200, n_iter=200, vartype='continuous', ax=None):
 
         ax.set_xlabel('rho')
         ax.set_ylabel('Mutual Information')
+        ax.set_title(vartype)
         ax.legend(loc=0)
     else:
         return mis, true_mis

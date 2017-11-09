@@ -4,13 +4,15 @@ A C++/python implementation of cross-cutting categorization.
 
 ![Travis-CI status](https://travis-ci.org/BaxterEaves/baxcat_cxx.svg?branch=master)
 
-**baxcat is under rapid development. The modeling assumptions and API are subject to change.**
+**baxcat is under rapid development. The modeling assumptions and API are
+subject to change.**
 
 
 # Installation
 C++ backend requires Boost and an OpenMP, C++11 capable compiler.
 
-The python front end requires python version 3.X and the packages in `requirements.txt`:
+The python front end requires python version 3.X and the packages in
+`requirements.txt`:
 
 To install:
 
@@ -21,14 +23,21 @@ To run the python unit tests:
     $ py.test
 
 # Documentation
-The documentation is a work in progress. Nevertheless, you can find it [here](http://baxcat.baxtereaves.com/).
+The documentation is a work in progress. Nevertheless, you can find it
+[here](http://baxcat.baxtereaves.com/). Or you can build it by `cd doc && make
+html`. The docs will be in _build/html.
 
 # Use
 Examples are stored in the `examples` directory. More coming soon.
 
+# Contributing
+Follow pep8 with 4-space indents and 79-charcter lines. The default settings on
+flake8 should be fine.
+
 # Hacking
 
-Some things I need to do to make this more accessible and useful to non-bax humans.
+Some things I need to do to make this more accessible and useful to non-bax
+humans.
 
 - [X] Sphinx documentation
 - [ ] Real-world examples in `examples` directory
@@ -48,7 +57,8 @@ Optimizations and refactoring
 - [X] rename `msd` in `cxx` to `csd` (#3) 
 - [X] Remove stupid copyright boilerplate.
 - [ ] dial back the namespaces and better organize headers
-- [X] Figure out better prior for CRP alpha. Maybe need prior MH to avoid numerical problems (#2)
+- [X] Figure out better prior for CRP alpha. Maybe need prior MH to avoid
+  numerical problems (#2)
 - [X] Fix super-redundant code in `Engine.pairwise_func`
 - [ ] Refactor DataContainer
 
@@ -56,10 +66,15 @@ Optimizations and refactoring
 BaxCat: an extensible cross-catigorization engine.
 Copyright (C) 2016 Baxter Eaves
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 3.
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, version 3.
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License (LICENSE.txt) along with this program. If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU General Public License (LICENSE.txt)
+along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 You may contact the mantainers of this software via github <https://github.com/BaxterEaves/baxcat_cxx>.
