@@ -24,8 +24,8 @@ install:
     - python setup.py develop
     - export PYTHONPATH=`pwd`/baxcat_cxx:$PYTHONPATH
 
-before_script:
-   - ipcluster start -n 4 --daemonize=True
+# before_script:
+#   - ipcluster start -n 4 --daemonize=True
 
 # We need to run the tests twice with different numbers of OpenMP threads
 script:
