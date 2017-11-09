@@ -104,7 +104,7 @@ class Engine(object):
         a set of cross-categorization states.
     """
 
-    def __init__(self, df=None, metadata=None, **kwargs):
+    def __init__(self, df=None, metadata=None, n_models=8, **kwargs):
         """
         Parameters
         ----------
@@ -114,6 +114,9 @@ class Engine(object):
             Column metadata to speed processing. Providing more data in
             `metadata` speeds up the processing of `df` by obviating the need
             to infer data types and create value maps.
+        n_models : int
+            The number of models (states/samples) over which to average. Each
+            model represents a sample from an independent Markov Chain.
         seed : integer
             Positive integer seed for the random number generators.
         mapper : callable
@@ -160,7 +163,8 @@ class Engine(object):
         use_mp = kwargs.get('use_mp', True)
         mapper = kwargs.get('mapper', None)
 
-        output = du.process_dataframe(df, metadata, guess_n_unique_cutoff)
+        output = du.process_dataframe(df, n_models, metadata,
+                                      guess_n_unique_cutoff)
         self._data, self._dtypes, self._distargs, self._converters = output
 
         self._df = df
@@ -186,17 +190,21 @@ class Engine(object):
         else:
             self._mapper = mapper
 
+        self._initialized = False
         self._models = []
-        self._n_models = 0
+        self._n_models = n_models
         self._diagnostic_tables = []
 
-    def init_models(self, n_models, structureless=False):
-        """ Intialize a number of cross-categorization models.
+    def init_models(self, subsample_size=None, structureless=False):
+        """ Intialize the cross-categorization models.
 
         Parameters
         ----------
-        n_models : int
-            The number of models to initialize.
+        subsample_size : float (0, 1], optional
+            The proportion of the full dataset allocated to each model. The
+            default behavior is that every model gets the full dataset. The
+            indices in the subsets are random, but each row is guranteed to be
+            represented at least once.
 
         Other parameters
         ----------------
@@ -204,13 +212,37 @@ class Engine(object):
             If True, initalize each cross-categorization state to have one
             view and one category (default is False). This is primiarily for
             debugging and visualization, and negatively affects inference.
-        """
-        if self._n_models != 0:
-            raise NotImplementedError('Cannot add more models.')
 
-        self._n_models = n_models
+        Example
+        -------
+        Initliallize
+
+        >>> engine.init_model()
+
+        Initliallize eight models that learn from half the data
+
+        >>> engine.init_model(subsample_size=0.5)
+        """
+        if self._initialized:
+            raise NotImplementedError("Cannot re-initialize or add models")
+
+        if subsample_size is not None:
+            self._subsampled = True
+        else:
+            self._subsampled = False
+
+        row_converters = du.gen_row_idx_converters(
+            self._df.index, self._n_models, subsample_size)
+
+        row2idx_df, idx2row_df, row2idx_sf, idx2row_sf = row_converters
+
+        self._converters['row2idx_df'] = row2idx_df
+        self._converters['idx2row_df'] = idx2row_df
+        self._converters['row2idx_sf'] = row2idx_sf
+        self._converters['idx2row_sf'] = idx2row_sf
+
         args = []
-        for _ in range(self._n_models):
+        for m_ix in range(self._n_models):
             sd = np.random.randint(2**31-1)
             kwarg = {'dtypes': self._dtypes,
                      'distargs': self._distargs,
@@ -218,13 +250,17 @@ class Engine(object):
             if structureless:
                 kwarg['Zv'] = [0]*self._n_cols
                 kwarg['Zrcv'] = [[0]*self._n_rows]
-
-            args.append((self._data, kwarg,))
+            
+            rows = sorted(self._converters['idx2row_df'][m_ix].keys())
+            data_i = self._data[rows, :]
+            args.append((data_i, kwarg,))
 
         res = self._mapper(_initialize, args)
         for model, diagnostics in res:
             self._models.append(model)
             self._diagnostic_tables.append(diagnostics)
+
+        self._initialized = True
 
     @classmethod
     def load(cls, filename):
@@ -263,7 +299,8 @@ class Engine(object):
             'cls_attrs': {
                 'models': self._models,
                 'n_models': self._n_models,
-                'diagnostic_tables': self._diagnostic_tables}}
+                'diagnostic_tables': self._diagnostic_tables,
+                'converters': self._converters}}
 
         with open(filename, 'wb') as f:
             pkl.dump(dat, f)
@@ -338,7 +375,7 @@ class Engine(object):
         trans_kwargs : dict
             Keyword arguments sent to `BCState.transition`
         verbose : bool
-            If True, print disagnostic info ate every checkpoint
+            If True, print disagnostic info at every checkpoint
         """
 
         if trans_kwargs is None:
@@ -350,8 +387,8 @@ class Engine(object):
             model_idxs = list(range(self._n_models))
 
         args = []
-        for idx in model_idxs:
-            model = self._models[idx]
+        for m_ix in model_idxs:
+            model = self._models[m_ix]
             sd = np.random.randint(2**31-1)
             init_kwarg = {'dtypes': self._dtypes,
                           'distargs': self._distargs,
@@ -361,7 +398,11 @@ class Engine(object):
                           'state_alpha': model['state_alpha'],
                           'view_alphas': model['view_alphas'],
                           'seed': sd}
-            args.append((self._data, checkpoint, idx, verbose, init_kwarg,
+
+            rows = sorted(self._converters['idx2row_df'][m_ix].keys())
+            data_i = self._data[rows, :]
+
+            args.append((data_i, checkpoint, m_ix, verbose, init_kwarg,
                          trans_kwargs,))
 
         res = self._mapper(_run, args)
@@ -451,8 +492,8 @@ class Engine(object):
             # Get row indices where col is null
             rows = self._df[pd.isnull(self._df[col])].index
 
-        row_idxs = [self._converters['row2idx'][row] for row in rows]
         col_idx = self._converters['col2idx'][col]
+        row2idx = self._converters['row2idx_sf']
 
         # FIXME: In the future we'll want a better way to determine
         # optimization bounds for different dtypes. If statements are gross.
@@ -467,8 +508,8 @@ class Engine(object):
             raise ValueError('Unsupported dtype: {}'.format(dtype))
 
         impdata = []
-        for row_idx in row_idxs:
-            x, conf = mu.impute(row_idx, col_idx, self._models, bounds)
+        for row in rows:
+            x, conf = mu.impute(row, col_idx, row2idx, self._models, bounds)
             if dtype == 'categorical':
                 x = self._converters['valmaps'][col]['idx2val'][x]
             impdata.append({col: x, 'conf': conf})
@@ -560,30 +601,30 @@ class Engine(object):
             colums for 'column', 'row', 'value', and 'surprisal'
         """
         col_idx = self._converters['col2idx'][col]
+        row2idx = self._converters['row2idx_sf']
+
         if rows is None:
-            row_idxs = list(range(self._n_rows))
-        else:
-            row_idxs = [self._converters['row2idx'][row] for row in rows]
+            rows = self._df.index.tolist()
 
         vals = []
-        rows = []
         queries = []
-        for row_idx in row_idxs:
-            row = self._converters['idx2row'][row_idx]
+        row_names = []
+        for row in rows:
+            row_idx = self._df.index.get_loc(row)
             x = self._data[row_idx, col_idx]
 
             # ignore missing values
             if not np.isnan(x):
-                rows.append(row)
                 vals.append(self._df[col][row])
-                queries.append((row_idx, x,))
+                queries.append((row, x,))
+                row_names.append(row)
 
-        s = mu.surprisal(col_idx, queries, self._models)
+        s = mu.surprisal(col_idx, queries, row2idx, self._models)
         data = []
         for val, si in zip(vals, s):
             data.append({'surprisal': si, col: val})
-
-        return pd.DataFrame(data, index=rows)
+        
+        return pd.DataFrame(data, index=row_names)
 
     def dependence_probability(self, col_a, col_b):
         """ The probabiilty that a dependence exists between a and b. """
@@ -608,21 +649,26 @@ class Engine(object):
             # XXX: we will assume that the user meant to do this
             return 1.0
 
-        idx_a = self._converters['row2idx'][row_a]
-        idx_b = self._converters['row2idx'][row_b]
 
-        sim = np.zeros(self._n_models)
+        sim = [] 
         for midx, model in enumerate(self._models):
+            idx_a = self._converters['row2idx_sf'][midx].get(row_a, None)
+            idx_b = self._converters['row2idx_sf'][midx].get(row_b, None)
+            
+            if idx_a is None or idx_b is None:
+                continue
+
             if wrt is not None:
                 relviews = set([model['col_assignment'][c] for c in colidxs])
             else:
                 relviews = list(range(len(model['row_assignments'])))
 
+            sim.append(0.0)
             for vidx in relviews:
                 asgn = model['row_assignments'][vidx]
-                sim[midx] += (asgn[idx_a] == asgn[idx_b])
+                sim[-1] += (asgn[idx_a] == asgn[idx_b])
 
-            sim[midx] /= float(len(relviews))
+            sim[-1] /= float(len(relviews))
 
         return np.mean(sim)
 
@@ -891,6 +937,9 @@ class Engine(object):
             with singleton views and categories having negative size or
             appearing as lines. Lots to fix.
         """
+        if self._subsampled:
+            raise NotImplementedError("Not implemented for sub-sampled states")
+
         if hl_rows != ():
             if not isinstance(hl_rows, (list, np.ndarray,)):
                 hl_rows = [hl_rows]

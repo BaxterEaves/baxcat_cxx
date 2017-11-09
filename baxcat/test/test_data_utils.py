@@ -257,7 +257,7 @@ def test_dataframe_to_array_all_categorical_with_missing_vals():
 # test process_dataframe
 # ---
 def test_process_dataframe_output_default(smalldf):
-    data_array, dtypes, distargs, converters = du.process_dataframe(smalldf)
+    data_array, dtypes, distargs, converters = du.process_dataframe(smalldf, 2)
 
     assert data_array.shape == smalldf.shape
     assert 'float' in str(data_array.dtype)
@@ -281,8 +281,6 @@ def test_process_dataframe_output_default(smalldf):
     # converters
     assert len(converters['col2idx']) == smalldf.shape[1]
     assert len(converters['idx2col']) == smalldf.shape[1]
-    assert len(converters['row2idx']) == smalldf.shape[0]
-    assert len(converters['idx2row']) == smalldf.shape[0]
     assert len(converters['valmaps']) == 2  # number of categorical cols
 
 
@@ -510,3 +508,36 @@ def test_format_query_data_should_return_2d_numpy_array_2d_array():
     x = du.format_query_data(np.eye(2))
     assert isinstance(x, np.ndarray)
     assert x.shape == (2, 2,)
+
+
+# --
+def test_gen_subset_indices():
+    # generate 5 data sets each with half the data
+    subsets = du.gen_subset_indices(20, .5, 5)
+
+    assert len(subsets) == 5
+    assert all(len(subset) == 10 for subset in subsets)
+
+    # each element should be unique
+    assert all(len(set(subset)) == 10 for subset in subsets)
+
+    allidxs = []
+    for subset in subsets:
+        allidxs.extend(subset)
+
+    assert len(set(allidxs)) == 20
+
+
+def test_gen_subset_indices_handles_oddly_divisible_sizes():
+    subsets = du.gen_subset_indices(23, .5, 5)
+    assert len(subsets) == 5
+
+
+def test_gen_subset_indices_raises_value_error_with_low_set_size():
+    with pytest.raises(ValueError):
+        du.gen_subset_indices(20, .1, 5)
+
+
+def test_gen_subset_indices_raises_value_error_with_high_set_size():
+    with pytest.raises(ValueError):
+        du.gen_subset_indices(20, 1.2, 5)
