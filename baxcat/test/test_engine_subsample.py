@@ -1,15 +1,10 @@
-import os
 import pytest
 import tempfile
 import pandas as pd
 import numpy as np
 
-from multiprocessing.pool import Pool
 
 from baxcat.engine import Engine
-from baxcat.metrics import SquaredError
-
-from tempfile import NamedTemporaryFile
 
 
 def smalldf():
@@ -43,10 +38,10 @@ def unimodal_df(n=200):
 
 
 def multimodal_df(n=200):
-    s1 = pd.Series(np.hstack((np.random.randn(n/2)-3,
-                              np.hstack(np.random.randn(n/2)+3))))
-    s2 = pd.Series(np.hstack((np.random.randn(n/2)-3,
-                              np.hstack(np.random.randn(n/2)+3))))
+    s1 = pd.Series(np.hstack((np.random.randn(int(n/2))-3,
+                              np.hstack(np.random.randn(int(n/2))+3))))
+    s2 = pd.Series(np.hstack((np.random.randn(int(n/2))-3,
+                              np.hstack(np.random.randn(int(n/2))+3))))
     df = pd.concat([s1, s2], axis=1)
     df.columns = ['x_1', 'x_2']
 
@@ -60,6 +55,7 @@ def gen_engine_full(df):
     engine.run(10)
 
     return engine
+
 
 # generates engine w/ 0.5 subsample
 def gen_engine_half(df):
