@@ -77,6 +77,7 @@ def test_fit_changes_data_sometimes_one_col(miner_df):
         assert(miner._df['x_3'].ix[i] == df['x_3'].ix[i])
 
 
+@pytest.mark.flaky(reruns=5)
 def test_fit_changes_data_sometimes_one_col_categorical(miner_df):
     df = copy.deepcopy(miner_df)
     logcf = lambda row, x: 0.0
