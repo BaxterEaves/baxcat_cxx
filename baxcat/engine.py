@@ -250,7 +250,7 @@ class Engine(object):
             if structureless:
                 kwarg['Zv'] = [0]*self._n_cols
                 kwarg['Zrcv'] = [[0]*self._n_rows]
-            
+
             rows = sorted(self._converters['idx2row_df'][m_ix].keys())
             data_i = self._data[rows, :]
             args.append((data_i, kwarg,))
@@ -623,7 +623,7 @@ class Engine(object):
         data = []
         for val, si in zip(vals, s):
             data.append({'surprisal': si, col: val})
-        
+
         return pd.DataFrame(data, index=row_names)
 
     def dependence_probability(self, col_a, col_b):
@@ -649,12 +649,11 @@ class Engine(object):
             # XXX: we will assume that the user meant to do this
             return 1.0
 
-
-        sim = [] 
+        sim = []
         for midx, model in enumerate(self._models):
             idx_a = self._converters['row2idx_sf'][midx].get(row_a, None)
             idx_b = self._converters['row2idx_sf'][midx].get(row_b, None)
-            
+
             if idx_a is None or idx_b is None:
                 continue
 
