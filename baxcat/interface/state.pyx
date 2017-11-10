@@ -74,7 +74,7 @@ cdef extern from "state.hpp" namespace "baxcat":
 
         # append and pop row
         void appendRow(vector[double] data_row, bool assign_to_max_p_cluster)
-        void replaceRowData(size_t row_index, vector[double] new_row_data)
+        void replaceDatum(size_t row_idx, size_t col_idx, double new_datum)
         void popRow()
 
         # predictive functions
@@ -190,9 +190,8 @@ cdef class BCState:
         return logps
 
 
-    def predictive_probability(self, query_indices, query_values,
-                               constraint_indices=None,
-                               constraint_values=None):
+    def predictive_logp(self, query_indices, query_values,
+                        constraint_indices=None, constraint_values=None):
         """
         Get the predictive probability
         """
@@ -268,82 +267,18 @@ cdef class BCState:
 
         return metadata
 
-    # FIXME: This is not excatly what we want. We don't want to have to
-    # resample entire rows. We'd like to resample parts of rows, for example,
-    # the parameter parts. We need to add column indices as well.
-    def conditioned_row_resample(self, row_index, logcf, num_samples=10):
-        # TODO: verify that this example works
-        """
-        Resamples a row in state conditioned on some external log probability
-        function.
+    def replace_data(self, idxs, data):
+        """ Replace existing data with new data. 
 
         Parameters
         ----------
-        row_index : int
-            row index of the cell to resample
-        logcf : function
-            function that returns the log probability of the row given some
-            external criterion.
-        num_samples : int, optional
-            number of Metropolis-Hastings steps to do
-
-        Examples
-        --------
-        condition resample given n-dimensional multivariate normal distribution
-        >>> import numpy as np
-        >>> from scipy.stats import multivariate_normal as mvn
-        >>> # generate random data and state
-        >>> X = np.random.randn(4,100).tolist()  # baxcat is column major
-        >>> state = baxcat.State(X, ['continuous']*4)
-        >>> # generate evaluation function
-        >>> mu = np.zeros(4)   # normal mean
-        >>> sigma = np.eye(4)  # normal standard deviation
-        >>> logcf = lambda row_data : mvn.logpdf(row_data, mu, sigma)
-        >>> # resample row 5 (50 Metropolis-Hastings steps)
-        >>> state.conditioned_row_resample(5, logcf, num_samples=50)
+        idxs : list of (row, col,) tuples
+            List of cells to update
+        data : list
+            List of data. Should have an entry for each entry in `idxs`.
         """
-        if not isinstance(row_index, int):
-            raise ValueError('row_index must be an integer index.')
-        if not callable(logcf):
-            raise ValueError('logcf must be a function')
+        if len(idxs) != len(data):
+            raise ValueError('data and idxs should have the same length')
 
-        def get_random_row(row_index, num_cols):
-            # FIXME: this is not quite right, because the existing suffstats
-            # in the row must be removed before the new row is sampled (and
-            # then replaced afterward).
-            query_indices = [[row_index, col_index] for col_index in 
-                              range(num_cols)]
-            return self.predictive_draw(query_indices)[0]
-
-        def row_predictive_probability(row_index, Y):
-            logp = 0.0
-            query_indices = []
-            query_values = []
-            for col_index, y in enumerate(Y):
-                query_indices.append([row_index, col_index])
-                query_values.append(y)
-            logps = self.predictive_probability(query_indices, query_values)
-            return np.sum(logps)
-
-        acr = 0
-        # get current data from the row
-        y = self.statePtr.getDataRow(row_index)
-        lc = logcf(y)
-
-        if not isinstance(lc, float):
-            raise ValueError('logcf should return a single float (log P)')
-
-        l = row_predictive_probability(row_index, y) + lc
-        for _ in range(num_samples):
-            # get a sample from the row
-            yp = get_random_row(row_index, self.n_cols)
-            lp = row_predictive_probability(row_index, yp) + logcf(yp)
-
-            # calcualte acceptance probability
-            if log(rand()) < lp-l:
-                acr += 1
-                l = lp
-                y = yp
-                self.statePtr.replaceRowData(row_index, y)
-
-        return acr/float(num_samples)
+        for (row_idx, col_idx,), x in zip(idxs, data):
+            self.statePtr.replaceDatum(row_idx, col_idx, x)

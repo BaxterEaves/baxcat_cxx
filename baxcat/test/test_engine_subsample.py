@@ -2,7 +2,7 @@ import pytest
 import tempfile
 import pandas as pd
 import numpy as np
-
+from flaky import flaky
 
 from baxcat.engine import Engine
 
@@ -132,6 +132,7 @@ def test_probability_equivalence(gendf, subsample_size):
 
 
 # -- Suprisal
+@flaky(max_runs=5, min_passes=1)
 @pytest.mark.parametrize('gendf', [unimodal_df, multimodal_df])
 @pytest.mark.parametrize('subsample_size', [None, 1.0, 0.5])
 def test_surprisal_equivalence(gendf, subsample_size):
@@ -152,6 +153,7 @@ def test_surprisal_equivalence(gendf, subsample_size):
 
 
 # -- Impute
+@flaky(max_runs=5, min_passes=1)
 @pytest.mark.parametrize('gendf', [unimodal_df, multimodal_df])
 @pytest.mark.parametrize('subsample_size', [None, 1.0, 0.5])
 def test_impute_equivalence(gendf, subsample_size):
