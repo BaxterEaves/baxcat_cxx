@@ -17,9 +17,9 @@ install:
     - conda config --set always_yes yes --set changeps1 no
     - conda update -q conda
     - conda info -a
-    - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION cython numpy scipy matplotlib seaborn pytest pandas flaky
+    - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION cython numpy scipy matplotlib seaborn pytest pandas
     - source activate test-environment
-    - pip install freeze ipython[all]
+    - pip install freeze ipython[all] flaky
     - pip install --upgrade --ignore-installed pytest
     - python setup.py develop
     - export PYTHONPATH=`pwd`/baxcat_cxx:$PYTHONPATH
