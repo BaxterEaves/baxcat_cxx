@@ -4,8 +4,7 @@ A C++/python implementation of cross-cutting categorization.
 
 ![Travis-CI status](https://travis-ci.org/BaxterEaves/baxcat_cxx.svg?branch=master)
 
-**baxcat is under rapid development. The modeling assumptions and API are
-subject to change.**
+**baxcat is no longer developed. Please see [lace](https://lace.dev) for all your probabilistic cross-categorization needs**
 
 
 # Installation
